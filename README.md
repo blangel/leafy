@@ -1,4 +1,4 @@
-# Leafy
+# Leafy 🌿
 
 Leafy is a Bitcoin wallet designed to be user-friendly. It is built for individuals interested in Bitcoin but with little to no knowledge of how Bitcoin works.
 
