@@ -2,20 +2,19 @@
 
 Leafy is a Bitcoin wallet designed to be user-friendly. It is built for those who want to participate in Bitcoin via [self-custody](#self-custody) but do not want to undertake the learning curve, cost and hassle required by other solutions.
 
+### Getting Started
+
+Users should download the Leafy application (available on [Android]() and [Apple]()) which will guide them through their wallet [setup](#setup).
+
+### Leafy Goals
+
 * **Easy** - Leafy creates interactions which are familiar to users, matching expectations from their other applications. Users need not understand Bitcoin technicalities to interact with the application.
 * **Serverless** - Leafy has no servers. All components and data of Leafy are controlled by the user. 
 * **Self-custodial** - Leafy provides complete control of users' bitcoin to the users themselves.
 * **Recoverable** - Leafy is robust to multiple types of disaster scenarios. It optimizes for ease of recovery for common user loss scenarios (e.g. user loses phone).
 * **Secure** - Leafy utilizes best practices and multiple Bitcoin primitives to secure users' funds.
 * **Elastic** - Leafy is built to allow for simple onboarding of users to Bitcoin but then scales in features as the user learns more about the Bitcoin ecosystem.
-* **(optionally) Social** - Leafy provides services (like [wallet recovery](#TBD) and [bitcoin trading](#TBD)) via the help of a users' trusted set of social companions.
-* **Open-source** - Leafy ("program"), like Bitcoin ("money"), is [open-source](TBD-github) because ["If the users don't control the program, the program controls the users."](https://www.gnu.org/philosophy/free-software-even-more-important.html)
-
-### What Is Required
-
-* Phone Application ("Phone") - users will need the Leafy application (available on [Android]() and [Apple]()).
-* Remote Account ("Remote Account") - users will need an implementation of the [Remote Module](#remote-module). By default, this is a Google Drive account.
-* Recovery Method ("Recovery Method") - users will need to select and configure an implementation of the [Recovery Module](#recovery-module). Currently, by default, this is a [Companion Device](#companion-device-recovery). Another option is a [Social Bond](#social-bond-recovery).
+* **(optionally) Social** - Leafy provides services (like [wallet recovery](#social-recovery) and [bitcoin trading](#TBD)) via the help of a users' trusted set of social companions.
 
 ### Setup
 
@@ -29,13 +28,34 @@ To spend bitcoin stored in a Leafy wallet, the user needs access to its Remote A
 
 TBD - video
 
-## Additional Topics
+### What Is Required
 
-Additional topics, either unlikely or advanced, are discussed below.
+* Phone Application ("Phone") - users will need the Leafy application (available on [Android]() and [Apple]()).
+* Remote Account ("Remote Account") - users will need an implementation of the [Remote Module](#remote-module). By default, this is a Google Drive account.
+* Recovery Method ("Recovery Method") - users will need to select and configure an implementation of the [Recovery Module](#recovery-module). By default, this is a [Companion Device](#2a-companion-device-recovery) but the user may choose instead to use a [Social Bond](#2b-social-bond-recovery).
 
-### Module System
+## Contents
 
-TBD
+1. [Overview](#leafy-)
+2. [Advanced Topics](#advanced-topics)
+2. [Technical Details](#technical-details)
+3. [Terminology](#terminology)
+4. [Open Source](#open-source)
+
+## Advanced Topics
+
+1. [Module System](#1-module-system)
+2. [Recovery](#2-recovery)
+    * [Companion Device Recovery](#2a-companion-device-recovery)
+    * [Social Bond Recovery](#2b-social-bond-recovery)
+3. [Optional Password/Passphrase](#3-optional-passwordpassphrase)
+4. [Additional Recovery Scenarios](#4-additional-recovery-scenarios)
+5. [Limitations of Recovery Scenarios](#5-limitations-of-recovery-scenarios)
+6. [Bitcoin Network Connectivity](#6-bitcoin-network-connectivity)
+
+### 1. Module System
+
+Leafy is designed with modularity in mind. Specifically there are two modules; a [Remote Module](#remote-module) and a [Recovery Module](#recovery-module). Each module is defined by an API to allow for other developers/users to create different implementations of the module. Leafy comes with at least one implementation of each module. 
 
 #### Remote Module
 TBD - Remote Storage Remote Account is a user controlled account of either Google or Apple (specifically [Google Drive](https://developers.google.com/drive/api/guides/about-sdk) or [Apple's iCloud key storage](https://developer.apple.com/library/archive/documentation/General/Conceptual/iCloudDesignGuide/Chapters/DesigningForKey-ValueDataIniCloud.html); in the case of Google, the data is also stored within the user's [Google Drive application storage](https://developers.google.com/drive/api/guides/appdata)).
@@ -43,11 +63,11 @@ TBD - Remote Storage Remote Account is a user controlled account of either Googl
 #### Recovery Module
 TBD
 
-### Recovery
+### 2. Recovery
 
-As detailed in [What Is Required](#what-is-required), a user needs to configure a [Recovery Module](#recovery-module). Currently, there are two implementations of recovery from which the user must select one: [Companion Device Recovery](#companion-device-recovery) or [Social Bond Recovery](#social-bond-recovery).
+As detailed in [What Is Required](#what-is-required), a user needs to configure a [Recovery Module](#recovery-module). Currently, there are two implementations of recovery from which the user must select one: [Companion Device Recovery](#2a-companion-device-recovery) or [Social Bond Recovery](#2b-social-bond-recovery).
 
-#### <ins>Companion Device Recovery</ins>
+#### 2.a Companion Device Recovery
 
 If using the companion device recovery module, users will be required to utilize a secondary device ("Companion Device"). The Companion Device could be a friend's, see [Social Recovery](#social-recovery), or their own, see [Anti-Social Recovery](#anti-social-recovery). The user needs at least one Companion Device but can configure multiple. In normal usage, Leafy functions with the combination of the data on the Phone and the Remote Account. The Companion Device is added to easily facilitate recovery from the most common loss scenario which is a user losing its Phone.
 
@@ -65,11 +85,11 @@ There are some common scenarios requiring recovery which are not the result of a
 
 ###### New Phone
 
-If the user gets a new phone and is still in possession of its existing Phone, the existing Phone can be used like a Companion Device to transfer relevant data to the new phone. Of course, the user can, if desired, use one of its other [Companion Device(s) for recovery](#companion-device-recovery).
+If the user gets a new phone and is still in possession of its existing Phone, the existing Phone can be used like a Companion Device to transfer relevant data to the new phone. Of course, the user can, if desired, use one of its other [Companion Device(s) for recovery](#2a-companion-device-recovery).
 
 ###### Uninstall Application / Application Data Deleted
 
-If the user uninstalls the Leafy application or the application data stored locally is deleted, the user's quickest path to recovery is to leverage its [Companion Device(s) for recovery](#companion-device-recovery).
+If the user uninstalls the Leafy application or the application data stored locally is deleted, the user's quickest path to recovery is to leverage its [Companion Device(s) for recovery](#2a-companion-device-recovery).
 
 ##### Timelock for Recovery
 
@@ -89,13 +109,13 @@ As discussed in [Timelock for Recovery](#timelock-for-recovery), funds are encum
 
 Although this liveliness check incurs on-chain transactions/fees, it has positive externalities as well. For instance, it is a form of key rotation which is a recommended part of key management in [NIST SP 800-57](https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final). It also acts as a yearly proof of control for a user over the entirety of their assets.
 
-#### <ins>Social Bond Recovery</ins>
+#### 2.b Social Bond Recovery
 
 TBD
 
 ***
 
-### Optional Password/Passphrase
+### 3. Optional Password/Passphrase
 
 A primary goal of Leafy is to create an easy-to-use application for non-technical users. This is the main rationale for not requiring (nor recommending) the user secure any portion of its wallet with a password/passphrase. However, there are several reasons why utilizing a password/passphrase would be beneficial to a user.
 
@@ -108,7 +128,7 @@ TODO - augment for Social Bond Recovery
 
 Leafy acknowledges that some users may desire stronger privacy and a stronger guarantee of security even in exotic scenarios. Given this, Leafy does support an optional password/passphrase that the user can configure on setup. This is not recommended though given the burden it places on the user. Leafy assumes the average user will not be concerned with the scenarios a password/passphrase mitigates. In fact, requiring a user to remember a password/passphrase may cause more harm as the funds would be inaccessible in certain recovery scenarios if the user forgets its chosen password/passphrase.
 
-### Additional Recovery Scenarios
+### 4. Additional Recovery Scenarios
 
 Primary recovery scenarios are [documented above](#recovery). There are a couple of more exotic scenarios discussed here.
 
@@ -126,7 +146,7 @@ In the event either App Provider ([Google Play Store](https://play.google.com/) 
 
 Both the [side-loaded binaries](TBD) and the [separate binaries](TBD) include instructions on content verification as well as installation.
 
-### Limitations of Recovery Scenarios
+### 5. Limitations of Recovery Scenarios
 
 As outlined above, users have the ability to recover from many loss scenarios. This can even include obstruction by [remote account providers](#remote-account-provider-obstruction) and [app providers](#app-provider-obstruction). However, there are certain scenarios where the user has no recourse. These are discussed below.
 
@@ -157,7 +177,7 @@ Additionally, for those users requiring extra assurance, [electing to use a pass
 
 ***
 
-### Bitcoin Network Connectivity
+### 6. Bitcoin Network Connectivity
 
 Leafy does not **require** users to [run a full bitcoin node](https://river.com/learn/how-to-run-a-bitcoin-node/). This is purposefully done to ease onboarding and the burden on the user when using the application. For connectivity to the Bitcoin network, Leafy leverages the open source [mempool.space APIs](https://mempool.space/docs/api/rest).
 
@@ -224,13 +244,16 @@ In the table, `[Pwd]` represents the optional password/passphrase. If elected by
 |             | Companion Device(1..n)         | `[Pwd]` [secure_storage](https://pub.dev/packages/flutter_secure_storage)     |
 |             | Companion Remote Account(1..n) | `[Pwd]` Companion's `First Seed` Public Key                                   |
 
-
 ## Terminology
 
 ### Self Custody
 
-Self custody is the process and tools allowing a user to solely control the responsibility of securing the bitcoin encumbrance for the bitcoin the user financially owns. Typically, bitcoin is encumbered via a locking script which only requires the possession of a private key. Often self-custody is synonymous with possession of a private key. However, bitcoin can be encumbered in simpler as well as more complicated ways than a single private key (e.g. set of private keys, preimages, etc). To be self-custodial the user must take responsibility for the full encumbrance of their bitcoin.
+Self custody is the process and tools allowing a user to solely control the responsibility of securing the bitcoin the user financially owns. Typically, bitcoin is encumbered via a locking script which only requires the possession of a private key. Often self-custody is synonymous with possession of a private key. However, bitcoin can be encumbered in simpler as well as more complicated ways than a single private key (e.g. set of private keys, preimages, etc). To be self-custodial the user must take responsibility for the full encumbrance of their bitcoin.
 
 ### Self Sovereign
 
-Leafy views bitcoin ownership as an evolution towards self-sovereignty. Self-sovereignty is a superset of self-custody. Besides self-custody, it also includes user control over [Bitcoin network connectivity](#customizable-bitcoin-network-connectivity) as well as the ability to freely [exchange bitcoin](#TBD) with others. 
+Leafy views bitcoin ownership as an evolution towards self-sovereignty. Self-sovereignty is a superset of self-custody. Besides self-custody, it also includes user control over [Bitcoin network connectivity](#customizable-bitcoin-network-connectivity) as well as the ability to freely [exchange bitcoin](#TBD) with others.
+
+## Open Source
+
+Leafy ("program"), like Bitcoin ("money"), is [open-source](TBD-github) because ["If the users don't control the program, the program controls the users."](https://www.gnu.org/philosophy/free-software-even-more-important.html).
