@@ -41,6 +41,7 @@ TBD - video
 2. [Technical Details](#technical-details)
 3. [Terminology](#terminology)
 4. [Open Source](#open-source)
+5. [Roadmap](#roadmap)
 
 ## Advanced Topics
 
@@ -257,3 +258,7 @@ Leafy views bitcoin ownership as an evolution towards self-sovereignty. Self-sov
 ## Open Source
 
 Leafy ("program"), like Bitcoin ("money"), is [open-source](TBD-github) because ["If the users don't control the program, the program controls the users."](https://www.gnu.org/philosophy/free-software-even-more-important.html).
+
+## Roadmap
+
+TBD
