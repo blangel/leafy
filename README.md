@@ -32,7 +32,7 @@ TBD - video
 
 * Phone Application ("Phone") - users will need the Leafy application (available on [Android]() and [Apple]()).
 * Remote Account ("Remote Account") - users will need an implementation of the [Remote Module](#remote-module). By default, this is a Google Drive account.
-* Recovery Method ("Recovery Method") - users will need to select and configure an implementation of the [Recovery Module](#recovery-module). By default, this is a [Companion Device](#2a-companion-device-recovery) but the user may choose instead to use a [Social Bond](#2b-social-bond-recovery).
+* Recovery Method ("Recovery Method") - users will need to select and configure an implementation of the [Recovery Module](#recovery-module). By default, this is a [Companion Device](#2a-companion-device-recovery).
 
 ## Contents
 
@@ -56,35 +56,37 @@ TBD - video
 
 ### 1. Module System
 
-Leafy is designed with modularity in mind. Specifically there are two modules; a [Remote Module](#remote-module) and a [Recovery Module](#recovery-module). Each module is defined by an API to allow for other developers/users to create different implementations of the module. Leafy comes with at least one implementation of each module. 
+Leafy is designed with modularity in mind. Specifically there are two modules; a [Remote Module](#remote-module) and a [Recovery Module](#recovery-module). Each module is defined by an API to allow for other developers/users to create different implementations of the module. Leafy comes with at least one implementation of each module[^1].
+[^1]: ✅ represents the default implementation.
 
 #### Remote Module
 
 As described in [Technical Details](#technical-details), a Leafy wallet requires two [BIP-39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) seed phrases. One of these phrases is stored on the user's Phone and another within a Remote Account. The Remote Module is the API necessary to implement a Remote Account. It is defined [here](TBD). 
 
-Here are the Remote Accounts created or planned within Leafy.
+Here are the Remote Accounts supported or being developed by Leafy.
 
-| Remote Account                    | Description                                                                                                                                                                                                      | Status        |
-|:----------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------|
-| Google Drive (default)            | Implemented via the [Google Drive API](https://developers.google.com/drive/api/guides/about-sdk) as well as the user [Google Drive application storage](https://developers.google.com/drive/api/guides/appdata). | Finished      |
-| Apple iCloud                      | Implemented via [Apple's iCloud key storage](https://developer.apple.com/library/archive/documentation/General/Conceptual/iCloudDesignGuide/Chapters/DesigningForKey-ValueDataIniCloud.html)                     | Planned       |
-| [ColdCard](https://coldcard.com/) | TBD                                                                                                                                                                                                              | Investigating |
-| [Ledger](https://www.ledger.com/) | TBD                                                                                                                                                                                                              | Investigating |
+| Remote Account | Description                                                                                                                                                                                                     |       Status |
+|:---------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------:|
+| Google Drive ✅ | Implemented via the [Google Drive API](https://developers.google.com/drive/api/guides/about-sdk) as well as the user [Google Drive application storage](https://developers.google.com/drive/api/guides/appdata) | Supported 💪 |
+| Apple iCloud   | Implemented via [Apple's iCloud key storage](https://developer.apple.com/library/archive/documentation/General/Conceptual/iCloudDesignGuide/Chapters/DesigningForKey-ValueDataIniCloud.html)                    |   Planned 🚧 |
+| Hardware       | Like [ColdCard](https://coldcard.com/) or [Ledger](https://www.ledger.com/)                                                                                                                                     |  Research 🔬 |
 
 #### Recovery Module
 
 To assist a user in recovering their Leafy wallet in case of various loss scenarios, the user must select and configure a Recovery Module implementation. The Recovery Module is the API necessary to implement a Recovery Method. It is defined [here](TBD).
 
-Here are the Recovery Methods created or planned within Leafy.
+Here are the Recovery Methods supported or being developed by Leafy.
 
-| Recovery Method            | Description                                                                                                                                                                                      | Status   |
-|:---------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------|
-| Companion Device (default) | Leverages trusted companions to store backups of a user's seed phrase and timelocks to recover from Remote Account access loss. This is [defined in depth below](#2a-companion-device-recovery). | Finished |
-| Social Bond                | Leverages trusted companions to pledge a UTXO to aid in recovery of a user's UTXO set. This is [defined in depth below](#2b-social-bond-recovery).                                               | Planned  |
+| Recovery Method    | Description                                                                                                                                                                                         |       Status |
+|:-------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------:|
+| Companion Device ✅ | Leverages trusted companions to store backups of a user's seed phrase and timelocks to recover from Remote Account access loss. This is [defined in depth below](#2a-companion-device-recovery).    | Supported 💪 |
+| Social Bond        | Leverages trusted companions to pledge a [UTXO](https://river.com/learn/bitcoins-utxo-model/) to aid in recovery of a user's UTXO set. This is [discussed further below](#2b-social-bond-recovery). |  Research 🔬 |
+
+Continue to [Recovery](#2-recovery) for more details about each and to see a [comparison](#2c-companion-device-and-social-bond-comparison) between the two.
 
 ### 2. Recovery
 
-As detailed in [What Is Required](#what-is-required), a user needs to configure a [Recovery Module](#recovery-module). Currently, there are two implementations of recovery from which the user must select one: [Companion Device Recovery](#2a-companion-device-recovery) or [Social Bond Recovery](#2b-social-bond-recovery).
+As detailed in [What Is Required](#what-is-required), a user needs to configure a [Recovery Module](#recovery-module). Currently, there is one implementation of recovery, the [Companion Device Recovery](#2a-companion-device-recovery) and another, [Social Bond Recovery](#2b-social-bond-recovery), being researched as a potential implementation.
 
 #### 2.a Companion Device Recovery
 
@@ -130,15 +132,62 @@ Although this liveliness check incurs on-chain transactions/fees, it has positiv
 
 #### 2.b Social Bond Recovery
 
-TBD
+[!WARNING]
+Social Bond Recovery is actively being researched as a viable Recovery Method for Leafy wallets but is not yet supported.
+
+If using the social bond recovery module, users must enlist the support of a friend, family member or someone else trusted and willing to pledge a small portion of their bitcoin (called a [UTXO](https://river.com/learn/bitcoins-utxo-model/)) to assist the user in the event of recovery. This pledged UTXO is referred to as the "social bond". The idea behind social bond recovery is to preallocate movement of the user funds to a recovery wallet but ensure this movement is only valid if the social bond is executed. This helps ensure the preallocated movement is only executed in actual user initiated recovery scenarios.
+
+<div style="margin: auto; text-align: center;">
+    <img src="./docs/leafy_recovery_social_bond.png" alt="Leafy Social Bond Recovery" width=600>
+</div>
+
+The social bond recovery method is cheap to maintain (as opposed to [Companion Device](#2a-companion-device-recovery) which requires yearly [liveliness checks](#liveliness-check)) in that the "social bond" UTXOs can be refreshed on demand without incurring on-chain fees (no on-chain transactions required).
+
+##### Fee Handling
+
+TODO
+
+##### Recovery Wallet Options/Selection
+
+TODO
+
+##### Preallocated Transaction Durability
+
+TODO
+
+##### Non-Loss Recovery Scenarios
+
+There are some common scenarios requiring recovery which are not the result of a lost phone. These are detailed below.
+
+###### New Phone
+
+TODO
+
+###### Uninstall Application / Application Data Deleted
+
+TODO
+
+##### Social Bond Recovery Summary
+
+TODO
+
+#### 2.c Companion Device and Social Bond Comparison
+
+|                                                                                   |                                                                                                 [Companion Device](#2a-companion-device-recovery) |                                                        [Social Bond](#2b-social-bond-recovery) |
+|:----------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------:|-----------------------------------------------------------------------------------------------:|
+| [**Liveliness Check**](#liveliness-check)                                         |                                                                                                                                               Yes |                                                                                             No |
+| **Transactions During Recovery**<br/>`U=User UTXO count`<br/>`F=Fee transactions` |                                                  <table><tr><th>Best Case</th><th>Worst Case</th></tr><tr><td>0</td><td>`U`+`F`</td></tr></table> | <table><tr><th>Best Case</th><th>Worst Case</th></tr><tr><td>2</td><td>2+`F`</td></tr></table> |
+|                                                                                   |                                                                                                                                                   |                                                                                                |
+ 
+
+[!NOTE]
+For the rest of the document, it is assumed that the Recovery Method is the [Companion Device Recovery](#2a-companion-device-recovery). If the [Social Bond Recovery](#2b-social-bond-recovery) becomes viable, the documentation will be revised to distinguish between the two methods and highlight different treatment depending upon the Recovery Method used by the user.
 
 ***
 
 ### 3. Optional Password/Passphrase
 
 A primary goal of Leafy is to create an easy-to-use application for non-technical users. This is the main rationale for not requiring (nor recommending) the user secure any portion of its wallet with a password/passphrase. However, there are several reasons why utilizing a password/passphrase would be beneficial to a user.
-
-TODO - augment for Social Bond Recovery
 
 | Scenario                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                           |
 |:------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -153,13 +202,9 @@ Primary recovery scenarios are [documented above](#recovery). There are a couple
 
 #### Remote Account Provider Obstruction
 
-TODO - augment for Social Bond Recovery
-
 In the event that the Remote Account is not accessible because the remote account provider has shut-down or is restricting access to the user's account, the user's recourse is the same as if the user lost access to the account which is to leverage [Timelock for Recovery](#timelock-for-recovery).
 
 #### App Provider Obstruction
-
-TODO - augment for Social Bond Recovery
 
 In the event either App Provider ([Google Play Store](https://play.google.com/) or [Apple App Store](https://www.apple.com/app-store/)) removes the application from its store the user can attempt recovery by utilizing a different phone of the other App Provider. If the user is unable or unwilling to use a different App Provider or if both App Providers have removed the application, the user can still use the Leafy application provided the user still has the application installed on its Phone. Otherwise, if the user has happened to uninstall the application before the App Provider has removed the application from its store, the user can rely upon its Companion Device(s) hoping at least one of them has the application still installed. In the event neither the user nor its Companion Device(s) are accessible, this scenario amounts to [Timelock for Recovery](#timelock-for-recovery) with an additional obstacle that the user is unable to utilize the Leafy mobile application for recovery. To mitigate this, Leafy [posts binaries](TBD), APK (Android) and IPA (iOS), for each release to allow a user to ["side load" the application](https://en.wikipedia.org/wiki/Sideloading) on its (or another) phone. In case the user is unable or unwilling to utilize side-loading of the mobile application, Leafy also [posts separate binaries](TBD) for Windows/MacOS/Linux. These binaries are single-focused applications to assist in this recovery scenario.
 
@@ -171,13 +216,9 @@ As outlined above, users have the ability to recover from many loss scenarios. T
 
 #### Simultaneous Loss of Phone and all Companion Device(s)
 
-TODO - augment for Social Bond Recovery
-
 As visualized in [Companion Device Recovery Summary](#companion-device-recovery-summary), if the user simultaneously losses access to its Phone as well as all Companion Device(s) there is no recourse for the user. Provided there has been no theft of these devices (or [malicious Companion Device(s)](#malicious-companion-devices)) the funds are not accessible but also are not stolen. This means that if the user can regain access to either its existing Phone or any of its Companion Device(s), the funds can still be recovered.
 
 #### Malicious Companion Device(s)
-
-TODO - augment for Social Bond Recovery
 
 In the case that one or all of the Companion Device(s) is malicious ("MCD") there are scenarios in which the user cannot recover.  In the table below "Pwd" represents a [user electing to use a password/passphrase](#optional-passwordpassphrase) during setup.
 
@@ -205,8 +246,6 @@ Leafy does not **require** users to [run a full bitcoin node](https://river.com/
 For those interested, Leafy makes it easy to "upgrade" a user's usage of Leafy to control how the application accesses the Bitcoin network. Leafy does this by allowing the user to modify the mempool.space API URL used by the application. This allows the user to run a self-hosted/local version of the open source mempool.space application (mempool.space [documents this process](https://github.com/mempool/mempool/tree/master/docker)) in conjunction with their own full bitcoin node. This optional configuration allows for better [self-sovereignty](#self-sovereign) of the user's bitcoin.
 
 ## Technical Details
-
-TODO - augment for Social Bond Recovery
 
 The following information is not required to be understood by users. It is documentation for anyone curious to learn more.  The primary source of documentation is the [source code](TBD) itself.
 
@@ -275,7 +314,7 @@ Leafy views bitcoin ownership as an evolution towards self-sovereignty. Self-sov
 
 ## Open Source
 
-Leafy ("program"), like Bitcoin ("money"), is [open-source](TBD-github) because ["If the users don't control the program, the program controls the users."](https://www.gnu.org/philosophy/free-software-even-more-important.html).
+Leafy ("program"), like Bitcoin ("money"), is [open-source](TBD) because ["If the users don't control the program, the program controls the users."](https://www.gnu.org/philosophy/free-software-even-more-important.html).
 
 ## Roadmap
 
