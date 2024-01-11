@@ -59,10 +59,28 @@ TBD - video
 Leafy is designed with modularity in mind. Specifically there are two modules; a [Remote Module](#remote-module) and a [Recovery Module](#recovery-module). Each module is defined by an API to allow for other developers/users to create different implementations of the module. Leafy comes with at least one implementation of each module. 
 
 #### Remote Module
-TBD - Remote Storage Remote Account is a user controlled account of either Google or Apple (specifically [Google Drive](https://developers.google.com/drive/api/guides/about-sdk) or [Apple's iCloud key storage](https://developer.apple.com/library/archive/documentation/General/Conceptual/iCloudDesignGuide/Chapters/DesigningForKey-ValueDataIniCloud.html); in the case of Google, the data is also stored within the user's [Google Drive application storage](https://developers.google.com/drive/api/guides/appdata)).
+
+As described in [Technical Details](#technical-details), a Leafy wallet requires two [BIP-39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) seed phrases. One of these phrases is stored on the user's Phone and another within a Remote Account. The Remote Module is the API necessary to implement a Remote Account. It is defined [here](TBD). 
+
+Here are the Remote Accounts created or planned within Leafy.
+
+| Remote Account                    | Description                                                                                                                                                                                                      | Status        |
+|:----------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------|
+| Google Drive (default)            | Implemented via the [Google Drive API](https://developers.google.com/drive/api/guides/about-sdk) as well as the user [Google Drive application storage](https://developers.google.com/drive/api/guides/appdata). | Finished      |
+| Apple iCloud                      | Implemented via [Apple's iCloud key storage](https://developer.apple.com/library/archive/documentation/General/Conceptual/iCloudDesignGuide/Chapters/DesigningForKey-ValueDataIniCloud.html)                     | Planned       |
+| [ColdCard](https://coldcard.com/) | TBD                                                                                                                                                                                                              | Investigating |
+| [Ledger](https://www.ledger.com/) | TBD                                                                                                                                                                                                              | Investigating |
 
 #### Recovery Module
-TBD
+
+To assist a user in recovering their Leafy wallet in case of various loss scenarios, the user must select and configure a Recovery Module implementation. The Recovery Module is the API necessary to implement a Recovery Method. It is defined [here](TBD).
+
+Here are the Recovery Methods created or planned within Leafy.
+
+| Recovery Method            | Description                                                                                                                                                                                      | Status   |
+|:---------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------|
+| Companion Device (default) | Leverages trusted companions to store backups of a user's seed phrase and timelocks to recover from Remote Account access loss. This is [defined in depth below](#2a-companion-device-recovery). | Finished |
+| Social Bond                | Leverages trusted companions to pledge a UTXO to aid in recovery of a user's UTXO set. This is [defined in depth below](#2b-social-bond-recovery).                                               | Planned  |
 
 ### 2. Recovery
 
@@ -94,7 +112,7 @@ If the user uninstalls the Leafy application or the application data stored loca
 
 ##### Timelock for Recovery
 
-To deal with less common loss scenarios, Leafy leverages an aspect of the Bitcoin network called "timelocks" (more details on timelocks are documented in [Technical Details](#technical-details)). Timelocks allow for recovery in unlikely events without needing to trust a third-party service or arbitrator (inline with the design goal of **Serverless**). Mechanically, this works by relaxing the spend conditions of the Leafy wallet after a period of time has expired (this time period is the "timelock" and it is enforced directly by the Bitcoin network). Using a timelock, the user can recover from losing access to its Remote Account. The timelock selected is 1 year. The selection of 1 year can be revisited with actual user data/experiences but is selected currently as a balance between the assumed likelihood of users losing access to their Remote Account versus the need to perform a [Liveliness Check](#liveliness-check).
+To deal with less common loss scenarios, Leafy leverages an aspect of the Bitcoin network called "timelocks" (more details on timelocks are documented in [Technical Details](#technical-details)). Timelocks allow for recovery in unlikely events without needing to trust a third-party service or arbitrator (inline with [Leafy's goal of **Serverless**](#leafy-goals)). Mechanically, this works by relaxing the spend conditions of the Leafy wallet after a period of time has expired (this time period is the "timelock" and it is enforced directly by the Bitcoin network). Using a timelock, the user can recover from losing access to its Remote Account. The timelock selected is 1 year. The selection of 1 year can be revisited with actual user data/experiences but is selected currently as a balance between the assumed likelihood of users losing access to their Remote Account versus the need to perform a [Liveliness Check](#liveliness-check).
 
 ##### Companion Device Recovery Summary
 
