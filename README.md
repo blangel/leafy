@@ -65,11 +65,12 @@ As described in [Technical Details](#technical-details), a Leafy wallet requires
 
 Here are the Remote Accounts supported or being developed by Leafy.
 
-| Remote Account | Description                                                                                                                                                                                                     |       Status |
-|:---------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------:|
-| Google Drive ✅ | Implemented via the [Google Drive API](https://developers.google.com/drive/api/guides/about-sdk) as well as the user [Google Drive application storage](https://developers.google.com/drive/api/guides/appdata) | Supported 💪 |
-| Apple iCloud   | Implemented via [Apple's iCloud key storage](https://developer.apple.com/library/archive/documentation/General/Conceptual/iCloudDesignGuide/Chapters/DesigningForKey-ValueDataIniCloud.html)                    |   Planned 🚧 |
-| Hardware       | Like [ColdCard](https://coldcard.com/) or [Ledger](https://www.ledger.com/)                                                                                                                                     |  Research 🔬 |
+| Remote Account | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |       Status |
+|:---------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------:|
+| Google Drive ✅ | Implemented via the [Google Drive API](https://developers.google.com/drive/api/guides/about-sdk) as well as the user [Google Drive application storage](https://developers.google.com/drive/api/guides/appdata)                                                                                                                                                                                                                                                                                                                                                                                                                                | Supported 💪 |
+| Apple iCloud   | Implemented via [Apple's iCloud key storage](https://developer.apple.com/library/archive/documentation/General/Conceptual/iCloudDesignGuide/Chapters/DesigningForKey-ValueDataIniCloud.html)                                                                                                                                                                                                                                                                                                                                                                                                                                                   |   Planned 🚧 |
+| Hardware       | Like [ColdCard](https://coldcard.com/) or [Ledger](https://www.ledger.com/)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |  Research 🔬 |
+| On-chain       | Could be implemented in at least three ways with various trade-offs. Each would require encryption given the public nature of the blockchain.<table><tr><th></th><th>[Inscription](https://docs.ordinals.com/guides/inscriptions.html)</th><th>[Stamps](https://github.com/mikeinspace/stamps/blob/main/BitcoinStamps.md)</th><th>[Annex](https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki#script-validation-rules)</th></tr><tr><td>Transactions Needed</td><td>2</td><td>1</td><td>1</td></tr><tr><td>Standard</td><td>✅</td><td>✅</td><td>⛔</td></tr><tr><td>Witness Discount</td><td>✅</td><td>⛔</td><td>✅</td></tr></table> |  Research 🔬 |
 
 #### Recovery Module
 
@@ -147,6 +148,10 @@ The social bond recovery method is cheap to maintain (as opposed to [Companion D
 
 TODO
 
+##### Bond Payment
+
+TODO
+
 ##### Recovery Wallet Options/Selection
 
 TODO
@@ -173,12 +178,24 @@ TODO
 
 #### 2.c Companion Device and Social Bond Comparison
 
-|                                                                                   |                                                                                                 [Companion Device](#2a-companion-device-recovery) |                                                        [Social Bond](#2b-social-bond-recovery) |
-|:----------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------:|-----------------------------------------------------------------------------------------------:|
-| [**Liveliness Check**](#liveliness-check)                                         |                                                                                                                                               Yes |                                                                                             No |
-| **Transactions During Recovery**<br/>`U=User UTXO count`<br/>`F=Fee transactions` |                                                  <table><tr><th>Best Case</th><th>Worst Case</th></tr><tr><td>0</td><td>`U`+`F`</td></tr></table> | <table><tr><th>Best Case</th><th>Worst Case</th></tr><tr><td>2</td><td>2+`F`</td></tr></table> |
-|                                                                                   |                                                                                                                                                   |                                                                                                |
- 
+|                                        | [Companion Device](#2a-companion-device-recovery) | [Social Bond](#2b-social-bond-recovery) |
+|:---------------------------------------|--------------------------------------------------:|----------------------------------------:|
+| **Yearly Maintenance Transactions**    |                                             1[^2] |                                       0 |
+| **First Seed Recovery Transactions**   |                                                 0 |                                       2 |
+| **Second Seed Recovery Transactions**  |                                                 1 |                                       2 |
+| **Wait Time for First Seed Recovery**  |                                                 0 |                                 1 block |
+| **Wait Time for Second Seed Recovery** |                           1 ≤ wait < 52560 blocks |                                1 block  |
+
+[^2]: This is the [liveliness checks](#liveliness-check) requirement
+[^3]: The additional `1` is the social bond transaction (`Tx_b` in the [social bond diagram](#2b-social-bond-recovery))
+
+**Note** the value `1` for Companion Device is technically `T + F` and the value of `2` for Social Bond is technically `1 + T + F`[^3]. For this analysis it is assumed that `U` can fit entirely within `1` transaction and that transaction can pay for fees. The UTXOs are P2TR inputs where there need only be 2 outputs for the transaction. Over [17,000 inputs could fit within a 1 vMB transaction](https://bitcoinops.org/en/tools/calc-size/) and we'll assume Leafy users have less than this number of UTXOs.
+
+| Symbol | Definition                                                      |
+|:-------|:----------------------------------------------------------------|
+| `U`    | User UTXO count                                                 |
+| `F`    | Number of fee transactions                                      |
+| `T`    | Minimum number of transactions to contain `U`<br/>Note, `T < U` | 
 
 [!NOTE]
 For the rest of the document, it is assumed that the Recovery Method is the [Companion Device Recovery](#2a-companion-device-recovery). If the [Social Bond Recovery](#2b-social-bond-recovery) becomes viable, the documentation will be revised to distinguish between the two methods and highlight different treatment depending upon the Recovery Method used by the user.
