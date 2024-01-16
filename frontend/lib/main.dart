@@ -6,6 +6,7 @@ import 'package:leafy/create_transaction.dart';
 import 'package:leafy/globals.dart';
 import 'package:leafy/receive_address.dart';
 import 'package:leafy/setup_new.dart';
+import 'package:leafy/social_recovery.dart';
 import 'package:leafy/start_branch.dart';
 import 'package:leafy/transaction.dart';
 import 'package:leafy/transactions_list.dart';
@@ -29,6 +30,7 @@ class LeafyApp extends StatelessWidget {
         '/': (context) => const LeafyHomePage(title: 'Leafy 🌿'),
         '/start': (context) => const LeafyStartPage(),
         '/new': (context) => const LeafySetupNewPage(),
+        '/social-recovery': (context) => const SocialRecoveryPage(),
         '/addresses': (context) => const AddressesListPage(),
         '/address': (context) => const AddressPage(),
         '/transactions': (context) => const TransactionsListPage(),
