@@ -52,6 +52,7 @@ dependencies:
   flutter_multi_formatter: ^2.12.4
   settings_ui: ^2.0.2
   mobile_scanner: ^3.5.6
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:

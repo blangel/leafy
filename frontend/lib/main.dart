@@ -10,6 +10,7 @@ import 'package:leafy/social_recovery.dart';
 import 'package:leafy/start_branch.dart';
 import 'package:leafy/transaction.dart';
 import 'package:leafy/transactions_list.dart';
+import 'package:leafy/wallet.dart';
 
 void main() {
   runApp(const LeafyApp());
@@ -38,6 +39,7 @@ class LeafyApp extends StatelessWidget {
         '/transaction': (context) => const TransactionPage(),
         '/receive-address': (context) => const ReceiveAddressPage(),
         '/create-transaction': (context) => const CreateTransactionPage(),
+        '/wallet': (context) => const LeafyWalletPage(),
       },
     );
   }

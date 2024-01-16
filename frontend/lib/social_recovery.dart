@@ -267,7 +267,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                     ],
                   Padding(padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                       child: RichText(text: TextSpan(
-                          text: "\n\nFor more information about how Hash Leaves' wallets work, ",
+                          text: "\n\nFor more information about how Leafy wallets work, ",
                           style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium!.color),
                           children: [
                             TextSpan(text: "see the documentation", style: TextStyle(fontSize: 14, decoration: TextDecoration.underline, color: Theme.of(context).textTheme.bodyMedium!.color),
@@ -371,7 +371,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                     ],
                   Padding(padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                       child: RichText(text: TextSpan(
-                          text: "\n\nFor more information about how Hash Leaves' wallets work, ",
+                          text: "\n\nFor more information about how Leafy wallets work, ",
                           style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium!.color),
                           children: [
                             TextSpan(text: "see the documentation", style: TextStyle(fontSize: 14, decoration: TextDecoration.underline, color: Theme.of(context).textTheme.bodyMedium!.color),
