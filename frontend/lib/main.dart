@@ -31,6 +31,7 @@ class LeafyApp extends StatelessWidget {
         '/start': (context) => const LeafyStartPage(),
         '/new': (context) => const LeafySetupNewPage(),
         '/social-recovery': (context) => const SocialRecoveryPage(),
+        // TODO : /timelock-recovery
         '/addresses': (context) => const AddressesListPage(),
         '/address': (context) => const AddressPage(),
         '/transactions': (context) => const TransactionsListPage(),
