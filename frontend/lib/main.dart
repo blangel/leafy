@@ -1,6 +1,7 @@
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:leafy/globals.dart';
+import 'package:leafy/setup_new.dart';
 
 void main() {
   runApp(const LeafyApp());
@@ -19,6 +20,7 @@ class LeafyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       routes: {
         '/': (context) => const LeafyHomePage(title: 'Leafy 🌿'),
+        '/new': (context) => const LeafySetupNewPage(),
       },
     );
   }
