@@ -74,7 +74,7 @@ class _ReceiveAddressState extends State<ReceiveAddressPage> {
             ),
             CopyableDataWidget(data: arguments.address),
             Padding(padding: const EdgeInsets.all(10), child: RichText(text: TextSpan(
-                text: "This is a Segwit v1 address, to learn more about how Hash Leaves' wallets work, ",
+                text: "This is a Segwit v1 address, to learn more about how Leafy wallets work, ",
                 style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium!.color),
                 children: [
                   TextSpan(text: "see the documentation", style: TextStyle(fontSize: 12, decoration: TextDecoration.underline, color: Theme.of(context).textTheme.bodyMedium!.color),

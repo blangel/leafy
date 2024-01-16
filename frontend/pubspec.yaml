@@ -49,6 +49,7 @@ dependencies:
   tuple: ^2.0.2
   screen_brightness: ^0.2.2+1
   qr_flutter: ^4.1.0
+  flutter_multi_formatter: ^2.12.4
 
 dev_dependencies:
   flutter_test:
