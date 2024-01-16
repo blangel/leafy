@@ -2,6 +2,7 @@ import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:leafy/address.dart';
 import 'package:leafy/addresses_list.dart';
+import 'package:leafy/create_transaction.dart';
 import 'package:leafy/globals.dart';
 import 'package:leafy/receive_address.dart';
 import 'package:leafy/setup_new.dart';
@@ -33,6 +34,7 @@ class LeafyApp extends StatelessWidget {
         '/transactions': (context) => const TransactionsListPage(),
         '/transaction': (context) => const TransactionPage(),
         '/receive-address': (context) => const ReceiveAddressPage(),
+        '/create-transaction': (context) => const CreateTransactionPage(),
       },
     );
   }
