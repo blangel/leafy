@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:leafy/address.dart';
 import 'package:leafy/addresses_list.dart';
 import 'package:leafy/globals.dart';
+import 'package:leafy/receive_address.dart';
 import 'package:leafy/setup_new.dart';
+import 'package:leafy/start_branch.dart';
 import 'package:leafy/transaction.dart';
 import 'package:leafy/transactions_list.dart';
 
@@ -24,11 +26,13 @@ class LeafyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       routes: {
         '/': (context) => const LeafyHomePage(title: 'Leafy 🌿'),
+        '/start': (context) => const LeafyStartPage(),
         '/new': (context) => const LeafySetupNewPage(),
         '/addresses': (context) => const AddressesListPage(),
         '/address': (context) => const AddressPage(),
         '/transactions': (context) => const TransactionsListPage(),
         '/transaction': (context) => const TransactionPage(),
+        '/receive-address': (context) => const ReceiveAddressPage(),
       },
     );
   }
