@@ -226,18 +226,18 @@ Future<void> persistLocallyViaBiometric(String firstMnemonic, String secondDescr
   const storage = FlutterSecureStorage(aOptions: AndroidOptions(
     encryptedSharedPreferences: true,
   ));
-  storage.write(key: 'hashleaves:firstMnemonic', value: firstMnemonic);
-  storage.write(key: 'hashleaves:secondDescriptor', value: secondDescriptor);
-  storage.write(key: 'hashleaves:remoteAccountId', value: remoteAccountId);
+  storage.write(key: 'leafy:firstMnemonic', value: firstMnemonic);
+  storage.write(key: 'leafy:secondDescriptor', value: secondDescriptor);
+  storage.write(key: 'leafy:remoteAccountId', value: remoteAccountId);
 }
 
 Future<RecoveryWallet?> getRecoveryWalletViaBiometric() async {
   const storage = FlutterSecureStorage(aOptions: AndroidOptions(
     encryptedSharedPreferences: true,
   ));
-  final firstMnemonic = await storage.read(key: 'hashleaves:firstMnemonic');
-  final secondDescriptor = await storage.read(key: 'hashleaves:secondDescriptor');
-  final remoteAccountId = await storage.read(key: 'hashleaves:remoteAccountId');
+  final firstMnemonic = await storage.read(key: 'leafy:firstMnemonic');
+  final secondDescriptor = await storage.read(key: 'leafy:secondDescriptor');
+  final remoteAccountId = await storage.read(key: 'leafy:remoteAccountId');
   if ((firstMnemonic != null) && (secondDescriptor != null) && (remoteAccountId != null)) {
     return RecoveryWallet(firstMnemonic: firstMnemonic, secondDescriptor: secondDescriptor, remoteAccountId: remoteAccountId);
   }
@@ -249,7 +249,7 @@ Future<List<String>> getCompanionIds() async {
   const storage = FlutterSecureStorage(aOptions: AndroidOptions(
     encryptedSharedPreferences: true,
   ));
-  var keyPrefix = 'hashleaves:companion:';
+  var keyPrefix = 'leafy:companion:';
   var all = await storage.readAll();
   return all.keys
       .where((element) => element.startsWith(keyPrefix))
@@ -279,7 +279,7 @@ Future<String?> getCompanionIdWalletSerialized(String companionId) async {
   const storage = FlutterSecureStorage(aOptions: AndroidOptions(
     encryptedSharedPreferences: true,
   ));
-  String? walletSerialized = await storage.read(key: 'hashleaves:companion:$companionId');
+  String? walletSerialized = await storage.read(key: 'leafy:companion:$companionId');
   if (walletSerialized == null) {
     return null;
   }
@@ -292,5 +292,5 @@ Future<void> persistCompanionLocallyViaBiometric(String serialized, String compa
   const storage = FlutterSecureStorage(aOptions: AndroidOptions(
     encryptedSharedPreferences: true,
   ));
-  storage.write(key: 'hashleaves:companion:$companionId', value: serialized);
+  storage.write(key: 'leafy:companion:$companionId', value: serialized);
 }

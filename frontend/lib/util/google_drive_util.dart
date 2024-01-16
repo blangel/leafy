@@ -26,21 +26,21 @@ class GoogleDriveUtil {
   GoogleDriveUtil._(this._driveApi);
 
   Future<File?> getMnemonicFile() async {
-    final directoryPair = await _getHashLeavesMnemonic();
+    final directoryPair = await _getLeafyMnemonic();
     if (directoryPair == null || directoryPair.item2 == null) {
       return null;
     }
     return directoryPair.item2;
   }
 
-  Future<Tuple2<File, File?>?> _getHashLeavesMnemonic() async {
+  Future<Tuple2<File, File?>?> _getLeafyMnemonic() async {
     var response = await _driveApi.files.list(q: "name='$_leafyGoogleDriveDirectoryName' and mimeType='$_googleDriveFolderMimeType'");
     if (response.files == null || response.files!.isEmpty) {
       return null;
     } else {
       // TODO - what to do on multiple matches (could ask for passphrase and limit to what matches, then further limit to which correspond to valid bitcoin addresses) [currently, take first]
       for (var folder in response.files!) {
-        var mnemonicFile = await _getHashLeavesMnemonicFileInDirectory(folder);
+        var mnemonicFile = await _getLeafyMnemonicFileInDirectory(folder);
         if (mnemonicFile != null) {
           return Tuple2(folder, mnemonicFile);
         }
@@ -49,7 +49,7 @@ class GoogleDriveUtil {
     }
   }
 
-  Future<File?> _getHashLeavesMnemonicFileInDirectory(File directory) async {
+  Future<File?> _getLeafyMnemonicFileInDirectory(File directory) async {
     // TODO - what to do on multiple matches (could ask for passphrase and limit to what matches, then further limit to which correspond to valid bitcoin addresses) [currently, take first]
     var response = await _driveApi.files.list(q: "'${directory.id}' in parents and name='$_leafyMnemonicFileName'", $fields: "files(id, name, mimeType, trashed, parents)");
     if (response.files == null || response.files!.isEmpty) {
@@ -59,14 +59,14 @@ class GoogleDriveUtil {
     }
   }
 
-  Future<File> _getHashLeavesDirectoryOrCreate() async {
+  Future<File> _getLeafyDirectoryOrCreate() async {
     File directory;
-    var directoryPair = await _getHashLeavesMnemonic();
+    var directoryPair = await _getLeafyMnemonic();
     if (directoryPair == null) {
-      File hashLeavesFolder = File()
+      File leafyFolder = File()
         ..name = _leafyGoogleDriveDirectoryName
         ..mimeType = _googleDriveFolderMimeType;
-      directory = await _driveApi.files.create(hashLeavesFolder, useContentAsIndexableText: false, keepRevisionForever: true);
+      directory = await _driveApi.files.create(leafyFolder, useContentAsIndexableText: false, keepRevisionForever: true);
     } else {
       directory = directoryPair.item1;
     }
@@ -74,7 +74,7 @@ class GoogleDriveUtil {
   }
 
   Future<String> createAndRetrieveMnemonicFile(String mnemonicPhraseEncrypted) async {
-    final directory = await _getHashLeavesDirectoryOrCreate();
+    final directory = await _getLeafyDirectoryOrCreate();
 
     var mnemonicPhraseFile = File()
       ..name = _leafyMnemonicFileName
