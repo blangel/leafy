@@ -32,20 +32,23 @@ To spend bitcoin stored in a Leafy wallet, the user needs access to its Remote A
   <img width="400" src="./docs/leafy_spend_demo.gif" alt="Leafy Spend Demo">
 </p>
 
-### What Is Required
-
-* Phone Application ("Phone") - users will need the Leafy application (available on [Android]() and [Apple]()).
-* Remote Account ("Remote Account") - users will need an implementation of the [Remote Module](#remote-module). By default, this is a Google Drive account.
-* Recovery Method ("Recovery Method") - users will need to select and configure an implementation of the [Recovery Module](#recovery-module). By default, this is a [Companion Device](#2a-companion-device-recovery).
+<br/><br/>
 
 ## Contents
 
 1. [Overview](#leafy-)
-2. [Advanced Topics](#advanced-topics)
-2. [Technical Details](#technical-details)
-3. [Terminology](#terminology)
-4. [Open Source](#open-source)
-5. [Roadmap](#roadmap)
+2. [What is Required](#what-is-required)
+3. [Advanced Topics](#advanced-topics)
+4. [Technical Details](#technical-details)
+5. [Terminology](#terminology)
+6. [Open Source](#open-source)
+7. [Roadmap](#roadmap)
+
+## What Is Required
+
+* Phone Application ("Phone") - users will need the Leafy application (available on [Android]() and [Apple]()).
+* Remote Account ("Remote Account") - users will need an implementation of the [Remote Module](#remote-module). By default, this is a Google Drive account.
+* Recovery Method ("Recovery Method") - users will need to select and configure an implementation of the [Recovery Module](#recovery-module). By default, this is a [Companion Device](#2a-companion-device-recovery).
 
 ## Advanced Topics
 
