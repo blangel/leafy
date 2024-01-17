@@ -20,7 +20,9 @@ Users should download the Leafy application (available on [Android]() and [Apple
 
 The Leafy setup is short and the user is guided through the process within the application. Below is a video demonstrating a setup.
 
-TBD - video
+<p align="center">
+  <img width="400" src="./docs/leafy_setup_demo.gif" alt="Leafy Setup Demo">
+</p>
 
 ### Wallet Spending
 
