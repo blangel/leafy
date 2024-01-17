@@ -268,7 +268,7 @@ For those interested, Leafy makes it easy to "upgrade" a user's usage of Leafy t
 
 ## Technical Details
 
-The following information is not required to be understood by users. It is documentation for anyone curious to learn more.  The primary source of documentation is the [source code](TBD) itself.
+The following information is not required to be understood by users. It is documentation for anyone curious to learn more.  The primary source of documentation is the [source code](https://github.com/blangel/leafy) itself.
 
 ### How It Works
 
@@ -335,7 +335,7 @@ Leafy views bitcoin ownership as an evolution towards self-sovereignty. Self-sov
 
 ## Open Source
 
-Leafy ("program"), like Bitcoin ("money"), is [open-source](TBD) because ["If the users don't control the program, the program controls the users."](https://www.gnu.org/philosophy/free-software-even-more-important.html).
+Leafy ("program"), like Bitcoin ("money"), is [open-source](https://github.com/blangel/leafy) because ["If the users don't control the program, the program controls the users."](https://www.gnu.org/philosophy/free-software-even-more-important.html).
 
 ## Roadmap
 
