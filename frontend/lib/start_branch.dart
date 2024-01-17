@@ -71,7 +71,7 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
             _uiState = _UiState.foundLocalNoRemote;
             _recoveryWallet = wallet;
           });
-          Navigator.popAndPushNamed(context, '/recovery');  // TODO - recovery via timelock path
+          Navigator.popAndPushNamed(context, '/timelock-recovery');  // TODO - recovery via timelock path
         } else {
           setState(() {
             _uiState = _UiState.foundLocal;
@@ -128,7 +128,7 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
               setState(() {
                 _uiState = _UiState.foundLocalNoRemote;
               });
-              Navigator.popAndPushNamed(context, '/recovery');  // TODO - recovery via timelock path
+              Navigator.popAndPushNamed(context, '/timelock-recovery');  // TODO - recovery via timelock path
             } else if (_uiState == _UiState.noLocal) {
               setState(() {
                 _uiState = _UiState.foundNothing;
