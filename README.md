@@ -137,8 +137,8 @@ Although this liveliness check incurs on-chain transactions/fees, it has positiv
 
 #### 2.b Social Bond Recovery
 
-[!WARNING]
-Social Bond Recovery is actively being researched as a viable Recovery Method for Leafy wallets but is not yet supported.
+> [!WARNING]
+> Social Bond Recovery is actively being researched as a viable Recovery Method for Leafy wallets but is not yet supported.
 
 If using the social bond recovery module, users must enlist the support of a friend, family member or someone else trusted and willing to pledge a small portion of their bitcoin (called a [UTXO](https://river.com/learn/bitcoins-utxo-model/)) to assist the user in the event of recovery. This pledged UTXO is referred to as the "social bond". The idea behind social bond recovery is to preallocate movement of the user funds to a recovery wallet but ensure this movement is only valid if the social bond is executed. This helps ensure the preallocated movement is only executed in actual user initiated recovery scenarios.
 
@@ -201,8 +201,8 @@ TODO
 | `F`    | Number of fee transactions                                      |
 | `T`    | Minimum number of transactions to contain `U`<br/>Note, `T < U` | 
 
-[!NOTE]
-For the rest of the document, it is assumed that the Recovery Method is the [Companion Device Recovery](#2a-companion-device-recovery). If the [Social Bond Recovery](#2b-social-bond-recovery) becomes viable, the documentation will be revised to distinguish between the two methods and highlight different treatment depending upon the Recovery Method used by the user.
+> [!NOTE]
+> For the rest of the document, it is assumed that the Recovery Method is the [Companion Device Recovery](#2a-companion-device-recovery). If the [Social Bond Recovery](#2b-social-bond-recovery) becomes viable, the documentation will be revised to distinguish between the two methods and highlight different treatment depending upon the Recovery Method used by the user.
 
 ***
 
