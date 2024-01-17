@@ -34,12 +34,12 @@ class GoogleSignInUtil {
     WidgetsFlutterBinding.ensureInitialized();
     if (kIsWeb) {
       _googleSignIn = GoogleSignIn(
-        clientId: '770864842302-4ue92unbru9h1t4n8ucifsvsd2vrj5fa.apps.googleusercontent.com',
+        clientId: '853812438928-2tl812dcap611o1rot1ol44dnpakh7ns.apps.googleusercontent.com',
         scopes: ['https://www.googleapis.com/auth/drive.file'],
       );
     } else if (Platform.isIOS) {
       _googleSignIn = GoogleSignIn(
-        clientId: '770864842302-7te46e9qh80v6sumn4tcj8kc8cqiiqlg.apps.googleusercontent.com',
+        clientId: '853812438928-2tl812dcap611o1rot1ol44dnpakh7ns.apps.googleusercontent.com',
         scopes: ['https://www.googleapis.com/auth/drive.file'],
       );
     } else {

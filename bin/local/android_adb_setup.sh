@@ -12,3 +12,4 @@ if [ -z "$device" ]; then
 fi
 
 adb -s "$device" reverse tcp:8080 tcp:8080
+adb -s "$device" reverse tcp:6419 tcp:6419

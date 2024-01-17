@@ -1,8 +1,13 @@
+import 'dart:async';
+import 'dart:developer';
+
 import 'package:animated_text_kit/animated_text_kit.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:leafy/address.dart';
 import 'package:leafy/addresses_list.dart';
 import 'package:leafy/create_transaction.dart';
+import 'package:leafy/firebase_options.dart';
 import 'package:leafy/globals.dart';
 import 'package:leafy/receive_address.dart';
 import 'package:leafy/setup_new.dart';
@@ -12,8 +17,14 @@ import 'package:leafy/transaction.dart';
 import 'package:leafy/transactions_list.dart';
 import 'package:leafy/wallet.dart';
 
-void main() {
+Future<void> main() async {
+  await init();
   runApp(const LeafyApp());
+}
+
+Future<void> init() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }
 
 class LeafyApp extends StatelessWidget {

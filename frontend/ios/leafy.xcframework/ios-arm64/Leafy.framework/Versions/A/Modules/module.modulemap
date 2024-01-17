@@ -1,0 +1,8 @@
+framework module "Leafy" {
+	header "ref.h"
+    header "Leafy.objc.h"
+    header "Universe.objc.h"
+    header "Leafy.h"
+
+    export *
+}

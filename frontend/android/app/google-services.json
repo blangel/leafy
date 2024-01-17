@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "853812438928",
+    "project_id": "leafy-20346",
+    "storage_bucket": "leafy-20346.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:853812438928:android:c49d999ff2c082737fb515",
+        "android_client_info": {
+          "package_name": "com.leafybitcoin.leafy"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "853812438928-eiat8kq2v33pk2ooiv6g87a6v9guin06.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.leafybitcoin.leafy",
+            "certificate_hash": "2924f18c2481704e625ee22bc18fd8f44cd95797"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCd9SV9N_1ZEDiBzyVyMH3TEwttkSdDVSw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "853812438928-2tl812dcap611o1rot1ol44dnpakh7ns.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.leafybitcoin.leafy",
+                "app_store_id": "6476158899"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
