@@ -98,7 +98,7 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
               text: "Let's finish creating your Bitcoin wallet. The online portion of your wallet will be encrypted before being stored on your ",
               style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color),
               children: [
-                TextSpan(text: "Cloud Account", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyMedium!.color)),
+                TextSpan(text: "Remote Account", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyMedium!.color)),
                 TextSpan(text: "\n\nFor more information about how Leafy wallets work, ", style: TextStyle(fontSize: 16, color: Theme.of(context).textTheme.bodyMedium!.color)),
                 TextSpan(text: "see the documentation", style: TextStyle(fontSize: 16, decoration: TextDecoration.underline, color: Theme.of(context).textTheme.bodyMedium!.color),
                     recognizer: TapGestureRecognizer()..onTap = () { launchDocumentation(); }
