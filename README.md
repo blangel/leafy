@@ -26,7 +26,9 @@ TBD - video
 
 To spend bitcoin stored in a Leafy wallet, the user needs access to its Remote Account as well as the data stored on its Phone. However, funds can still be accessed if either of the user's Phone or Remote Account is inaccessible (see [Recovery](#recovery) below). Accessing this data within the mobile application is intuitive and familiar for a user. Below is a video demonstrating a spend.
 
-TBD - video
+<p align="center">
+  <img width="400" src="./docs/leafy_spend_demo.gif" alt="Leafy Spend Demo">
+</p>
 
 ### What Is Required
 
@@ -121,9 +123,9 @@ To deal with less common loss scenarios, Leafy leverages an aspect of the Bitcoi
 
 The following image diagrams how recovery is handled for all possible combinations of loss in the Companion Device Recovery module. An important insight from this diagram is that user funds can be recovered for most combinations of loss. There is one scenario which results in a user not being able to access its funds: if the user losses its Phone and all its Companion Devices at the same time. Note, in this scenario access to the Remote Account does not assist in recovery and so additionally losing access to the Remote Account is outcome equivalent.
 
-<div style="margin: auto; text-align: center;">
-    <img src="./docs/leafy_recovery_scenarios.png" alt="Leafy Recovery Scenarios" width=600>
-</div>
+<p align="center">
+  <img width="600" src="./docs/leafy_recovery_scenarios.png" alt="Leafy Recovery Scenarios">
+</p>
 
 ##### Liveliness Check
 
@@ -138,9 +140,9 @@ Social Bond Recovery is actively being researched as a viable Recovery Method fo
 
 If using the social bond recovery module, users must enlist the support of a friend, family member or someone else trusted and willing to pledge a small portion of their bitcoin (called a [UTXO](https://river.com/learn/bitcoins-utxo-model/)) to assist the user in the event of recovery. This pledged UTXO is referred to as the "social bond". The idea behind social bond recovery is to preallocate movement of the user funds to a recovery wallet but ensure this movement is only valid if the social bond is executed. This helps ensure the preallocated movement is only executed in actual user initiated recovery scenarios.
 
-<div style="margin: auto; text-align: center;">
-    <img src="./docs/leafy_recovery_social_bond.png" alt="Leafy Social Bond Recovery" width=600>
-</div>
+<p align="center">
+  <img width="600" src="./docs/leafy_recovery_social_bond.png" alt="Leafy Social Bond Recovery.png">
+</p>
 
 The social bond recovery method is cheap to maintain (as opposed to [Companion Device](#2a-companion-device-recovery) which requires yearly [liveliness checks](#liveliness-check)) in that the "social bond" UTXOs can be refreshed on demand without incurring on-chain fees (no on-chain transactions required).
 
