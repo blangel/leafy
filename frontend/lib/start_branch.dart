@@ -1,13 +1,8 @@
-import 'dart:convert';
-import 'dart:developer';
-
-import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
-import 'package:encrypt/encrypt.dart' as encrypt;
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:leafy/globals.dart';
-import 'package:leafy/util/google_drive_util.dart';
+import 'package:leafy/util/google_drive_remote_account.dart';
 import 'package:leafy/util/google_signin_util.dart';
+import 'package:leafy/util/remote_module.dart';
 import 'package:leafy/util/wallet.dart';
 
 // Possible branches and their handling:
@@ -39,6 +34,8 @@ enum _UiState {
 class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMixin {
 
   late final GoogleSignInUtil _googleSignIn;
+
+  late final RemoteModule _remoteAccount;
 
   late AnimationController _animationController;
 
@@ -98,7 +95,8 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
     });
     _googleSignIn = GoogleSignInUtil.create((account) async {
       try {
-        var encryptedContent = await getLeafyMnemonicContent(account!);
+        _remoteAccount = await GoogleDriveRemoteAccount.create(account!);
+        var encryptedContent = await _remoteAccount.getEncryptedSecondSeed();
         globalRemoteAccountId = account.email;
         if (context.mounted) {
           if (encryptedContent != null) {
@@ -157,24 +155,13 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
     if ((_encryptedMnemonicContent == null) || (_recoveryWallet == null)) {
       return;
     }
-    List<int> firstMnemonicBytes = utf8.encode(_recoveryWallet!.firstMnemonic);
-    Digest firstMnemonicSha = sha256.convert(firstMnemonicBytes);
-    final encryptionKey = encrypt.Key.fromBase64(base64Url.encode(firstMnemonicSha.bytes));
-    final fernet = encrypt.Fernet(encryptionKey);
-    final encrypter = encrypt.Encrypter(fernet);
-    try {
-      final decrypted = encrypter.decrypt64(_encryptedMnemonicContent!);
-      var split = decrypted.split(' ');
-      if (split.length == 24) {
-        Navigator.popAndPushNamed(context, '/wallet', arguments: KeyArguments(firstMnemonic: _recoveryWallet!.firstMnemonic, secondMnemonic: decrypted, secondDescriptor: _recoveryWallet!.secondDescriptor));
-        return;
-      }
-      log("invalid decrypted second mnemonic (length of ${split.length})");
-    } catch (e) {
-      log("failed to decrypt: ${e.toString()}");
+    final decrypted = decryptSecondSeedMnemonic(_recoveryWallet!.firstMnemonic, _encryptedMnemonicContent!);
+    if (decrypted != null) {
+      Navigator.popAndPushNamed(context, '/wallet', arguments: KeyArguments(firstMnemonic: _recoveryWallet!.firstMnemonic, secondMnemonic: decrypted, secondDescriptor: _recoveryWallet!.secondDescriptor));
+      return;
     }
-    // TODO - if local is corrupted, attempt /social-recovery, otherwise need /recovery
-    // TODO - should ask user; want to try social-recovery? otherwise need /recovery
+    // TODO - if local is corrupted, attempt /social-recovery, otherwise need /timelock-recovery
+    // TODO - should ask user; want to try social-recovery? otherwise need /timelock-recovery
     Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: _remoteAccountId!));
   }
 
@@ -209,18 +196,6 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
         ],
       ),
     ));
-  }
-
-  Future<String?> getLeafyMnemonicContent(GoogleSignInAccount account) async {
-    final driveApi = await GoogleDriveUtil.create(account);
-    var mnemonicFile = await driveApi.getMnemonicFile();
-    if (mnemonicFile == null) {
-      return null;
-    }
-    if ((mnemonicFile.trashed != null) && mnemonicFile.trashed!) {
-      await driveApi.restore(mnemonicFile);
-    }
-    return driveApi.getContent(mnemonicFile.id!);
   }
 
 }

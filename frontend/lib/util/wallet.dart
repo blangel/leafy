@@ -1,8 +1,11 @@
 
 import 'dart:convert';
+import 'dart:developer';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:leafy/globals.dart';
+import 'package:encrypt/encrypt.dart' as encrypt;
 
 Future<Wallet> createNewWallet() async {
   try {
@@ -14,6 +17,34 @@ Future<Wallet> createNewWallet() async {
   } on PlatformException catch (e) {
     throw ArgumentError("failed to createNewWallet: $e");
   }
+}
+
+String? decryptSecondSeedMnemonic(String firstSeedMnemonic, String encryptedSecondSeedMnemonic) {
+  List<int> firstMnemonicBytes = utf8.encode(firstSeedMnemonic);
+  Digest firstMnemonicSha = sha256.convert(firstMnemonicBytes);
+  final encryptionKey = encrypt.Key.fromBase64(base64Url.encode(firstMnemonicSha.bytes));
+  final fernet = encrypt.Fernet(encryptionKey);
+  final encrypter = encrypt.Encrypter(fernet);
+  try {
+    final decrypted = encrypter.decrypt64(encryptedSecondSeedMnemonic);
+    var split = decrypted.split(' ');
+    if (split.length == 24) {
+      return decrypted;
+    }
+    log("invalid decrypted second mnemonic (length of ${split.length})");
+  } catch (e) {
+    log("failed to decrypt: ${e.toString()}");
+  }
+  return null;
+}
+
+String encryptSecondSeed(String firstSeedMnemonic, String secondSeedMnemonic) {
+  List<int> firstMnemonicBytes = utf8.encode(firstSeedMnemonic);
+  Digest firstMnemonicSha = sha256.convert(firstMnemonicBytes);
+  final encryptionKey = encrypt.Key.fromBase64(base64Url.encode(firstMnemonicSha.bytes));
+  final fernet = encrypt.Fernet(encryptionKey);
+  final encrypter = encrypt.Encrypter(fernet);
+  return encrypter.encrypt(secondSeedMnemonic).base64;
 }
 
 class Wallet {

@@ -1,14 +1,9 @@
-
-import 'dart:convert';
-
-import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
-import 'package:encrypt/encrypt.dart' as encrypt;
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:leafy/globals.dart';
 import 'package:flutter/gestures.dart';
-import 'package:leafy/util/google_drive_util.dart';
+import 'package:leafy/util/google_drive_remote_account.dart';
 import 'package:leafy/util/google_signin_util.dart';
+import 'package:leafy/util/remote_module.dart';
 import 'package:leafy/util/wallet.dart';
 
 class LeafySetupNewPage extends StatefulWidget {
@@ -32,6 +27,8 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
   late final Wallet _wallet;
 
   late final GoogleSignInUtil _googleSignIn;
+  
+  late final RemoteModule _remoteAccount;
 
   @override
   void initState() {
@@ -53,8 +50,9 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
     _googleSignIn = GoogleSignInUtil.create((account) async {
       try {
         if (account != null) {
+          _remoteAccount = await GoogleDriveRemoteAccount.create(account!);
           await persistLocally(_wallet.firstMnemonic, _wallet.secondDescriptor, account.email);
-          await persistRemotely(account, _wallet.firstMnemonic, _wallet.secondMnemonic);
+          await persistRemotely(_wallet.firstMnemonic, _wallet.secondMnemonic);
           if (context.mounted) {
             Navigator.popAndPushNamed(context, '/wallet', arguments: KeyArguments(firstMnemonic: _wallet.firstMnemonic, secondMnemonic: _wallet.secondMnemonic, secondDescriptor: _wallet.secondDescriptor));
           }
@@ -136,39 +134,15 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
     ));
   }
 
-  String encryptForCloudAccountStorage(String firstMnemonic, String secondMnemonic) {
-    List<int> firstMnemonicBytes = utf8.encode(firstMnemonic);
-    Digest firstMnemonicSha = sha256.convert(firstMnemonicBytes);
-    final encryptionKey = encrypt.Key.fromBase64(base64Url.encode(firstMnemonicSha.bytes));
-    final fernet = encrypt.Fernet(encryptionKey);
-    final encrypter = encrypt.Encrypter(fernet);
-    return encrypter.encrypt(secondMnemonic).base64;
-  }
-
-  bool validate(String b64Content, String firstMnemonic, String secondMnemonic) {
-    List<int> firstMnemonicBytes = utf8.encode(firstMnemonic);
-    Digest firstMnemonicSha = sha256.convert(firstMnemonicBytes);
-    final encryptionKey = encrypt.Key.fromBase64(base64Url.encode(firstMnemonicSha.bytes));
-    final fernet = encrypt.Fernet(encryptionKey);
-    final encrypter = encrypt.Encrypter(fernet);
-    try {
-      final decrypted = encrypter.decrypt64(b64Content);
-      return (secondMnemonic == decrypted);
-    } catch (e) {
-      return false;
-    }
-  }
-
   Future<void> persistLocally(String firstMnemonic, String secondDescriptor, String remoteAccountId) async {
     await persistLocallyViaBiometric(firstMnemonic, secondDescriptor, remoteAccountId);
   }
 
-  Future<void> persistRemotely(GoogleSignInAccount account, String firstMnemonic, String secondMnemonic) async {
-    final driveApi = await GoogleDriveUtil.create(account);
-    final secondMnemonicEncrypted = encryptForCloudAccountStorage(firstMnemonic, secondMnemonic);
-    final retrievedFileContent = await driveApi.createAndRetrieveMnemonicFile(secondMnemonicEncrypted);
-    // now verify the retrieved value by decrypting and matching it
-    if (!validate(retrievedFileContent, firstMnemonic, secondMnemonic)) {
+  Future<void> persistRemotely(String firstMnemonic, String secondMnemonic) async {
+    final secondMnemonicEncrypted = encryptSecondSeed(firstMnemonic, secondMnemonic);
+    final validator = DefaultSecondSeedValidator.create(firstMnemonic, secondMnemonic);
+    final valid = await _remoteAccount.persistEncryptedSecondSeed(secondMnemonicEncrypted, validator);
+    if (!valid) {
       throw Exception("Second mnemonic backup failure, please retry");
     }
   }

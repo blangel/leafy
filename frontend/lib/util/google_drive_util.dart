@@ -12,6 +12,7 @@ const _leafyMnemonicFileName = 'mnemonic_phrase';
 
 const _googleDriveFolderMimeType = 'application/vnd.google-apps.folder';
 
+const _googleDriveAppDataFolder = 'appDataFolder';
 
 class GoogleDriveUtil {
 
