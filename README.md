@@ -24,6 +24,14 @@ The Leafy setup is short and the user is guided through the process within the a
   <img width="400" src="./docs/leafy_setup_demo.gif" alt="Leafy Setup Demo">
 </p>
 
+### Wallet Deposit / Balance
+
+Getting a deposit address and viewing your transactions within Leafy is easy and intuitive.
+
+<p align="center">
+  <img width="400" src="./docs/leafy_deposit_demo.gif" alt="Leafy Deposit Demo">
+</p>
+
 ### Wallet Spending
 
 To spend bitcoin stored in a Leafy wallet, the user needs access to its Remote Account as well as the data stored on its Phone[^1]. Accessing this data within the mobile application is intuitive and familiar for a user. Below is a video demonstrating a spend.
