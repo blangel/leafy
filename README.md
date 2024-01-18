@@ -77,7 +77,7 @@ Leafy is designed with modularity in mind. Specifically there are two modules; a
 
 #### Remote Module
 
-As described in [Technical Details](#technical-details), a Leafy wallet requires two [BIP-39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) seed phrases. One of these phrases is stored on the user's Phone and another within a Remote Account. The Remote Module is the API necessary to implement a Remote Account. It is defined [here](TBD). 
+As described in [Technical Details](#technical-details), a Leafy wallet requires two [BIP-39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) seed phrases. One of these phrases is stored on the user's Phone and another within a Remote Account. The Remote Module is the API necessary to implement a Remote Account. It is defined [here](https://github.com/blangel/leafy/blob/main/frontend/lib/util/remote_module.dart#L4). 
 
 Here are the Remote Accounts supported or being developed by Leafy.
 
