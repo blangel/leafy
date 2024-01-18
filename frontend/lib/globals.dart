@@ -18,9 +18,8 @@ const platform = MethodChannel('leafy/core');
 // TODO - user configured network?
 final BitcoinClient bitcoinClient = kDebugMode ? MempoolSpaceClient.regtest() : MempoolSpaceClient.mainnet();
 
-final Uri devDocumentationUri = Uri.parse('http://localhost:6419/');
+final Uri devDocumentationUri = Uri.parse('https://github.com/blangel/leafy/blob/main/README.md');
 Future<void> launchDocumentation() async {
-  // TODO - switch on env for documentation-uri
   if (!await launchUrl(devDocumentationUri)) {
     throw Exception('Could not launch $devDocumentationUri');
   }

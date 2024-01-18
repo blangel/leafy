@@ -14,7 +14,7 @@ Users should download the Leafy application (available on [Android]() and [Apple
 * **Recoverable** - Leafy is robust to multiple types of disaster scenarios. It optimizes for ease of recovery for common user loss scenarios (e.g. user loses phone).
 * **Secure** - Leafy utilizes best practices and multiple Bitcoin primitives to secure users' funds.
 * **Elastic** - Leafy is built to allow for simple onboarding of users to Bitcoin but then scales in features as the user learns more about the Bitcoin ecosystem.
-* **(optionally) Social** - Leafy provides services (like [wallet recovery](#social-recovery) and [bitcoin trading](#TBD)) via the help of a users' trusted set of social companions.
+* **(optionally) Social** - Leafy provides services (like [wallet recovery](#social-recovery)) via the help of a users' trusted set of social companions.
 
 ### Setup
 
