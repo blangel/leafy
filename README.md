@@ -26,7 +26,8 @@ The Leafy setup is short and the user is guided through the process within the a
 
 ### Wallet Spending
 
-To spend bitcoin stored in a Leafy wallet, the user needs access to its Remote Account as well as the data stored on its Phone. However, funds can still be accessed if either of the user's Phone or Remote Account is inaccessible (see [Recovery](#recovery) below). Accessing this data within the mobile application is intuitive and familiar for a user. Below is a video demonstrating a spend.
+To spend bitcoin stored in a Leafy wallet, the user needs access to its Remote Account as well as the data stored on its Phone[^1]. Accessing this data within the mobile application is intuitive and familiar for a user. Below is a video demonstrating a spend.
+[^1]: Funds can still be accessed if either of the user's Phone or Remote Account is inaccessible (see [Recovery](#2-recovery))
 
 <p align="center">
   <img width="400" src="./docs/leafy_spend_demo.gif" alt="Leafy Spend Demo">
@@ -63,8 +64,8 @@ To spend bitcoin stored in a Leafy wallet, the user needs access to its Remote A
 
 ### 1. Module System
 
-Leafy is designed with modularity in mind. Specifically there are two modules; a [Remote Module](#remote-module) and a [Recovery Module](#recovery-module). Each module is defined by an API to allow for other developers/users to create different implementations of the module. Leafy comes with at least one implementation of each module[^1].
-[^1]: ✅ represents the default implementation.
+Leafy is designed with modularity in mind. Specifically there are two modules; a [Remote Module](#remote-module) and a [Recovery Module](#recovery-module). Each module is defined by an API to allow for other developers/users to create different implementations of the module. Leafy comes with at least one implementation of each module[^2].
+[^2]: ✅ represents the default implementation.
 
 #### Remote Module
 
@@ -187,16 +188,16 @@ TODO
 
 |                                        | [Companion Device](#2a-companion-device-recovery) | [Social Bond](#2b-social-bond-recovery) |
 |:---------------------------------------|--------------------------------------------------:|----------------------------------------:|
-| **Yearly Maintenance Transactions**    |                                             1[^2] |                                       0 |
+| **Yearly Maintenance Transactions**    |                                             1[^3] |                                       0 |
 | **First Seed Recovery Transactions**   |                                                 0 |                                       2 |
 | **Second Seed Recovery Transactions**  |                                                 1 |                                       2 |
 | **Wait Time for First Seed Recovery**  |                                                 0 |                                 1 block |
 | **Wait Time for Second Seed Recovery** |                           1 ≤ wait < 52560 blocks |                                1 block  |
 
-[^2]: This is the [liveliness checks](#liveliness-check) requirement
-[^3]: The additional `1` is the social bond transaction (`Tx_b` in the [social bond diagram](#2b-social-bond-recovery))
+[^3]: This is the [liveliness checks](#liveliness-check) requirement
 
-**Note** the value `1` for Companion Device is technically `T + F` and the value of `2` for Social Bond is technically `1 + T + F`[^3]. For this analysis it is assumed that `U` can fit entirely within `1` transaction and that transaction can pay for fees. The UTXOs are P2TR inputs where there need only be 2 outputs for the transaction. Over [17,000 inputs could fit within a 1 vMB transaction](https://bitcoinops.org/en/tools/calc-size/) and we'll assume Leafy users have less than this number of UTXOs.
+**Note** the value `1` for Companion Device is technically `T + F` and the value of `2` for Social Bond is technically `1 + T + F`[^4]. For this analysis it is assumed that `U` can fit entirely within `1` transaction and that transaction can pay for fees. The UTXOs are P2TR inputs where there need only be 2 outputs for the transaction. Over [17,000 inputs could fit within a 1 vMB transaction](https://bitcoinops.org/en/tools/calc-size/) and we'll assume Leafy users have less than this number of UTXOs.
+[^4]: The additional `1` is the social bond transaction (`Tx_b` in the [social bond diagram](#2b-social-bond-recovery))
 
 | Symbol | Definition                                                      |
 |:-------|:----------------------------------------------------------------|
