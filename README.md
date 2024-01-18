@@ -343,4 +343,11 @@ Leafy ("program"), like Bitcoin ("money"), is [open-source](https://github.com/b
 
 ## Roadmap
 
-TBD
+- [ ] Add the redundant [Google Drive application storage](https://developers.google.com/drive/api/guides/appdata)
+- [ ] Within [social recovery](#social-recovery), add Google Drive storage for companion's data 
+- [ ] Implement "Timelock Recovery"
+- [ ] Add advanced option during setup for passphrase/password encryption
+- [ ] Add setting to customize the [Bitcoin Network Connectivity](#6-bitcoin-network-connectivity)
+- [ ] Add Apple iCloud as a Remote Account
+- [ ] Implement binaries as discussed in [App Provider Obstruction](#app-provider-obstruction)
+- [ ] Finalize research for [social bond](#2b-social-bond-recovery)
