@@ -6,10 +6,6 @@ import 'package:googleapis/drive/v3.dart';
 import 'package:leafy/util/google_signin_util.dart';
 import 'package:tuple/tuple.dart';
 
-const _leafyGoogleDriveDirectoryName = 'Leafy Data';
-
-const _leafyMnemonicFileName = 'mnemonic_phrase';
-
 const _googleDriveFolderMimeType = 'application/vnd.google-apps.folder';
 
 const _googleDriveAppDataFolder = 'appDataFolder';
@@ -26,67 +22,57 @@ class GoogleDriveUtil {
 
   GoogleDriveUtil._(this._driveApi);
 
-  Future<File?> getMnemonicFile() async {
-    final directoryPair = await _getLeafyMnemonic();
-    if (directoryPair == null || directoryPair.item2 == null) {
-      return null;
-    }
-    return directoryPair.item2;
-  }
-
-  Future<Tuple2<File, File?>?> _getLeafyMnemonic() async {
-    var response = await _driveApi.files.list(q: "name='$_leafyGoogleDriveDirectoryName' and mimeType='$_googleDriveFolderMimeType'");
+  Future<List<Tuple2<File, List<File>?>>?> getFileFromDirectory(String directoryName, String fileName) async {
+    var response = await _driveApi.files.list(q: "name='$directoryName' and mimeType='$_googleDriveFolderMimeType'");
     if (response.files == null || response.files!.isEmpty) {
       return null;
     } else {
-      // TODO - what to do on multiple matches (could ask for passphrase and limit to what matches, then further limit to which correspond to valid bitcoin addresses) [currently, take first]
+      List<Tuple2<File, List<File>?>> matches = [];
       for (var folder in response.files!) {
-        var mnemonicFile = await _getLeafyMnemonicFileInDirectory(folder);
-        if (mnemonicFile != null) {
-          return Tuple2(folder, mnemonicFile);
+        var files = await _getFilesInDirectory(folder, fileName);
+        if (files != null) {
+          matches.add(Tuple2(folder, files));
         }
       }
-      return Tuple2(response.files!.first, null);
+      return matches;
     }
   }
 
-  Future<File?> _getLeafyMnemonicFileInDirectory(File directory) async {
-    // TODO - what to do on multiple matches (could ask for passphrase and limit to what matches, then further limit to which correspond to valid bitcoin addresses) [currently, take first]
-    var response = await _driveApi.files.list(q: "'${directory.id}' in parents and name='$_leafyMnemonicFileName'", $fields: "files(id, name, mimeType, trashed, parents)");
+  Future<List<File>?> _getFilesInDirectory(File directory, String fileName) async {
+    var response = await _driveApi.files.list(q: "'${directory.id}' in parents and name='$fileName'", $fields: "files(id, name, mimeType, trashed, parents)");
     if (response.files == null || response.files!.isEmpty) {
       return null;
     } else {
-      return response.files!.first;
+      return response.files!;
     }
   }
 
-  Future<File> _getLeafyDirectoryOrCreate() async {
+  Future<File> _getDirectoryOrCreate(String directoryName, String fileName) async {
     File directory;
-    var directoryPair = await _getLeafyMnemonic();
+    var directoryPair = await getFileFromDirectory(directoryName, fileName);
     if (directoryPair == null) {
-      File leafyFolder = File()
-        ..name = _leafyGoogleDriveDirectoryName
+      directory = File()
+        ..name = directoryName
         ..mimeType = _googleDriveFolderMimeType;
-      directory = await _driveApi.files.create(leafyFolder, useContentAsIndexableText: false, keepRevisionForever: true);
+      directory = await _driveApi.files.create(directory, useContentAsIndexableText: false, keepRevisionForever: true);
     } else {
-      directory = directoryPair.item1;
+      directory = directoryPair.first.item1;
     }
     return directory;
   }
 
-  Future<String> createAndRetrieveMnemonicFile(String mnemonicPhraseEncrypted) async {
-    final directory = await _getLeafyDirectoryOrCreate();
+  Future<String> createAndRetrieveFile(String directoryName, String fileName, String data) async {
+    final directory = await _getDirectoryOrCreate(directoryName, fileName);
 
-    var mnemonicPhraseFile = File()
-      ..name = _leafyMnemonicFileName
+    var file = File()
+      ..name = fileName
       ..mimeType = 'text/plain'
       ..parents = [directory.id!];
-    List<int> mnemonicPhraseBytes = utf8.encode(mnemonicPhraseEncrypted);
-    Stream<List<int>> mnemonicPhraseStream = Stream.fromIterable([mnemonicPhraseBytes]);
-    var media = Media(mnemonicPhraseStream, mnemonicPhraseBytes.length);
-    final createdFile = await _driveApi.files.create(mnemonicPhraseFile, uploadMedia: media,
+    List<int> dataBytes = utf8.encode(data);
+    Stream<List<int>> dataStream = Stream.fromIterable([dataBytes]);
+    var media = Media(dataStream, dataBytes.length);
+    final createdFile = await _driveApi.files.create(file, uploadMedia: media,
         useContentAsIndexableText: false, keepRevisionForever: true);
-    // now verify the value persisted correctly by rereading it
     return getContent(createdFile.id!);
   }
 

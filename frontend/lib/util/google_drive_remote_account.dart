@@ -4,6 +4,10 @@ import 'package:leafy/util/remote_module.dart';
 
 class GoogleDriveRemoteAccount extends RemoteModule {
 
+  static const _leafyGoogleDriveDirectoryName = 'Leafy Data';
+
+  static const _leafyMnemonicFileName = 'mnemonic_phrase';
+
   static Future<GoogleDriveRemoteAccount> create(GoogleSignInAccount account) async {
     var util = await GoogleDriveUtil.create(account);
     return GoogleDriveRemoteAccount._(util);
@@ -15,10 +19,12 @@ class GoogleDriveRemoteAccount extends RemoteModule {
 
   @override
   Future<String?> getEncryptedSecondSeed() async {
-    var mnemonicFile = await _driveApi.getMnemonicFile();
-    if (mnemonicFile == null) {
+    var mnemonicFiles = await _driveApi.getFileFromDirectory(_leafyGoogleDriveDirectoryName, _leafyMnemonicFileName);
+    if (mnemonicFiles == null) {
       return null;
     }
+    // TODO - what to do on multiple matches (could ask for passphrase and limit to what matches, then further limit to which correspond to valid bitcoin addresses) [currently, take first]
+    var mnemonicFile = mnemonicFiles.first.item2!.first;
     if ((mnemonicFile.trashed != null) && mnemonicFile.trashed!) {
       await _driveApi.restore(mnemonicFile);
     }
@@ -27,7 +33,7 @@ class GoogleDriveRemoteAccount extends RemoteModule {
 
   @override
   Future<bool> persistEncryptedSecondSeed(String encryptedSecondSeed, SecondSeedValidator validator) async {
-    final retrievedFileContent = await _driveApi.createAndRetrieveMnemonicFile(encryptedSecondSeed);
+    final retrievedFileContent = await _driveApi.createAndRetrieveFile(_leafyGoogleDriveDirectoryName, _leafyMnemonicFileName, encryptedSecondSeed);
     return validator.validate(retrievedFileContent);
   }
 
