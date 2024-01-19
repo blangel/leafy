@@ -48,9 +48,11 @@ class _TransactionState extends State<TransactionPage> {
     // TODO - replace client
     BitcoinClient client = MempoolSpaceClient.mainnet();
     client.getMempoolSnapshot().then((snapshot) {
-      setState(() {
-        mempoolSnapshot = snapshot;
-      });
+      if (mounted) {
+        setState(() {
+          mempoolSnapshot = snapshot;
+        });
+      }
     });
   }
 
@@ -84,13 +86,13 @@ class _TransactionState extends State<TransactionPage> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(width: 35, child: Text("TxId", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
+            const SizedBox(width: 42, child: Text("TxId", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
             Expanded(flex: 1, child: Row(
               mainAxisSize: MainAxisSize.max,
               mainAxisAlignment: MainAxisAlignment.end,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(shortTransactionIdOfLength(transaction.id, 44), textAlign: TextAlign.right),
+                Text(shortTransactionIdOfLength(transaction.id, 40), textAlign: TextAlign.right),
                 SizedBox(width: 24, child: IconButton(onPressed: () {
                   Clipboard.setData(ClipboardData(text: transaction.id)).then((_) {
                     ScaffoldMessenger.of(context).clearSnackBars();

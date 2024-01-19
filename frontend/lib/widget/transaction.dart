@@ -17,8 +17,8 @@ class TransactionRowWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.max,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(width: 130, child: Text(shortTransactionId(transaction.id), style: const TextStyle(fontSize: 18))),
-        const SizedBox(width: 10,),
+        SizedBox(width: 145, child: Text(shortTransactionId(transaction.id), style: const TextStyle(fontSize: 18))),
+        const SizedBox(width: 5,),
         if (!transaction.status.confirmed)
           ...[
             Padding(padding: const EdgeInsets.fromLTRB(0, 0, 5, 0),
