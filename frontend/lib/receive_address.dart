@@ -24,8 +24,7 @@ class _ReceiveAddressState extends State<ReceiveAddressPage> {
   @override
   void initState() {
     super.initState();
-    _getOriginalBrightness();
-    _setBrightness(1.0);
+    _setRevertibleBrightness();
   }
 
   @override
@@ -34,11 +33,12 @@ class _ReceiveAddressState extends State<ReceiveAddressPage> {
     super.dispose();
   }
 
-  void _getOriginalBrightness() async {
-    originalBrightness = await ScreenBrightness().current;
+  Future<void> _setRevertibleBrightness() async {
+    originalBrightness = await ScreenBrightness().system;
+    _setBrightness(1.0);
   }
 
-  void _setBrightness(double brightness) async {
+  Future<void> _setBrightness(double brightness) async {
     await ScreenBrightness().setScreenBrightness(brightness);
   }
 

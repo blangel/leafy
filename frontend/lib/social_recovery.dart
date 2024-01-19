@@ -51,8 +51,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     super.initState();
     _loadCompanionIds();
     _createSocialEphemeralKeyPair();
-    _getOriginalBrightness();
-    _setBrightness(1.0);
+    _setRevertibleBrightness();
   }
 
   @override
@@ -61,11 +60,12 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     super.dispose();
   }
 
-  void _getOriginalBrightness() async {
-    originalBrightness = await ScreenBrightness().current;
+  Future<void> _setRevertibleBrightness() async {
+    originalBrightness = await ScreenBrightness().system;
+    _setBrightness(1.0);
   }
 
-  void _setBrightness(double brightness) async {
+  Future<void> _setBrightness(double brightness) async {
     await ScreenBrightness().setScreenBrightness(brightness);
   }
 
