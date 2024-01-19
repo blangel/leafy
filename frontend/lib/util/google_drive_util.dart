@@ -22,7 +22,26 @@ class GoogleDriveUtil {
 
   GoogleDriveUtil._(this._driveApi);
 
+  Future<List<Tuple2<File, List<File>?>>?> getFileFromAppDirectory(String fileName) async {
+    return getFileFromDirectory(_googleDriveAppDataFolder, fileName);
+  }
+
   Future<List<Tuple2<File, List<File>?>>?> getFileFromDirectory(String directoryName, String fileName) async {
+    if (_googleDriveAppDataFolder == directoryName) {
+      // see https://developers.google.com/drive/api/guides/appdata#search-files
+      var response = await _driveApi.files.list(spaces: directoryName);
+      List<Tuple2<File, List<File>?>> matches = [];
+      if (response.files != null) {
+        List<File> matchedFiles = [];
+        for (var file in response.files!) {
+          if (file.name == fileName) {
+            matchedFiles.add(file);
+          }
+        }
+        matches.add(Tuple2(File()..id=directoryName..name=directoryName, matchedFiles));
+      }
+      return matches;
+    }
     var response = await _driveApi.files.list(q: "name='$directoryName' and mimeType='$_googleDriveFolderMimeType'");
     if (response.files == null || response.files!.isEmpty) {
       return null;
@@ -48,6 +67,10 @@ class GoogleDriveUtil {
   }
 
   Future<File> _getDirectoryOrCreate(String directoryName, String fileName) async {
+    if (_googleDriveAppDataFolder == directoryName) {
+      // name is the id; see https://developers.google.com/drive/api/guides/appdata
+      return File()..id=_googleDriveAppDataFolder;
+    }
     File directory;
     var directoryPair = await getFileFromDirectory(directoryName, fileName);
     if (directoryPair == null) {
@@ -59,6 +82,10 @@ class GoogleDriveUtil {
       directory = directoryPair.first.item1;
     }
     return directory;
+  }
+
+  Future<String> createAndRetrieveFileFromAppDirectory(String fileName, String data) async {
+    return createAndRetrieveFile(_googleDriveAppDataFolder, fileName, data);
   }
 
   Future<String> createAndRetrieveFile(String directoryName, String fileName, String data) async {

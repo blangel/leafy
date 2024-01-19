@@ -351,7 +351,7 @@ Leafy ("program"), like Bitcoin ("money"), is [open-source](https://github.com/b
 
 ## Roadmap
 
-- [ ] Add the redundant [Google Drive application storage](https://developers.google.com/drive/api/guides/appdata)
+- [x] Add the redundant [Google Drive application storage](https://developers.google.com/drive/api/guides/appdata)
 - [ ] Within [social recovery](#social-recovery), add Google Drive storage for companion's data 
 - [ ] Implement "Timelock Recovery"
 - [ ] Add advanced option during setup for passphrase/password encryption

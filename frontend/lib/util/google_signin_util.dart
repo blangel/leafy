@@ -35,16 +35,16 @@ class GoogleSignInUtil {
     if (kIsWeb) {
       _googleSignIn = GoogleSignIn(
         clientId: '853812438928-2tl812dcap611o1rot1ol44dnpakh7ns.apps.googleusercontent.com',
-        scopes: ['https://www.googleapis.com/auth/drive.file'],
+        scopes: ['https://www.googleapis.com/auth/drive.file','https://www.googleapis.com/auth/drive.appdata'],
       );
     } else if (Platform.isIOS) {
       _googleSignIn = GoogleSignIn(
         clientId: '853812438928-2tl812dcap611o1rot1ol44dnpakh7ns.apps.googleusercontent.com',
-        scopes: ['https://www.googleapis.com/auth/drive.file'],
+        scopes: ['https://www.googleapis.com/auth/drive.file','https://www.googleapis.com/auth/drive.appdata'],
       );
     } else {
       _googleSignIn = GoogleSignIn(
-        scopes: ['https://www.googleapis.com/auth/drive.file'],
+        scopes: ['https://www.googleapis.com/auth/drive.file','https://www.googleapis.com/auth/drive.appdata'],
       );
     }
     _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) async {
