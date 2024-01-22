@@ -38,7 +38,9 @@ class GoogleDriveUtil {
             matchedFiles.add(file);
           }
         }
-        matches.add(Tuple2(File()..id=directoryName..name=directoryName, matchedFiles));
+        if (matchedFiles.isNotEmpty) {
+          matches.add(Tuple2(File()..id=directoryName..name=directoryName, matchedFiles));
+        }
       }
       return matches;
     }

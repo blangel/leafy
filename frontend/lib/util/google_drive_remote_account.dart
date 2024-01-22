@@ -23,7 +23,7 @@ class GoogleDriveRemoteAccount extends RemoteModule {
   Future<String?> getEncryptedSecondSeed() async {
     // first retrieve from application directory (since unmodifiable by user), fallback to user directory if not found
     var mnemonicFiles = await _driveApi.getFileFromAppDirectory(_leafyMnemonicFileName);
-    if (mnemonicFiles == null) {
+    if (mnemonicFiles == null || mnemonicFiles.isEmpty) {
       mnemonicFiles = await _driveApi.getFileFromDirectory(_leafyGoogleDriveDirectoryName, _leafyMnemonicFileName);
       if (mnemonicFiles == null) {
         return null;
