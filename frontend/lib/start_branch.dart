@@ -6,10 +6,10 @@ import 'package:leafy/util/remote_module.dart';
 import 'package:leafy/util/wallet.dart';
 
 // Possible branches and their handling:
-// (0) [normal] locally have first-mnemonic, second-descriptor and second-mnemonic via cloud-account => '/wallet'
-// (1) [new | social] nothing locally and nothing on cloud-account => ask for '/social', otherwise '/new'
-// (2) [recovery] locally have first-mnemonic, second-descriptor but no cloud-account access => '/recovery'
-// (3) [social] nothing locally, and second-mnemonic via cloud-account => '/social'
+// (0) [normal] locally have first-mnemonic, second-descriptor and second-mnemonic via remote-account => '/wallet'
+// (1) [new | social] nothing locally and nothing on remote-account => ask for '/social-recovery', otherwise '/new'
+// (2) [recovery] locally have first-mnemonic, second-descriptor but no remote-account access => '/timelock-recovery'
+// (3) [social] nothing locally, and second-mnemonic via remote-account => '/social-recovery'
 
 // LeafyStartPage determines if a user has an existing account, branching
 // to the proper page depending upon existence

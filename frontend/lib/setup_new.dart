@@ -91,7 +91,7 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Center(child: Image(height: 150, image: _lockImage)),
-        Padding(padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        Padding(padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
           child: RichText(text: TextSpan(
               text: "Let's finish creating your Bitcoin wallet. The online portion of your wallet will be encrypted before being stored on your ",
               style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color),
@@ -105,9 +105,16 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
               ]
           )),
         ),
+        Divider(color: Theme.of(context).textTheme.titleMedium!.color, indent: 10, endIndent: 10),
+        Padding(padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+          child: Align(alignment: Alignment.centerLeft, child: RichText(text: TextSpan(text: "Select a ", style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color), children: [
+            TextSpan(text: "Remote Account", style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color, fontWeight: FontWeight.bold)),
+            TextSpan(text: " to continue:", style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color)),
+          ])))
+        ),
         Padding(padding: const EdgeInsets.all(10), child: Row(
           mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
             ElevatedButton(
               onPressed: (_uiState == _UiState.backingUp) ? null : () async {
@@ -120,7 +127,7 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
                   children: [
                     const Image(width: 50, image: AssetImage('images/google_drive_icon.png')),
                     const SizedBox.square(dimension: 10),
-                    const Text("Continue", style: TextStyle(fontSize: 24),),
+                    const Text("Google Drive", style: TextStyle(fontSize: 24),),
                     if (_uiState == _UiState.backingUp)
                       ...[const SizedBox.square(dimension: 10),
                         Center(child: CircularProgressIndicator(value: _animationController.value)),]

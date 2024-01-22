@@ -97,7 +97,6 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Padding(padding: const EdgeInsets.fromLTRB(20, 20, 20, 10), child: Center(child: Image(height: 150, image: _restoreImage))),
               Expanded(flex: 1, child: SettingsList(
                 platform: DevicePlatform.iOS,
                 sections: [
