@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:leafy/globals.dart';
 import 'package:flutter/gestures.dart';
 import 'package:leafy/util/google_drive_remote_account.dart';
@@ -34,7 +35,6 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
   final TextEditingController _passwordController = TextEditingController();
   String? _password;
   bool _showPassword = false;
-  final FocusNode _setPasswordNode = FocusNode();
 
   @override
   void initState() {
@@ -56,7 +56,7 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
     _googleSignIn = GoogleSignInUtil.create((account) async {
       try {
         if (account != null) {
-          _remoteAccount = await GoogleDriveRemoteAccount.create(account!);
+          _remoteAccount = await GoogleDriveRemoteAccount.create(account);
           await persistLocally(_wallet.firstMnemonic, _wallet.secondDescriptor, account.email);
           await persistRemotely(_wallet.firstMnemonic, _wallet.secondMnemonic);
           if (context.mounted) {
@@ -87,7 +87,6 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
   void dispose() {
     _animationController.dispose();
     _passwordController.dispose();
-    _setPasswordNode.dispose();
     super.dispose();
   }
 
@@ -101,7 +100,7 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
         Center(child: Image(height: 150, image: _lockImage)),
         Padding(padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
           child: RichText(text: TextSpan(
-              text: "Let's finish creating your Bitcoin wallet. The online portion of your wallet will be encrypted before being stored on your ",
+              text: "Let's finish creating your Bitcoin wallet. Your wallet is compromised of two keys. One key will be encrypted and then stored on your chosen ",
               style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color),
               children: [
                 TextSpan(text: "Remote Account", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyMedium!.color)),
@@ -149,7 +148,9 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
           child: SingleChildScrollView(child: ExpansionPanelList(
             expansionCallback: (int index, bool isExpanded) {
               setState(() {
-                _advancedTileExpanded = !_advancedTileExpanded;
+                if (_password == null) {
+                  _advancedTileExpanded = !_advancedTileExpanded;
+                }
               });
             },
             expandedHeaderPadding: EdgeInsets.zero,
@@ -179,7 +180,7 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
                       title: const Text('Wallet Password'),
                       content: StatefulBuilder(
                         builder: (BuildContext context, StateSetter setState) {
-                          return Column(
+                          return AutofillGroup(child: Column(
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,6 +199,7 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
                               ),
                               TextField(
                                   controller: _passwordController,
+                                  autofillHints: const [AutofillHints.password],
                                   decoration: InputDecoration(
                                     border: const OutlineInputBorder(),
                                     hintText: 'Enter a wallet password',
@@ -210,15 +212,12 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
                                       },
                                     ),
                                   ),
-                                  onEditingComplete: () {
-                                    _setPasswordNode.requestFocus();
-                                  },
                                   obscureText: !_showPassword,
                                   enableSuggestions: false,
                                   autocorrect: false
                               )
                             ],
-                          );
+                          ));
                         }
                       ),
                       actions: <Widget>[
@@ -234,11 +233,11 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
                           child: const Text('Cancel'),
                         ),
                         TextButton(
-                          focusNode: _setPasswordNode,
                           onPressed: () {
                             setState(() {
                               _password = _passwordController.text;
                             });
+                            TextInput.finishAutofillContext();
                             Navigator.pop(context, 'Use');
                           },
                           child: const Text('Use'),
