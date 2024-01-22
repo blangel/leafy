@@ -30,6 +30,12 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
   
   late final RemoteModule _remoteAccount;
 
+  bool _advancedTileExpanded = false;
+  final TextEditingController _passwordController = TextEditingController();
+  String? _password;
+  bool _showPassword = false;
+  final FocusNode _setPasswordNode = FocusNode();
+
   @override
   void initState() {
     _animationController = AnimationController(
@@ -80,13 +86,15 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
   @override
   void dispose() {
     _animationController.dispose();
+    _passwordController.dispose();
+    _setPasswordNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return buildScaffold(context, 'New Wallet Setup', Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: MainAxisSize.max,
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -136,7 +144,116 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
                   ]),
             )
           ],
-        ))
+        )),
+        Expanded(flex: 1, child: Align(alignment: Alignment.bottomLeft,
+          child: SingleChildScrollView(child: ExpansionPanelList(
+            expansionCallback: (int index, bool isExpanded) {
+              setState(() {
+                _advancedTileExpanded = !_advancedTileExpanded;
+              });
+            },
+            expandedHeaderPadding: EdgeInsets.zero,
+            children: [
+              ExpansionPanel(headerBuilder: (BuildContext context, bool isExpanded) {
+                return const ListTile(
+                  title: Text("Advanced settings"),
+                );
+              },
+              canTapOnHeader: true,
+              body: ListTile(
+                title: _password != null ? const Text("Wallet protected with a password") : const Text("Protect wallet with a password"),
+                subtitle: _password != null ? const Text("Tap to remove", style: TextStyle(color: Colors.redAccent),) : const Text('Warning! There is no "forgot password" functionality.'),
+                trailing: _password != null ? const Icon(Icons.delete) : const Icon(Icons.password),
+                onTap: () {
+                  if (_password != null) {
+                    setState(() {
+                      _password = null;
+                      _passwordController.clear();
+                      _showPassword = false;
+                    });
+                    return;
+                  }
+                  showDialog<String>(
+                    context: context,
+                    builder: (BuildContext context) => AlertDialog(
+                      title: const Text('Wallet Password'),
+                      content: StatefulBuilder(
+                        builder: (BuildContext context, StateSetter setState) {
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(padding: const EdgeInsets.fromLTRB(0, 0, 0, 20),
+                                  child: RichText(text: TextSpan(text: "Leafy does not recommend using a password. ",
+                                      style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium!.color),
+                                      children: [
+                                        TextSpan(text: "Read the documentation", style: TextStyle(fontSize: 14, decoration: TextDecoration.underline, color: Theme.of(context).textTheme.bodyMedium!.color),
+                                          recognizer: TapGestureRecognizer()..onTap = () { launchDocumentation(documentationPasswordUrl); }
+                                        ),
+                                        TextSpan(text: " for further context in terms of the risks and rationale for setting a password.", style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium!.color))
+                                      ]
+                                    ),
+                                  ),
+                              ),
+                              TextField(
+                                  controller: _passwordController,
+                                  decoration: InputDecoration(
+                                    border: const OutlineInputBorder(),
+                                    hintText: 'Enter a wallet password',
+                                    suffixIcon: IconButton(
+                                      icon: _showPassword ? const Icon(Icons.visibility_off) : const Icon(Icons.visibility),
+                                      onPressed: () {
+                                        setState(() {
+                                          _showPassword = !_showPassword;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  onEditingComplete: () {
+                                    _setPasswordNode.requestFocus();
+                                  },
+                                  obscureText: !_showPassword,
+                                  enableSuggestions: false,
+                                  autocorrect: false
+                              )
+                            ],
+                          );
+                        }
+                      ),
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _password = null;
+                              _passwordController.clear();
+                              _showPassword = false;
+                            });
+                            Navigator.pop(context, 'Cancel');
+                          },
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          focusNode: _setPasswordNode,
+                          onPressed: () {
+                            setState(() {
+                              _password = _passwordController.text;
+                            });
+                            Navigator.pop(context, 'Use');
+                          },
+                          child: const Text('Use'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              ),
+              isExpanded: _advancedTileExpanded || (_password != null),
+              )
+            ],
+          )),
+        )),
+        const SizedBox(height: 40)
       ],
     ));
   }

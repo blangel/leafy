@@ -18,10 +18,12 @@ const platform = MethodChannel('leafy/core');
 // TODO - user configured network?
 final BitcoinClient bitcoinClient = kDebugMode ? MempoolSpaceClient.regtest() : MempoolSpaceClient.mainnet();
 
-final Uri devDocumentationUri = Uri.parse('https://github.com/blangel/leafy/blob/main/README.md');
-Future<void> launchDocumentation() async {
-  if (!await launchUrl(devDocumentationUri)) {
-    throw Exception('Could not launch $devDocumentationUri');
+const String documentationPasswordUrl = 'https://github.com/blangel/leafy?tab=readme-ov-file#3-optional-passwordpassphrase';
+final Uri documentationUri = Uri.parse('https://github.com/blangel/leafy/blob/main/README.md');
+Future<void> launchDocumentation([String? override]) async {
+  var url = override == null ? documentationUri : Uri.parse(override);
+  if (!await launchUrl(url)) {
+    throw Exception('Could not launch $url');
   }
 }
 
