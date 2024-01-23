@@ -79,9 +79,7 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
           return;
         }
         if ((_uiState == _UiState.noLocalFoundRemote) && (account != null)) {
-          // TODO - get wallet password for recovery
-          String? walletPassword;
-          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: account.email, walletPassword: walletPassword));
+          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.walletPassword, remoteAccountId: account.email, walletPassword: null));
           return;
         }
         if (account == null) {

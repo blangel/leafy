@@ -325,15 +325,15 @@ The Second Seed Descriptor is stored encrypted within the user's device (via the
 
 In the table, `[Pwd]` represents the optional password/passphrase. If elected by the user, the data is first encrypted with this password/passphrase and then encrypted by the indicated encryption method.
 
-| Data        | Location                       | Encryption                                                                    |
-|:------------|:-------------------------------|:------------------------------------------------------------------------------|
-| First Seed  | Phone                          | [secure_storage](https://pub.dev/packages/flutter_secure_storage)             |
-|             | Companion Device(1..n)         | `[Pwd]` [secure_storage](https://pub.dev/packages/flutter_secure_storage)     |
-|             | Companion Remote Account(1..n) | `[Pwd]` Companion's `First Seed` Public Key                                   |
-| Second Seed | Remote Account                 | First Seed                                                                    |
-| Descriptor  | Phone                          | [secure_storage](https://pub.dev/packages/flutter_secure_storage)             |
-|             | Companion Device(1..n)         | `[Pwd]` [secure_storage](https://pub.dev/packages/flutter_secure_storage)     |
-|             | Companion Remote Account(1..n) | `[Pwd]` Companion's `First Seed` Public Key                                   |
+| Data        | Location                       | Encryption                                                                |
+|:------------|:-------------------------------|:--------------------------------------------------------------------------|
+| First Seed  | Phone                          | `[Pwd]` [secure_storage](https://pub.dev/packages/flutter_secure_storage) |
+|             | Companion Device(1..n)         | `[Pwd]` [secure_storage](https://pub.dev/packages/flutter_secure_storage) |
+|             | Companion Remote Account(1..n) | `[Pwd]` Companion's `First Seed` Public Key                               |
+| Second Seed | Remote Account                 | First Seed                                                                |
+| Descriptor  | Phone                          | `[Pwd]` [secure_storage](https://pub.dev/packages/flutter_secure_storage) |
+|             | Companion Device(1..n)         | `[Pwd]` [secure_storage](https://pub.dev/packages/flutter_secure_storage) |
+|             | Companion Remote Account(1..n) | `[Pwd]` Companion's `First Seed` Public Key                               |
 
 ## Terminology
 

@@ -1,6 +1,5 @@
 
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:leafy/globals.dart';
 import 'package:leafy/util/wallet.dart';
 import 'package:leafy/widget/address.dart';
+import 'package:leafy/widget/wallet_password.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:screen_brightness/screen_brightness.dart';
@@ -45,6 +45,8 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
   String? _assistingWithCompanionId;
 
   late double originalBrightness;
+
+  bool _retrievingPassword = false;
 
   @override
   void initState() {
@@ -91,6 +93,30 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
       });
     }
     switch (arguments.type) {
+      case SocialRecoveryType.walletPassword:
+        if (!_retrievingPassword) {
+          Future.microtask(() {
+            _retrievingPassword = true;
+            showDialog<String>(
+              context: context,
+              builder: (BuildContext context) =>
+              const WalletPasswordDialog(newPassword: false, unknownUsage: true),
+            ).then((password) {
+              if (context.mounted) {
+                Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: arguments.remoteAccountId, walletPassword: password));
+              }
+            });
+          });
+        }
+        return buildScaffold(context, 'Recovery: Wallet Password', const Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(padding: EdgeInsets.all(20), child: Text('Provide your wallet password, if any', style: TextStyle(fontSize: 24))),
+              SizedBox(height: 150),
+            ]
+        ));
       case SocialRecoveryType.branch:
         return buildScaffold(context, 'Recovery', Column(
             mainAxisSize: MainAxisSize.min,
@@ -179,7 +205,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         ),
                         onDetect: (capture) {
                           if (capture.barcodes.isNotEmpty && (capture.barcodes.first.rawValue != null)) {
-                            _validateCompanionPublicKey(capture.barcodes.first.rawValue!, arguments.remoteAccountId);
+                            _validateCompanionPublicKey(arguments.walletPassword, capture.barcodes.first.rawValue!, arguments.remoteAccountId);
                           }
                         },
                       ))),
@@ -201,7 +227,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                           labelText: 'Companion Data',
                         ),
                         onChanged: (data) {
-                          _validateCompanionPublicKey(data, arguments.remoteAccountId);
+                          _validateCompanionPublicKey(arguments.walletPassword, data, arguments.remoteAccountId);
                         },
                       )
                   )
@@ -492,7 +518,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         ),
                         onDetect: (capture) {
                           if (capture.barcodes.isNotEmpty && (capture.barcodes.first.rawValue != null)) {
-                            _validateCompanionPublicKey(capture.barcodes.first.rawValue!, arguments.remoteAccountId);
+                            _validateCompanionPublicKey(null, capture.barcodes.first.rawValue!, arguments.remoteAccountId);
                           }
                         },
                       ))),
@@ -514,7 +540,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                           labelText: 'Companion Data',
                         ),
                         onChanged: (data) {
-                          _validateCompanionPublicKey(data, arguments.remoteAccountId);
+                          _validateCompanionPublicKey(null, data, arguments.remoteAccountId);
                         },
                       )
                   )
@@ -552,10 +578,19 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     var json = jsonDecode(decrypted);
     if (CompanionRecoveryWalletWrapper.isCompanionRecoveryWalletWrapper(json)) {
       var wrapped = CompanionRecoveryWalletWrapper.fromJson(json);
-      // TODO - decrypt passphrase if present
       json = jsonDecode(wrapped.serializedWallet);
     }
     var wallet = RecoveryWallet.fromJson(remoteAccountId, json);
+    if (walletPassword != null) {
+      final decryptedWallet = decryptWallet(walletPassword, wallet);
+      if (decryptedWallet == null) {
+        if (mounted) {
+          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.walletPassword, remoteAccountId: remoteAccountId, walletPassword: null));
+        }
+        return;
+      }
+      wallet = decryptedWallet;
+    }
     await persistLocallyViaBiometric(walletPassword, wallet.firstMnemonic, wallet.secondDescriptor, remoteAccountId);
     if (mounted) {
       Navigator.pushNamedAndRemoveUntil(context, '/start', (route) => false);
@@ -573,7 +608,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     }
   }
 
-  void _validateCompanionPublicKey(String publicKeyHex, String self) async {
+  void _validateCompanionPublicKey(String? walletPassword, String publicKeyHex, String self) async {
     bool result = await _validateEphemeralSocialPublicKeyNatively(publicKeyHex);
     if (!result) {
       if (mounted) {
@@ -583,9 +618,9 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     } else {
       String walletData;
       if (self == _assistingWithCompanionId) {
-        walletData = await getRecoveryWalletSerialized();
+        walletData = await getRecoveryWalletSerialized(walletPassword);
       } else if (_assistingWithCompanionId == null) {
-        walletData = await getRecoveryWalletSerializedForCompanion();
+        walletData = await getRecoveryWalletSerializedForCompanion(walletPassword);
       } else {
         var companionSerialized = await getCompanionIdWalletSerialized(_assistingWithCompanionId!);
         if (companionSerialized == null) {

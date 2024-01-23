@@ -8,7 +8,9 @@ class WalletPasswordDialog extends StatefulWidget {
 
   final bool newPassword;
 
-  const WalletPasswordDialog({super.key, this.newPassword=true});
+  final bool unknownUsage;
+
+  const WalletPasswordDialog({super.key, this.newPassword=true, this.unknownUsage=false});
 
   @override
   State<WalletPasswordDialog> createState() => _WalletPasswordDialogState();
@@ -107,7 +109,7 @@ class _WalletPasswordDialogState extends State<WalletPasswordDialog> {
             });
             Navigator.pop(context, null);
           },
-          child: const Text('Cancel'),
+          child: Text(widget.unknownUsage ? 'I have no password' : 'Cancel'),
         ),
         TextButton(
           onPressed: () {

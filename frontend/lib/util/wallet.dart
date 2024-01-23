@@ -59,6 +59,16 @@ String? decryptLeafyData(String password, String data) {
   return null;
 }
 
+RecoveryWallet encryptWallet(String? password, RecoveryWallet wallet) {
+  if (password == null) {
+    return wallet;
+  }
+  final firstMnemonic = encryptLeafyData(password, wallet.firstMnemonic);
+  final secondDescriptor = encryptLeafyData(password, wallet.secondDescriptor);
+  final remoteAccountId = encryptLeafyData(password, wallet.remoteAccountId);
+  return RecoveryWallet(firstMnemonic: firstMnemonic, secondDescriptor: secondDescriptor, remoteAccountId: remoteAccountId);
+}
+
 String encryptLeafyData(String password, String data) {
   List<int> passwordBytes = utf8.encode(password);
   Digest passwordSha = sha256.convert(passwordBytes);

@@ -219,7 +219,7 @@ class CreateTransactionArguments {
 
 // SocialRecoveryType determines what UI to display in recovery
 enum SocialRecoveryType {
-  branch, setup, setupCompanion, recovery, recoveryCompanion;
+  branch, walletPassword, setup, setupCompanion, recovery, recoveryCompanion;
 }
 
 class SocialRecoveryArguments {
@@ -275,20 +275,21 @@ Future<List<String>> getCompanionIds() async {
       .map((element) => element.substring(keyPrefix.length)).toList();
 }
 
-Future<String> getRecoveryWalletSerialized() async {
+Future<String> getRecoveryWalletSerialized(String? walletPassword) async {
   RecoveryWallet? wallet = await getRecoveryWalletViaBiometric();
   if (wallet == null) {
     throw Exception("no wallet found");
   }
+  wallet = encryptWallet(walletPassword, wallet);
   return jsonEncode(wallet.toJson());
 }
 
-Future<String> getRecoveryWalletSerializedForCompanion() async {
+Future<String> getRecoveryWalletSerializedForCompanion(String? walletPassword) async {
   RecoveryWallet? wallet = await getRecoveryWalletViaBiometric();
   if (wallet == null) {
     throw Exception("no wallet found");
   }
-  // TODO - encrypt with passphrase if present
+  wallet = encryptWallet(walletPassword, wallet);
   var walletSerialized = jsonEncode(wallet.toJson());
   CompanionRecoveryWalletWrapper wrapper = CompanionRecoveryWalletWrapper(companionId: wallet.remoteAccountId, serializedWallet: walletSerialized);
   return jsonEncode(wrapper.toJson());
