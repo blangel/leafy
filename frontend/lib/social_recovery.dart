@@ -108,7 +108,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         title: const Text('Your Account'),
                         value: const Text(''),
                         onPressed: (context) {
-                          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: arguments.remoteAccountId));
+                          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: arguments.remoteAccountId, walletPassword: arguments.walletPassword));
                         },
                       ),
                     ],
@@ -121,7 +121,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         title: const Text('for Your Account'),
                         value: const Text(''),
                         onPressed: (context) {
-                          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.setup, remoteAccountId: arguments.remoteAccountId));
+                          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.setup, remoteAccountId: arguments.remoteAccountId, walletPassword: arguments.walletPassword));
                         },
                       ),
                       SettingsTile.navigation(
@@ -129,7 +129,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         title: const Text('for a Companion'),
                         value: const Text(''),
                         onPressed: (context) {
-                          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.setupCompanion, remoteAccountId: arguments.remoteAccountId));
+                          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.setupCompanion, remoteAccountId: arguments.remoteAccountId, walletPassword: arguments.walletPassword));
                         },
                       ),
                     ],
@@ -143,7 +143,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                           title: Text(arguments.remoteAccountId == companionId ? "$companionId  (self)" : companionId),
                           value: const Text(''),
                           onPressed: (context) {
-                            Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recoveryCompanion, remoteAccountId: arguments.remoteAccountId, assistingWithCompanionId: companionId));
+                            Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recoveryCompanion, remoteAccountId: arguments.remoteAccountId, assistingWithCompanionId: companionId, walletPassword: arguments.walletPassword));
                           },
                         )
                       ],
@@ -400,7 +400,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         ),
                         onDetect: (capture) {
                           if (capture.barcodes.isNotEmpty && (capture.barcodes.first.rawValue != null)) {
-                            _dataDecryptAndSave(capture.barcodes.first.rawValue!, arguments.remoteAccountId);
+                            _dataDecryptAndSave(arguments.walletPassword, capture.barcodes.first.rawValue!, arguments.remoteAccountId);
                           }
                         },
                       ))),
@@ -422,7 +422,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                           labelText: 'Companion Data',
                         ),
                         onChanged: (data) {
-                          _dataDecryptAndSave(data, arguments.remoteAccountId);
+                          _dataDecryptAndSave(arguments.walletPassword, data, arguments.remoteAccountId);
                         },
                       )
                   )
@@ -547,7 +547,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     }
   }
 
-  void _dataDecryptAndSave(String encryptedData, String remoteAccountId) async {
+  void _dataDecryptAndSave(String? walletPassword, String encryptedData, String remoteAccountId) async {
     String decrypted = await _decryptWithEphemeralSocialPrivateKeyNatively(_socialKeyPair!.privateKey, encryptedData);
     var json = jsonDecode(decrypted);
     if (CompanionRecoveryWalletWrapper.isCompanionRecoveryWalletWrapper(json)) {
@@ -556,14 +556,13 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
       json = jsonDecode(wrapped.serializedWallet);
     }
     var wallet = RecoveryWallet.fromJson(remoteAccountId, json);
-    await persistLocallyViaBiometric(wallet.firstMnemonic, wallet.secondDescriptor, remoteAccountId);
+    await persistLocallyViaBiometric(walletPassword, wallet.firstMnemonic, wallet.secondDescriptor, remoteAccountId);
     if (mounted) {
       Navigator.pushNamedAndRemoveUntil(context, '/start', (route) => false);
     }
   }
 
   void _dataDecryptAndSaveForCompanion(String encryptedData) async {
-    log("received encrypted data: $encryptedData");
     String decrypted = await _decryptWithEphemeralSocialPrivateKeyNatively(_socialKeyPair!.privateKey, encryptedData);
     var wrapper = CompanionRecoveryWalletWrapper.fromJson(jsonDecode(decrypted));
     await persistCompanionLocallyViaBiometric(wrapper.serializedWallet, wrapper.companionId);

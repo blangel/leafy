@@ -24,7 +24,7 @@ class DefaultSecondSeedValidator implements SecondSeedValidator {
 
   @override
   bool validate(String encryptedSecondSeed) {
-    final decrypted = decryptSecondSeedMnemonic(_firstSeedMnemonic, encryptedSecondSeed);
+    final decrypted = decryptLeafyData(_firstSeedMnemonic, encryptedSecondSeed);
     return (decrypted == _secondSeedMnemonic);
   }
 

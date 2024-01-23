@@ -19,32 +19,53 @@ Future<Wallet> createNewWallet() async {
   }
 }
 
-String? decryptSecondSeedMnemonic(String firstSeedMnemonic, String encryptedSecondSeedMnemonic) {
-  List<int> firstMnemonicBytes = utf8.encode(firstSeedMnemonic);
-  Digest firstMnemonicSha = sha256.convert(firstMnemonicBytes);
-  final encryptionKey = encrypt.Key.fromBase64(base64Url.encode(firstMnemonicSha.bytes));
+bool firstSeedMnemonicNeedsPassword(String firstSeedMnemonic) {
+  var split = firstSeedMnemonic.split(' ');
+  return split.length != 24;
+}
+
+RecoveryWallet? decryptWallet(String password, RecoveryWallet wallet) {
+  final firstMnemonic = decryptLeafyData(password, wallet.firstMnemonic);
+  if (firstMnemonic == null) {
+    return null;
+  }
+  final secondDescriptor = decryptLeafyData(password, wallet.secondDescriptor);
+  if (secondDescriptor == null) {
+    return null;
+  }
+  final remoteAccountId = decryptLeafyData(password, wallet.remoteAccountId);
+  if (remoteAccountId == null) {
+    return null;
+  }
+  return RecoveryWallet(firstMnemonic: firstMnemonic, secondDescriptor: secondDescriptor, remoteAccountId: remoteAccountId);
+}
+
+String? decryptLeafyData(String password, String data) {
+  List<int> passwordBytes = utf8.encode(password);
+  Digest passwordSha = sha256.convert(passwordBytes);
+  final encryptionKey = encrypt.Key.fromBase64(base64Url.encode(passwordSha.bytes));
   final fernet = encrypt.Fernet(encryptionKey);
   final encrypter = encrypt.Encrypter(fernet);
   try {
-    final decrypted = encrypter.decrypt64(encryptedSecondSeedMnemonic);
+    final decrypted = encrypter.decrypt64(data);
     var split = decrypted.split(' ');
     if (split.length == 24) {
       return decrypted;
     }
-    log("invalid decrypted second mnemonic (length of ${split.length})");
+    log("invalid decrypted data (length of ${split.length})");
   } catch (e) {
     log("failed to decrypt: ${e.toString()}");
   }
   return null;
 }
 
-String encryptSecondSeed(String firstSeedMnemonic, String secondSeedMnemonic) {
-  List<int> firstMnemonicBytes = utf8.encode(firstSeedMnemonic);
-  Digest firstMnemonicSha = sha256.convert(firstMnemonicBytes);
-  final encryptionKey = encrypt.Key.fromBase64(base64Url.encode(firstMnemonicSha.bytes));
+String encryptLeafyData(String password, String data) {
+  List<int> passwordBytes = utf8.encode(password);
+  Digest passwordSha = sha256.convert(passwordBytes);
+  final encryptionKey = encrypt.Key.fromBase64(base64Url.encode(passwordSha.bytes));
   final fernet = encrypt.Fernet(encryptionKey);
   final encrypter = encrypt.Encrypter(fernet);
-  return encrypter.encrypt(secondSeedMnemonic).base64;
+  return encrypter.encrypt(data).base64;
 }
 
 class Wallet {

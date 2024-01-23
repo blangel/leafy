@@ -4,6 +4,7 @@ import 'package:leafy/util/google_drive_remote_account.dart';
 import 'package:leafy/util/google_signin_util.dart';
 import 'package:leafy/util/remote_module.dart';
 import 'package:leafy/util/wallet.dart';
+import 'package:leafy/widget/wallet_password.dart';
 
 // Possible branches and their handling:
 // (0) [normal] locally have first-mnemonic, second-descriptor and second-mnemonic via remote-account => '/wallet'
@@ -22,27 +23,26 @@ class LeafyStartPage extends StatefulWidget {
 }
 
 enum _UiState {
-  // loading states; indeterminate branch
-  loading, foundLocal, foundRemote, noLocal, noRemote,
-  // known state
-  foundLocalAndRemote, // branch (0)[normal] above
-  foundLocalNoRemote, // branch (2)[recovery] above
-  foundRemoteNoLocal, // branch (3)[social] above
-  foundNothing // branch (1)[new|social] above
+  loadingLocal, // initial state, loading local
+  noLocal, // no local found, branch (1) or (3)
+  noLocalTryingRemote, // no local found, branch (3), attempting social-recovery so need remote account
+  noLocalFoundRemote, // no local found, branch (3), attempting social-recovery and found remote account
+  localNeedDecrypting, // found local but needs to be decrypted
+  localFailedDecryption, // found local and failed to decrypt it
+  localDecryptedNeedRemote, // found local and decrypted, branch (0) or (2), attempting remote account sign-in
 }
 
 class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMixin {
 
-  late final GoogleSignInUtil _googleSignIn;
-
-  late final RemoteModule _remoteAccount;
-
   late AnimationController _animationController;
 
-  _UiState _uiState = _UiState.loading;
+  late final RemoteModule _remoteAccount;
+  late final GoogleSignInUtil _googleSignIn;
+
+  _UiState _uiState = _UiState.loadingLocal;
   RecoveryWallet? _recoveryWallet;
-  String? _encryptedMnemonicContent;
-  String? _remoteAccountId;
+  String? _password;
+  bool _retrievingPassword = false;
 
   @override
   void initState() {
@@ -54,115 +54,97 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
     });
     _animationController.repeat();
     super.initState();
-    // TODO - validate that wallet.remoteAccountId == account.email
     getRecoveryWalletViaBiometric().then((wallet) {
-      if (wallet != null) {
-        if (_uiState == _UiState.foundRemote) {
-          setState(() {
-            _uiState = _UiState.foundLocalAndRemote;
-            _recoveryWallet = wallet;
-            decryptMnemonicContent();
-          });
-        } else if (_uiState == _UiState.noRemote) {
-          setState(() {
-            _uiState = _UiState.foundLocalNoRemote;
-            _recoveryWallet = wallet;
-          });
-          Navigator.popAndPushNamed(context, '/timelock-recovery');  // TODO - recovery via timelock path
-        } else {
-          setState(() {
-            _uiState = _UiState.foundLocal;
-            _recoveryWallet = wallet;
-          });
-        }
-      } else {
-        if (_uiState == _UiState.foundRemote) {
-          setState(() {
-            _uiState = _UiState.foundRemoteNoLocal;
-          });
-          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: _remoteAccountId!));
-        } else if (_uiState == _UiState.noRemote) {
-          setState(() {
-            _uiState = _UiState.foundNothing;
-          });
-          Navigator.popAndPushNamed(context, '/new');
-        } else {
-          setState(() {
-            _uiState = _UiState.noLocal;
-          });
+      // no local; either (1) or (3)
+      if (wallet == null) {
+        setState(() {
+          _uiState = _UiState.noLocal;
+        });
+      }
+      // local; either (0) or (2)
+      else {
+        _recoveryWallet = wallet;
+        var localState = _determineUiStateFromLocalWallet(wallet);
+        setState(() {
+          _uiState = localState;
+        });
+        if (localState == _UiState.localDecryptedNeedRemote) {
+          _googleSignIn.signIn(); // TODO - should be an abstraction over remote account
         }
       }
     });
     _googleSignIn = GoogleSignInUtil.create((account) async {
       try {
-        _remoteAccount = await GoogleDriveRemoteAccount.create(account!);
-        var encryptedContent = await _remoteAccount.getEncryptedSecondSeed();
-        globalRemoteAccountId = account.email;
-        if (context.mounted) {
+        if (!context.mounted) {
+          return;
+        }
+        if ((_uiState == _UiState.noLocalFoundRemote) && (account != null)) {
+          // TODO - get wallet password for recovery
+          String? walletPassword;
+          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: account.email, walletPassword: walletPassword));
+          return;
+        }
+        if (account == null) {
+          Navigator.popAndPushNamed(context, '/timelock-recovery'); // TODO - timelock-recovery
+          return;
+        } else {
+          globalRemoteAccountId = account.email;
+          _remoteAccount = await GoogleDriveRemoteAccount.create(account);
+          var encryptedContent = await _remoteAccount.getEncryptedSecondSeed();
+          if (!context.mounted) {
+            return;
+          }
           if (encryptedContent != null) {
-            if (_uiState == _UiState.foundLocal) {
-              setState(() {
-                _uiState = _UiState.foundLocalAndRemote;
-                _encryptedMnemonicContent = encryptedContent;
-                _remoteAccountId = account.email;
-                decryptMnemonicContent();
-              });
-            } else if (_uiState == _UiState.noLocal) {
-              setState(() {
-                _uiState = _UiState.foundRemoteNoLocal;
-                _remoteAccountId = account.email;
-                _encryptedMnemonicContent = encryptedContent;
-              });
-              Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: account.email));
+            final decrypted = decryptLeafyData(_recoveryWallet!.firstMnemonic, encryptedContent);
+            if (decrypted != null) {
+              Navigator.popAndPushNamed(context, '/wallet', arguments: KeyArguments(firstMnemonic: _recoveryWallet!.firstMnemonic, secondMnemonic: decrypted, secondDescriptor: _recoveryWallet!.secondDescriptor, walletPassword: _password));
+              return;
             } else {
-              setState(() {
-                _uiState = _UiState.foundRemote;
-                _remoteAccountId = account.email;
-                _encryptedMnemonicContent = encryptedContent;
-              });
+              Navigator.popAndPushNamed(context, '/timelock-recovery'); // TODO - timelock-recovery
+              return;
             }
           } else {
-            if (_uiState == _UiState.foundLocal) {
-              setState(() {
-                _uiState = _UiState.foundLocalNoRemote;
-              });
-              Navigator.popAndPushNamed(context, '/timelock-recovery');  // TODO - recovery via timelock path
-            } else if (_uiState == _UiState.noLocal) {
-              setState(() {
-                _uiState = _UiState.foundNothing;
-              });
-              Navigator.popAndPushNamed(context, '/new');
-            } else {
-              setState(() {
-                _uiState = _UiState.noRemote;
-              });
-            }
+            Navigator.popAndPushNamed(context, '/timelock-recovery'); // TODO - timelock-recovery
+            return;
           }
         }
       } on Exception catch(e) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text("${e.toString()}; setting up a new wallet", style: const TextStyle(color: Colors.white),),
+            content: Text("${e.toString()}; loading wallet, please retry", style: const TextStyle(color: Colors.white),),
             backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 7),
           ));
-          Navigator.popAndPushNamed(context, '/new');
+          Navigator.pop(context);
         }
       }
     });
   }
 
-  void decryptMnemonicContent() {
-    if ((_encryptedMnemonicContent == null) || (_recoveryWallet == null)) {
+  _UiState _determineUiStateFromLocalWallet(RecoveryWallet wallet) {
+    if (firstSeedMnemonicNeedsPassword(wallet.firstMnemonic)) {
+      return _UiState.localNeedDecrypting;
+    }
+    return _UiState.localDecryptedNeedRemote;
+  }
+
+  void _updatePasswordState(String? password) {
+    if (_recoveryWallet == null) {
       return;
     }
-    final decrypted = decryptSecondSeedMnemonic(_recoveryWallet!.firstMnemonic, _encryptedMnemonicContent!);
-    if (decrypted != null) {
-      Navigator.popAndPushNamed(context, '/wallet', arguments: KeyArguments(firstMnemonic: _recoveryWallet!.firstMnemonic, secondMnemonic: decrypted, secondDescriptor: _recoveryWallet!.secondDescriptor));
-      return;
+    final decryptedWallet = (password == null ? null : decryptWallet(password, _recoveryWallet!));
+    if (decryptedWallet == null) {
+      setState(() {
+        _password = null;
+        _uiState = _UiState.localFailedDecryption;
+      });
+    } else {
+      setState(() {
+        _password = password;
+        _recoveryWallet = decryptedWallet;
+        _uiState = _UiState.localDecryptedNeedRemote;
+      });
     }
-    // TODO - if local is corrupted, attempt /social-recovery, otherwise need /timelock-recovery
-    // TODO - should ask user; want to try social-recovery? otherwise need /timelock-recovery
-    Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: _remoteAccountId!));
   }
 
   @override
@@ -173,26 +155,143 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    _googleSignIn.signIn();
+    // if _UiState is localNeedDecrypting, immediately ask for password
+    if (!_retrievingPassword && _uiState == _UiState.localNeedDecrypting) {
+      Future.microtask(() {
+        _retrievingPassword = true;
+        showDialog<String>(
+          context: context,
+          builder: (BuildContext context) =>
+          const WalletPasswordDialog(newPassword: false),
+        ).then((password) {
+          _retrievingPassword = true;
+          _updatePasswordState(password);
+        });
+      });
+    }
     return buildScaffold(context, 'Wallet Check', Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Center(child: Text('Checking for existing wallet...', style: TextStyle(fontSize: 24))),
-          const SizedBox(height: 50),
-          Center(child: CircularProgressIndicator(value: _animationController.value)),
-          const SizedBox(height: 50),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              TextButton(onPressed: () {
-                _googleSignIn.signIn();
-              }, child: const Text('Retry'))
+          if (_uiState == _UiState.loadingLocal
+              || _uiState == _UiState.localNeedDecrypting)
+            ...[
+              const Center(child: Text('Checking for existing wallet...', style: TextStyle(fontSize: 24))),
+              const SizedBox(height: 50),
+              Center(child: CircularProgressIndicator(value: _animationController.value)),
+              const SizedBox(height: 100),
+            ]
+          else if (_uiState == _UiState.noLocal)
+            ...[
+              const Align(alignment: Alignment.topRight, child: Text('No existing wallet found on this device', style: TextStyle(fontSize: 24))),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.topCenter,
+                child:
+                  Row(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      TextButton(onPressed: () {
+                        Navigator.popAndPushNamed(context, '/new');
+                      }, child: const Text("create new", style: TextStyle(fontSize: 32))),
+                      const SizedBox(width: 25),
+                    ],
+                  )
+              ),
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.topCenter,
+                child:
+                  Row(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text("or attempt"),
+                      TextButton(onPressed: () {
+                        setState(() {
+                          _uiState = _UiState.noLocalTryingRemote;
+                        });
+                      }, child: const Text("recovery", style: TextStyle(fontSize: 16))),
+                      const Text("via a companion device"),
+                      const SizedBox(width: 10),
+                    ],
+                  )
+              ),
+              const SizedBox(height: 100),
+            ]
+          else if (_uiState == _UiState.noLocalTryingRemote || _uiState == _UiState.noLocalFoundRemote)
+            ...[
+              Align(
+                alignment: Alignment.topCenter,
+                child:
+                  RichText(text: TextSpan(text: "To start wallet recovery, select your existing ",
+                      style: TextStyle(fontSize: 22, color: Theme.of(context).textTheme.bodyMedium!.color),
+                      children: [
+                        TextSpan(text: "Remote Account", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyMedium!.color)),
+                        TextSpan(text: ".", style: TextStyle(fontSize: 22, color: Theme.of(context).textTheme.bodyMedium!.color))
+                      ]
+                    ),
+                  )
+              ),
+              const SizedBox(height: 50),
+              Padding(padding: const EdgeInsets.all(10), child: Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  ElevatedButton(
+                    onPressed: (_uiState == _UiState.noLocalFoundRemote) ? null : () {
+                      setState(() {
+                        _uiState = _UiState.noLocalFoundRemote;
+                        _googleSignIn.signIn();
+                      });
+                    },
+                    child: Row(mainAxisSize:MainAxisSize.min,
+                        children: [
+                          const Image(width: 50, image: AssetImage('images/google_drive_icon.png')),
+                          const SizedBox.square(dimension: 10),
+                          const Text("Google Drive", style: TextStyle(fontSize: 24),),
+                          if (_uiState == _UiState.noLocalFoundRemote)
+                            ...[const SizedBox.square(dimension: 10),
+                              Center(child: CircularProgressIndicator(value: _animationController.value)),]
+                          else
+                            ...[]
+                        ]),
+                  )
+                ],
+              )),
+              const SizedBox(height: 200),
+            ]
+          else if (_uiState == _UiState.localFailedDecryption)
+            ...[
+              const Text('Invalid password, try again?', style: TextStyle(fontSize: 24)),
+              const SizedBox(height: 10),
+              Align(alignment: Alignment.centerRight, child: TextButton(onPressed: () {
+                setState(() {
+                  _retrievingPassword = false;
+                  _uiState = _UiState.localNeedDecrypting;
+                });
+              }, child: const Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text('Yes', style: TextStyle(fontSize: 24)),
+                  SizedBox(width: 10),
+                  Icon(Icons.restart_alt)
+                ]))),
+              const SizedBox(height: 100),
+            ]
+          else
+            ...[
+              const Center(child: Text('Loading existing wallet...', style: TextStyle(fontSize: 24))),
+              const SizedBox(height: 50),
+              Center(child: CircularProgressIndicator(value: _animationController.value)),
+              const SizedBox(height: 100),
             ],
-          )
         ],
       ),
     ));

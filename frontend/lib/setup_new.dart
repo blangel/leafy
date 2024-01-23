@@ -6,6 +6,7 @@ import 'package:leafy/util/google_drive_remote_account.dart';
 import 'package:leafy/util/google_signin_util.dart';
 import 'package:leafy/util/remote_module.dart';
 import 'package:leafy/util/wallet.dart';
+import 'package:leafy/widget/wallet_password.dart';
 
 class LeafySetupNewPage extends StatefulWidget {
   const LeafySetupNewPage({super.key});
@@ -32,9 +33,7 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
   late final RemoteModule _remoteAccount;
 
   bool _advancedTileExpanded = false;
-  final TextEditingController _passwordController = TextEditingController();
   String? _password;
-  bool _showPassword = false;
 
   @override
   void initState() {
@@ -57,10 +56,10 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
       try {
         if (account != null) {
           _remoteAccount = await GoogleDriveRemoteAccount.create(account);
-          await persistLocally(_wallet.firstMnemonic, _wallet.secondDescriptor, account.email);
+          await persistLocallyViaBiometric(_password, _wallet.firstMnemonic, _wallet.secondDescriptor, account.email);
           await persistRemotely(_wallet.firstMnemonic, _wallet.secondMnemonic);
           if (context.mounted) {
-            Navigator.popAndPushNamed(context, '/wallet', arguments: KeyArguments(firstMnemonic: _wallet.firstMnemonic, secondMnemonic: _wallet.secondMnemonic, secondDescriptor: _wallet.secondDescriptor));
+            Navigator.popAndPushNamed(context, '/wallet', arguments: KeyArguments(firstMnemonic: _wallet.firstMnemonic, secondMnemonic: _wallet.secondMnemonic, secondDescriptor: _wallet.secondDescriptor, walletPassword: _password));
           }
         } else {
           if (context.mounted) {
@@ -86,7 +85,6 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
   @override
   void dispose() {
     _animationController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -169,82 +167,17 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
                   if (_password != null) {
                     setState(() {
                       _password = null;
-                      _passwordController.clear();
-                      _showPassword = false;
                     });
                     return;
                   }
                   showDialog<String>(
                     context: context,
-                    builder: (BuildContext context) => AlertDialog(
-                      title: const Text('Wallet Password'),
-                      content: StatefulBuilder(
-                        builder: (BuildContext context, StateSetter setState) {
-                          return AutofillGroup(child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(padding: const EdgeInsets.fromLTRB(0, 0, 0, 20),
-                                  child: RichText(text: TextSpan(text: "Leafy does not recommend using a password. ",
-                                      style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium!.color),
-                                      children: [
-                                        TextSpan(text: "Read the documentation", style: TextStyle(fontSize: 14, decoration: TextDecoration.underline, color: Theme.of(context).textTheme.bodyMedium!.color),
-                                          recognizer: TapGestureRecognizer()..onTap = () { launchDocumentation(documentationPasswordUrl); }
-                                        ),
-                                        TextSpan(text: " for further context in terms of the risks and rationale for setting a password.", style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium!.color))
-                                      ]
-                                    ),
-                                  ),
-                              ),
-                              TextField(
-                                  controller: _passwordController,
-                                  autofillHints: const [AutofillHints.password],
-                                  decoration: InputDecoration(
-                                    border: const OutlineInputBorder(),
-                                    hintText: 'Enter a wallet password',
-                                    suffixIcon: IconButton(
-                                      icon: _showPassword ? const Icon(Icons.visibility_off) : const Icon(Icons.visibility),
-                                      onPressed: () {
-                                        setState(() {
-                                          _showPassword = !_showPassword;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                  obscureText: !_showPassword,
-                                  enableSuggestions: false,
-                                  autocorrect: false
-                              )
-                            ],
-                          ));
-                        }
-                      ),
-                      actions: <Widget>[
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _password = null;
-                              _passwordController.clear();
-                              _showPassword = false;
-                            });
-                            Navigator.pop(context, 'Cancel');
-                          },
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _password = _passwordController.text;
-                            });
-                            TextInput.finishAutofillContext();
-                            Navigator.pop(context, 'Use');
-                          },
-                          child: const Text('Use'),
-                        ),
-                      ],
-                    ),
-                  );
+                    builder: (BuildContext context) => const WalletPasswordDialog(),
+                  ).then((password) {
+                    setState(() {
+                      _password = password;
+                    });
+                  });
                 }
               ),
               isExpanded: _advancedTileExpanded || (_password != null),
@@ -257,12 +190,8 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
     ));
   }
 
-  Future<void> persistLocally(String firstMnemonic, String secondDescriptor, String remoteAccountId) async {
-    await persistLocallyViaBiometric(firstMnemonic, secondDescriptor, remoteAccountId);
-  }
-
   Future<void> persistRemotely(String firstMnemonic, String secondMnemonic) async {
-    final secondMnemonicEncrypted = encryptSecondSeed(firstMnemonic, secondMnemonic);
+    final secondMnemonicEncrypted = encryptLeafyData(firstMnemonic, secondMnemonic);
     final validator = DefaultSecondSeedValidator.create(firstMnemonic, secondMnemonic);
     final valid = await _remoteAccount.persistEncryptedSecondSeed(secondMnemonicEncrypted, validator);
     if (!valid) {

@@ -44,28 +44,36 @@ ThemeData getDarkTheme() {
 }
 
 Scaffold buildHomeScaffold(BuildContext context, String title, Widget body) {
-  return _buildScaffold(context, title, body, false, false);
+  return _buildScaffold(context, title, body, false, _Recovery.none);
 }
 
-Scaffold buildHomeScaffoldWithRestore(BuildContext context, String title, Widget body) {
-  return _buildScaffold(context, title, body, false, true);
+Scaffold buildHomeScaffoldWithRestore(BuildContext context, String title, String? walletPassword, Widget body) {
+  return _buildScaffold(context, title, body, false, _Recovery(walletPassword));
 }
 
 Scaffold buildScaffold(BuildContext context, String title, Widget body) {
-  return _buildScaffold(context, title, body, true, false);
+  return _buildScaffold(context, title, body, true, _Recovery.none);
 }
 
-Scaffold _buildScaffold(BuildContext context, String title, Widget body, bool addLeading, bool addRecovery) {
+class _Recovery {
+  static final _Recovery none = _Recovery(null);
+
+  final String? walletPassword;
+
+  _Recovery(this.walletPassword);
+}
+
+Scaffold _buildScaffold(BuildContext context, String title, Widget body, bool addLeading, _Recovery recovery) {
   return Scaffold(
     appBar: AppBar(
       backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       title: Text(title),
-      actions: addRecovery ? [
+      actions: recovery != _Recovery.none ? [
         PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert),
           onSelected: (String value) {
             if (value == 'recovery') {
-              Navigator.pushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.branch, remoteAccountId: globalRemoteAccountId));
+              Navigator.pushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.branch, remoteAccountId: globalRemoteAccountId, walletPassword: recovery.walletPassword));
             } else if (value == 'settings') {
               // TODO - settings
             } else {
@@ -138,8 +146,9 @@ class KeyArguments {
   final String firstMnemonic;
   final String secondDescriptor;
   final String? secondMnemonic;
+  final String? walletPassword;
 
-  KeyArguments({required this.firstMnemonic, required this.secondDescriptor, required this.secondMnemonic});
+  KeyArguments({required this.firstMnemonic, required this.secondDescriptor, required this.secondMnemonic, required this.walletPassword});
 }
 
 class TransactionsArguments {
@@ -215,21 +224,30 @@ enum SocialRecoveryType {
 
 class SocialRecoveryArguments {
   final SocialRecoveryType type;
+  final String? walletPassword;
   final String remoteAccountId;
   final String? assistingWithCompanionId;
 
-  SocialRecoveryArguments({required this.type, required this.remoteAccountId, this.assistingWithCompanionId});
+  SocialRecoveryArguments({required this.type, required this.walletPassword, required this.remoteAccountId, this.assistingWithCompanionId});
 }
 
 // TODO - update to use biometric_storage (https://pub.dev/packages/biometric_storage) instead of flutter_secure_storage ?
 
-Future<void> persistLocallyViaBiometric(String firstMnemonic, String secondDescriptor, String remoteAccountId) async {
+Future<void> persistLocallyViaBiometric(String? password, String firstMnemonic, String secondDescriptor, String remoteAccountId) async {
   const storage = FlutterSecureStorage(aOptions: AndroidOptions(
     encryptedSharedPreferences: true,
   ));
-  storage.write(key: 'leafy:firstMnemonic', value: firstMnemonic);
-  storage.write(key: 'leafy:secondDescriptor', value: secondDescriptor);
-  storage.write(key: 'leafy:remoteAccountId', value: remoteAccountId);
+  var firstSeedData = firstMnemonic;
+  var secondDescriptorData = secondDescriptor;
+  var remoteAccountIdData = remoteAccountId;
+  if (password != null) {
+    firstSeedData = encryptLeafyData(password, firstSeedData);
+    secondDescriptorData = encryptLeafyData(password, secondDescriptorData);
+    remoteAccountIdData = encryptLeafyData(password, remoteAccountIdData);
+  }
+  storage.write(key: 'leafy:firstMnemonic', value: firstSeedData);
+  storage.write(key: 'leafy:secondDescriptor', value: secondDescriptorData);
+  storage.write(key: 'leafy:remoteAccountId', value: remoteAccountIdData);
 }
 
 Future<RecoveryWallet?> getRecoveryWalletViaBiometric() async {
