@@ -518,7 +518,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         ),
                         onDetect: (capture) {
                           if (capture.barcodes.isNotEmpty && (capture.barcodes.first.rawValue != null)) {
-                            _validateCompanionPublicKey(null, capture.barcodes.first.rawValue!, arguments.remoteAccountId);
+                            _validateCompanionPublicKey(arguments.walletPassword, capture.barcodes.first.rawValue!, arguments.remoteAccountId);
                           }
                         },
                       ))),
@@ -540,7 +540,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                           labelText: 'Companion Data',
                         ),
                         onChanged: (data) {
-                          _validateCompanionPublicKey(null, data, arguments.remoteAccountId);
+                          _validateCompanionPublicKey(arguments.walletPassword, data, arguments.remoteAccountId);
                         },
                       )
                   )

@@ -69,7 +69,7 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
           _uiState = localState;
         });
         if (localState == _UiState.localDecryptedNeedRemote) {
-          _googleSignIn.signIn(); // TODO - should be an abstraction over remote account
+          _remoteAccountLogin();
         }
       }
     });
@@ -93,7 +93,7 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
             return;
           }
           if (encryptedContent != null) {
-            final decrypted = decryptLeafyData(_recoveryWallet!.firstMnemonic, encryptedContent);
+            final decrypted = decryptLeafyData(_recoveryWallet!.firstMnemonic, encryptedContent, mnemonicLength);
             if (decrypted != null) {
               Navigator.popAndPushNamed(context, '/wallet', arguments: KeyArguments(firstMnemonic: _recoveryWallet!.firstMnemonic, secondMnemonic: decrypted, secondDescriptor: _recoveryWallet!.secondDescriptor, walletPassword: _password));
               return;
@@ -126,6 +126,10 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
     return _UiState.localDecryptedNeedRemote;
   }
 
+  Future<void> _remoteAccountLogin() async {
+    _googleSignIn.signIn(); // TODO - should be an abstraction over remote account
+  }
+
   void _updatePasswordState(String? password) {
     if (_recoveryWallet == null) {
       return;
@@ -141,6 +145,7 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
         _password = password;
         _recoveryWallet = decryptedWallet;
         _uiState = _UiState.localDecryptedNeedRemote;
+        _remoteAccountLogin();
       });
     }
   }

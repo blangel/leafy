@@ -91,7 +91,7 @@ func CreateAndSignTransaction(
 		return nil, err
 	}
 	msgTx := tx.MsgTx.Copy()
-	signingKeys, err := findSigningKeysTBD(params, wallet, tx)
+	signingKeys, err := findSigningKeys(params, wallet, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ type signingKeys struct {
 	merkleRoot        []byte
 }
 
-func findSigningKeysTBD(
+func findSigningKeys(
 	params *chaincfg.Params,
 	wallet Wallet,
 	transactionInfo *TransactionInfo,

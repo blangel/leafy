@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:leafy/globals.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 
+const mnemonicLength = 24;
+
 Future<Wallet> createNewWallet() async {
   try {
     List<int> jsonBytes = await platform.invokeMethod("createNewWallet", <String, dynamic>{
@@ -25,22 +27,22 @@ bool firstSeedMnemonicNeedsPassword(String firstSeedMnemonic) {
 }
 
 RecoveryWallet? decryptWallet(String password, RecoveryWallet wallet) {
-  final firstMnemonic = decryptLeafyData(password, wallet.firstMnemonic);
+  final firstMnemonic = decryptLeafyData(password, wallet.firstMnemonic, mnemonicLength);
   if (firstMnemonic == null) {
     return null;
   }
-  final secondDescriptor = decryptLeafyData(password, wallet.secondDescriptor);
+  final secondDescriptor = decryptLeafyData(password, wallet.secondDescriptor, 1);
   if (secondDescriptor == null) {
     return null;
   }
-  final remoteAccountId = decryptLeafyData(password, wallet.remoteAccountId);
+  final remoteAccountId = decryptLeafyData(password, wallet.remoteAccountId, 1);
   if (remoteAccountId == null) {
     return null;
   }
   return RecoveryWallet(firstMnemonic: firstMnemonic, secondDescriptor: secondDescriptor, remoteAccountId: remoteAccountId);
 }
 
-String? decryptLeafyData(String password, String data) {
+String? decryptLeafyData(String password, String data, int lengthCheck) {
   List<int> passwordBytes = utf8.encode(password);
   Digest passwordSha = sha256.convert(passwordBytes);
   final encryptionKey = encrypt.Key.fromBase64(base64Url.encode(passwordSha.bytes));
@@ -49,7 +51,7 @@ String? decryptLeafyData(String password, String data) {
   try {
     final decrypted = encrypter.decrypt64(data);
     var split = decrypted.split(' ');
-    if (split.length == 24) {
+    if (split.length == lengthCheck) {
       return decrypted;
     }
     log("invalid decrypted data (length of ${split.length})");

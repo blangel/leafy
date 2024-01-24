@@ -56,6 +56,7 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
       try {
         if (account != null) {
           _remoteAccount = await GoogleDriveRemoteAccount.create(account);
+          globalRemoteAccountId = account.email;
           await persistLocallyViaBiometric(_password, _wallet.firstMnemonic, _wallet.secondDescriptor, account.email);
           await persistRemotely(_wallet.firstMnemonic, _wallet.secondMnemonic);
           if (context.mounted) {
