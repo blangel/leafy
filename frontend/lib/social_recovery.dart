@@ -205,7 +205,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         ),
                         onDetect: (capture) {
                           if (capture.barcodes.isNotEmpty && (capture.barcodes.first.rawValue != null)) {
-                            _validateCompanionPublicKey(arguments.walletPassword, capture.barcodes.first.rawValue!, arguments.remoteAccountId);
+                            _validateCompanionPublicKey(capture.barcodes.first.rawValue!, arguments.remoteAccountId);
                           }
                         },
                       ))),
@@ -227,7 +227,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                           labelText: 'Companion Data',
                         ),
                         onChanged: (data) {
-                          _validateCompanionPublicKey(arguments.walletPassword, data, arguments.remoteAccountId);
+                          _validateCompanionPublicKey(data, arguments.remoteAccountId);
                         },
                       )
                   )
@@ -518,7 +518,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         ),
                         onDetect: (capture) {
                           if (capture.barcodes.isNotEmpty && (capture.barcodes.first.rawValue != null)) {
-                            _validateCompanionPublicKey(arguments.walletPassword, capture.barcodes.first.rawValue!, arguments.remoteAccountId);
+                            _validateCompanionPublicKey(capture.barcodes.first.rawValue!, arguments.remoteAccountId);
                           }
                         },
                       ))),
@@ -540,7 +540,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                           labelText: 'Companion Data',
                         ),
                         onChanged: (data) {
-                          _validateCompanionPublicKey(arguments.walletPassword, data, arguments.remoteAccountId);
+                          _validateCompanionPublicKey(data, arguments.remoteAccountId);
                         },
                       )
                   )
@@ -580,7 +580,11 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
       var wrapped = CompanionRecoveryWalletWrapper.fromJson(json);
       json = jsonDecode(wrapped.serializedWallet);
     }
-    var wallet = RecoveryWallet.fromJson(remoteAccountId, json);
+    var remoteAccountIdForWallet = remoteAccountId;
+    if (walletPassword != null) {
+      remoteAccountIdForWallet = encryptLeafyData(walletPassword, remoteAccountId);
+    }
+    var wallet = RecoveryWallet.fromJson(remoteAccountIdForWallet, json);
     if (walletPassword != null) {
       final decryptedWallet = decryptWallet(walletPassword, wallet);
       if (decryptedWallet == null) {
@@ -593,7 +597,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     }
     await persistLocallyViaBiometric(walletPassword, wallet.firstMnemonic, wallet.secondDescriptor, remoteAccountId);
     if (mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/start', (route) => false);
+      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
     }
   }
 
@@ -608,7 +612,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     }
   }
 
-  void _validateCompanionPublicKey(String? walletPassword, String publicKeyHex, String self) async {
+  void _validateCompanionPublicKey(String publicKeyHex, String self) async {
     bool result = await _validateEphemeralSocialPublicKeyNatively(publicKeyHex);
     if (!result) {
       if (mounted) {
@@ -618,9 +622,9 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     } else {
       String walletData;
       if (self == _assistingWithCompanionId) {
-        walletData = await getRecoveryWalletSerialized(walletPassword);
+        walletData = await getRecoveryWalletSerialized();
       } else if (_assistingWithCompanionId == null) {
-        walletData = await getRecoveryWalletSerializedForCompanion(walletPassword);
+        walletData = await getRecoveryWalletSerializedForCompanion();
       } else {
         var companionSerialized = await getCompanionIdWalletSerialized(_assistingWithCompanionId!);
         if (companionSerialized == null) {
@@ -669,6 +673,16 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
   }
 
   Future<String> _encryptWithEphemeralSocialPublicKeyNatively(String publicKeyHex, String data) async {
+    List<String> chunks = _splitForEncryptionWrapping(data);
+    List<String> encryptedChunks = [];
+    for (String chunk in chunks) {
+      final encryptedChunk = await _encryptChunkedWithEphemeralSocialPublicKeyNatively(publicKeyHex, chunk);
+      encryptedChunks.add(encryptedChunk);
+    }
+    return jsonEncode(encryptedChunks);
+  }
+
+  Future<String> _encryptChunkedWithEphemeralSocialPublicKeyNatively(String publicKeyHex, String data) async {
     try {
       return await platform.invokeMethod("encryptWithEphemeralSocialPublicKey", <String, dynamic>{
         'publicKeyHex': publicKeyHex,
@@ -680,6 +694,16 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
   }
 
   Future<String> _decryptWithEphemeralSocialPrivateKeyNatively(String privateKeyHex, String encrypted) async {
+    List<dynamic> encryptedChunks = jsonDecode(encrypted);
+    List<String> chunks = [];
+    for (String encryptedChunk in encryptedChunks) {
+      final chunk = await _decryptChunkedWithEphemeralSocialPrivateKeyNatively(privateKeyHex, encryptedChunk);
+      chunks.add(chunk);
+    }
+    return chunks.join();
+  }
+
+  Future<String> _decryptChunkedWithEphemeralSocialPrivateKeyNatively(String privateKeyHex, String encrypted) async {
     try {
       return await platform.invokeMethod("decryptWithEphemeralSocialPrivateKey", <String, dynamic>{
         'privateKeyHex': privateKeyHex,
@@ -688,6 +712,18 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     } on PlatformException catch (e) {
       throw ArgumentError("failed to decryptWithEphemeralSocialPrivateKey: $e");
     }
+  }
+
+  List<String> _splitForEncryptionWrapping(String data) {
+    // Leafy uses 4096 RSA keys, split data into 500 length chunks
+    List<String> chunks = [];
+    int start = 0;
+    while (start < data.length) {
+      int end = start + 500 < data.length ? start + 500 : data.length;
+      chunks.add(data.substring(start, end));
+      start += 500;
+    }
+    return chunks;
   }
 
 }

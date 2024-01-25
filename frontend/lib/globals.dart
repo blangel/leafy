@@ -276,21 +276,19 @@ Future<List<String>> getCompanionIds() async {
       .map((element) => element.substring(keyPrefix.length)).toList();
 }
 
-Future<String> getRecoveryWalletSerialized(String? walletPassword) async {
+Future<String> getRecoveryWalletSerialized() async {
   RecoveryWallet? wallet = await getRecoveryWalletViaBiometric();
   if (wallet == null) {
     throw Exception("no wallet found");
   }
-  wallet = encryptWallet(walletPassword, wallet);
   return jsonEncode(wallet.toJson());
 }
 
-Future<String> getRecoveryWalletSerializedForCompanion(String? walletPassword) async {
+Future<String> getRecoveryWalletSerializedForCompanion() async {
   RecoveryWallet? wallet = await getRecoveryWalletViaBiometric();
   if (wallet == null) {
     throw Exception("no wallet found");
   }
-  wallet = encryptWallet(walletPassword, wallet);
   var walletSerialized = jsonEncode(wallet.toJson());
   CompanionRecoveryWalletWrapper wrapper = CompanionRecoveryWalletWrapper(companionId: wallet.remoteAccountId, serializedWallet: walletSerialized);
   return jsonEncode(wrapper.toJson());
