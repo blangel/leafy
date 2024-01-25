@@ -22,6 +22,14 @@ class GoogleDriveUtil {
 
   GoogleDriveUtil._(this._driveApi);
 
+  Future<String> updateFile(File file, String data) async {
+    List<int> dataBytes = utf8.encode(data);
+    Stream<List<int>> dataStream = Stream.fromIterable([dataBytes]);
+    var media = Media(dataStream, dataBytes.length);
+    final updatedFile = await _driveApi.files.update(file, file.id!, uploadMedia: media);
+    return getContent(updatedFile.id!);
+  }
+
   Future<List<Tuple2<File, List<File>?>>?> getFileFromAppDirectory(String fileName) async {
     return getFileFromDirectory(_googleDriveAppDataFolder, fileName);
   }

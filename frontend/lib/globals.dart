@@ -265,7 +265,7 @@ Future<RecoveryWallet?> getRecoveryWalletViaBiometric() async {
 }
 
 Future<List<String>> getCompanionIds() async {
-  // TODO - pull from local but need to think of place to sync between local and remote
+  // TODO - pull from remote and merge with local (need to think of place to sync between local and remote)
   const storage = FlutterSecureStorage(aOptions: AndroidOptions(
     encryptedSharedPreferences: true,
   ));
@@ -307,7 +307,6 @@ Future<String?> getCompanionIdWalletSerialized(String companionId) async {
 }
 
 Future<void> persistCompanionLocallyViaBiometric(String serialized, String companionId) async {
-  // TODO - store remotely as well
   const storage = FlutterSecureStorage(aOptions: AndroidOptions(
     encryptedSharedPreferences: true,
   ));

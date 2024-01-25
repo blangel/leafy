@@ -605,6 +605,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     String decrypted = await _decryptWithEphemeralSocialPrivateKeyNatively(_socialKeyPair!.privateKey, encryptedData);
     var wrapper = CompanionRecoveryWalletWrapper.fromJson(jsonDecode(decrypted));
     await persistCompanionLocallyViaBiometric(wrapper.serializedWallet, wrapper.companionId);
+    // TODO - persist via remote-account
     if (mounted) {
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Successfully setup recovery device', overflow: TextOverflow.ellipsis,), showCloseIcon: true));

@@ -10,6 +10,8 @@ class GoogleDriveRemoteAccount extends RemoteModule {
 
   static const _leafyMnemonicFileName = 'mnemonic_phrase';
 
+  static const _leafyCompanionFileNamePrefix = 'companion';
+
   static Future<GoogleDriveRemoteAccount> create(GoogleSignInAccount account) async {
     var util = await GoogleDriveUtil.create(account);
     return GoogleDriveRemoteAccount._(util);
@@ -19,6 +21,9 @@ class GoogleDriveRemoteAccount extends RemoteModule {
 
   GoogleDriveRemoteAccount._(this._driveApi);
 
+  // Retrieves the Second Seed encrypted value from the user's Google Drive account, first
+  // pulling from the application directory and if not present pulling from the user drive directly.
+  // If found, the data is encrypted and will need to be decrypted based on 'First Seed'.
   @override
   Future<String?> getEncryptedSecondSeed() async {
     // first retrieve from application directory (since unmodifiable by user), fallback to user directory if not found
@@ -46,6 +51,8 @@ class GoogleDriveRemoteAccount extends RemoteModule {
     return _driveApi.getContent(mnemonicFile.id!);
   }
 
+  // Persists 'encryptedSecondSeed' within the application directory and directly within the user drive.
+  // Note, callers should first encrypt data based on 'First Seed'.
   @override
   Future<bool> persistEncryptedSecondSeed(String encryptedSecondSeed, SecondSeedValidator validator) async {
     // store in both Google Drive application directory and a user accessible directory
@@ -61,4 +68,35 @@ class GoogleDriveRemoteAccount extends RemoteModule {
     return await _driveApi.createAndRetrieveFileFromAppDirectory(_leafyMnemonicFileName, encryptedSecondSeed);
   }
 
+  // Persists 'encryptedData' within the application directory on behalf of companionId. Note, callers should
+  // first encrypt data based on 'First Seed' Public Key.
+  @override
+  Future<bool> persistCompanionData(String companionId, String encryptedData) async {
+    String companionFileName = _getCompanionFileName(companionId);
+    var existing = await _driveApi.getFileFromAppDirectory(companionFileName);
+    if (existing == null || existing.isEmpty) {
+      String persisted = await _driveApi.createAndRetrieveFileFromAppDirectory(_getCompanionFileName(companionId), encryptedData);
+      return (persisted == encryptedData);
+    } else {
+      var companionFile = existing.first.item2!.first;
+      String persisted = await _driveApi.updateFile(companionFile, encryptedData);
+      return (persisted == encryptedData);
+    }
+  }
+
+  // Retrieves persisted data within the application directory on behalf of companionId. If found, the data
+  // is encrypted and will need to be decrypted based on 'First Seed' Private Key.
+  @override
+  Future<String?> getCompanionData(String companionId) async {
+    var results = await _driveApi.getFileFromAppDirectory(_getCompanionFileName(companionId));
+    if (results == null || results.isEmpty) {
+      return null;
+    }
+    var companionFile = results.first.item2!.first;
+    return await _driveApi.getContent(companionFile.id!);
+  }
+
+  static String _getCompanionFileName(String companionId) {
+    return "${_leafyCompanionFileNamePrefix}_$companionId";
+  }
 }
