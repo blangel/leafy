@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:leafy/globals.dart';
 import 'package:flutter/gestures.dart';
 import 'package:leafy/util/google_drive_remote_account.dart';
