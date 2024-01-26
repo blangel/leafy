@@ -597,6 +597,8 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     }
     await persistLocallyViaBiometric(walletPassword, wallet.firstMnemonic, wallet.secondDescriptor, remoteAccountId);
     if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Successfully recovered wallet! Re-authenticate with remote-account to continue.', overflow: TextOverflow.ellipsis,), duration: Duration(seconds: 7), showCloseIcon: true));
       Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
     }
   }
