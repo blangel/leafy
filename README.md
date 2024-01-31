@@ -94,10 +94,10 @@ To assist a user in recovering their Leafy wallet in case of various loss scenar
 
 Here are the Recovery Methods supported or being developed by Leafy.
 
-| Recovery Method    | Description                                                                                                                                                                                         |       Status |
-|:-------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------:|
-| Companion Device ✅ | Leverages trusted companions to store backups of a user's seed phrase and timelocks to recover from Remote Account access loss. This is [defined in depth below](#2a-companion-device-recovery).    | Supported 💪 |
-| Social Bond        | Leverages trusted companions to pledge a [UTXO](https://river.com/learn/bitcoins-utxo-model/) to aid in recovery of a user's UTXO set. This is [discussed further below](#2b-social-bond-recovery). |  Research 🔬 |
+| Recovery Method    | Description                                                                                                                                                                                             |       Status |
+|:-------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------:|
+| Companion Device ✅ | Leverages trusted companions to store backups of a user's Phone data and Bitcoin timelocks to recover from Remote Account access loss. This is [defined in depth below](#2a-companion-device-recovery). | Supported 💪 |
+| Social Bond        | Leverages trusted companions to pledge a [UTXO](https://river.com/learn/bitcoins-utxo-model/) to aid in recovery of a user's UTXO set. This is [discussed further below](#2b-social-bond-recovery).     |  Research 🔬 |
 
 Continue to [Recovery](#2-recovery) for more details about each and to see a [comparison](#2c-companion-device-and-social-bond-comparison) between the two.
 

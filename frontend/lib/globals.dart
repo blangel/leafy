@@ -284,13 +284,17 @@ Future<String> getRecoveryWalletSerialized() async {
   return jsonEncode(wallet.toJson());
 }
 
-Future<String> getRecoveryWalletSerializedForCompanion() async {
+Future<String> getRecoveryWalletSerializedForCompanion(String? walletPassword) async {
   RecoveryWallet? wallet = await getRecoveryWalletViaBiometric();
   if (wallet == null) {
     throw Exception("no wallet found");
   }
+  String? companionId = wallet.remoteAccountId;
+  if (walletPassword != null) {
+    companionId = decryptLeafyData(walletPassword, companionId, 1);
+  }
   var walletSerialized = jsonEncode(wallet.toJson());
-  CompanionRecoveryWalletWrapper wrapper = CompanionRecoveryWalletWrapper(companionId: wallet.remoteAccountId, serializedWallet: walletSerialized);
+  CompanionRecoveryWalletWrapper wrapper = CompanionRecoveryWalletWrapper(companionId: companionId!, serializedWallet: walletSerialized);
   return jsonEncode(wrapper.toJson());
 }
 

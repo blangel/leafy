@@ -5,6 +5,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:leafy/globals.dart';
+import 'package:leafy/util/google_drive_remote_account.dart';
+import 'package:leafy/util/google_signin_util.dart';
+import 'package:leafy/util/remote_module.dart';
 import 'package:leafy/util/wallet.dart';
 import 'package:leafy/widget/address.dart';
 import 'package:leafy/widget/wallet_password.dart';
@@ -39,6 +42,12 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
 
   _SocialKeyPair? _socialKeyPair;
   bool _attemptDataDecrypt = false;
+  bool _askForRemoteAccountPersistence = false;
+  bool _loggingInRemoteAccount = false;
+  bool _remoteAccountPersistenceFailed = false;
+  CompanionRecoveryWalletWrapper? _companionWallet;
+  late final GoogleSignInUtil _googleSignIn;
+  late final RemoteModule _remoteAccount;
 
   String? _encryptedData;
 
@@ -54,6 +63,31 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     _loadCompanionIds();
     _createSocialEphemeralKeyPair();
     _setRevertibleBrightness();
+    _googleSignIn = GoogleSignInUtil.create((account) async {
+      try {
+        if (account != null) {
+          _remoteAccount = await GoogleDriveRemoteAccount.create(account);
+          var data = _companionWallet!.serializedWallet;
+          // TODO - encrypt 'data' with First Seed Public Key
+          var result = await _remoteAccount.persistCompanionData(_companionWallet!.companionId, data);
+          if (result) {
+            _finalizeAssistanceForCompanion();
+            return;
+          }
+        }
+      } on Exception catch(e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e.toString(), style: const TextStyle(color: Colors.white),),
+            backgroundColor: Colors.redAccent,
+          ));
+        }
+      }
+      setState(() {
+        _remoteAccountPersistenceFailed = true;
+        _loggingInRemoteAccount = false;
+      });
+    });
   }
 
   @override
@@ -205,7 +239,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         ),
                         onDetect: (capture) {
                           if (capture.barcodes.isNotEmpty && (capture.barcodes.first.rawValue != null)) {
-                            _validateCompanionPublicKey(capture.barcodes.first.rawValue!, arguments.remoteAccountId);
+                            _validateCompanionPublicKey(arguments.walletPassword, capture.barcodes.first.rawValue!, arguments.remoteAccountId);
                           }
                         },
                       ))),
@@ -227,7 +261,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                           labelText: 'Companion Data',
                         ),
                         onChanged: (data) {
-                          _validateCompanionPublicKey(data, arguments.remoteAccountId);
+                          _validateCompanionPublicKey(arguments.walletPassword, data, arguments.remoteAccountId);
                         },
                       )
                   )
@@ -301,6 +335,34 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                             TextSpan(text: ".", style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium!.color)),
                           ])
                       ))
+                ]
+              else if (_askForRemoteAccountPersistence)
+                ...[
+                  Padding(padding: const EdgeInsets.all(20), child: Text(_remoteAccountPersistenceFailed ? 'Failed to save companion data on your Remote Account (however, it is already successfully saved locally).'
+                      : 'Companion data successfully saved locally!', style: const TextStyle(fontSize: 24))),
+                  Padding(padding: const EdgeInsets.all(20), child: Text(_remoteAccountPersistenceFailed ? 'Would you like to retry saving the companion data on your Remote Account?'
+                      : 'Would you want to persist this companion data on your Remote Account as well?', style: const TextStyle(fontSize: 24))),
+                  Padding(padding: const EdgeInsets.all(20), child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: _loggingInRemoteAccount ? null : () {
+                          _finalizeAssistanceForCompanion();
+                        },
+                        child: const Text("No", style: TextStyle(fontSize: 24)),
+                      ),
+                      TextButton(
+                        onPressed: _loggingInRemoteAccount ? null : () {
+                          setState(() {
+                            _loggingInRemoteAccount = true;
+                            _googleSignIn.signIn();
+                          });
+                        },
+                        child: Text(_loggingInRemoteAccount ? 'Logging-in...' : 'Yes', style: const TextStyle(fontSize: 24)),
+                      ),
+                    ]
+                  )),
+                  const SizedBox(height: 150),
                 ]
               else
                 ...[
@@ -518,7 +580,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         ),
                         onDetect: (capture) {
                           if (capture.barcodes.isNotEmpty && (capture.barcodes.first.rawValue != null)) {
-                            _validateCompanionPublicKey(capture.barcodes.first.rawValue!, arguments.remoteAccountId);
+                            _validateCompanionPublicKey(arguments.walletPassword, capture.barcodes.first.rawValue!, arguments.remoteAccountId);
                           }
                         },
                       ))),
@@ -540,7 +602,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                           labelText: 'Companion Data',
                         ),
                         onChanged: (data) {
-                          _validateCompanionPublicKey(data, arguments.remoteAccountId);
+                          _validateCompanionPublicKey(arguments.walletPassword, data, arguments.remoteAccountId);
                         },
                       )
                   )
@@ -607,15 +669,24 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     String decrypted = await _decryptWithEphemeralSocialPrivateKeyNatively(_socialKeyPair!.privateKey, encryptedData);
     var wrapper = CompanionRecoveryWalletWrapper.fromJson(jsonDecode(decrypted));
     await persistCompanionLocallyViaBiometric(wrapper.serializedWallet, wrapper.companionId);
-    // TODO - persist via remote-account
+    setState(() {
+      _companionWallet = wrapper;
+      _askForRemoteAccountPersistence = true;
+    });
+  }
+
+  void _finalizeAssistanceForCompanion() {
     if (mounted) {
+      setState(() {
+        _loggingInRemoteAccount = false;
+      });
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Successfully setup recovery device', overflow: TextOverflow.ellipsis,), showCloseIcon: true));
       Navigator.pop(context);
     }
   }
 
-  void _validateCompanionPublicKey(String publicKeyHex, String self) async {
+  void _validateCompanionPublicKey(String? walletPassword, String publicKeyHex, String self) async {
     bool result = await _validateEphemeralSocialPublicKeyNatively(publicKeyHex);
     if (!result) {
       if (mounted) {
@@ -627,7 +698,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
       if (self == _assistingWithCompanionId) {
         walletData = await getRecoveryWalletSerialized();
       } else if (_assistingWithCompanionId == null) {
-        walletData = await getRecoveryWalletSerializedForCompanion();
+        walletData = await getRecoveryWalletSerializedForCompanion(walletPassword);
       } else {
         var companionSerialized = await getCompanionIdWalletSerialized(_assistingWithCompanionId!);
         if (companionSerialized == null) {
