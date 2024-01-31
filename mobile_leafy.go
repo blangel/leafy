@@ -231,6 +231,32 @@ func MobileDecryptWithEphemeralSocialPrivateKey(privateKeyHex string, encrypted 
 	return decrypted, nil
 }
 
+func MobileEncryptUtilizingFirstSeed(networkName string, firstMnemonic string, data string) (string, error) {
+	params, err := parseNetworkName(networkName)
+	if err != nil {
+		return "", wrapError(err)
+	}
+	wallet := NewRecoveryWallet(firstMnemonic, "")
+	encrypted, err := EncryptUtilizingFirstSeed(params, wallet, data)
+	if err != nil {
+		return "", wrapError(err)
+	}
+	return encrypted, nil
+}
+
+func MobileDecryptUtilizingFirstSeed(networkName string, firstMnemonic string, encrypted string) (string, error) {
+	params, err := parseNetworkName(networkName)
+	if err != nil {
+		return "", wrapError(err)
+	}
+	wallet := NewRecoveryWallet(firstMnemonic, "")
+	decrypted, err := DecryptUtilizingFirstSeed(params, wallet, encrypted)
+	if err != nil {
+		return "", wrapError(err)
+	}
+	return decrypted, nil
+}
+
 type MobileWallet struct {
 	FirstMnemonic    string
 	SecondMnemonic   string

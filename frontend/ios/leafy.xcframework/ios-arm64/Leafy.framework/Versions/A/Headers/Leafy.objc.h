@@ -295,7 +295,13 @@ FOUNDATION_EXPORT id<LeafyWallet> _Nullable LeafyCreateNewWallet(NSError* _Nulla
 // skipped function CreateTransaction with unsupported parameter or return types
 
 
+// skipped function DecryptUtilizingFirstSeed with unsupported parameter or return types
+
+
 FOUNDATION_EXPORT NSString* _Nonnull LeafyDecryptWithEphemeralSocialPrivateKey(NSString* _Nullable privateKeyHex, NSString* _Nullable encrypted, NSError* _Nullable* _Nullable error);
+
+// skipped function EncryptUtilizingFirstSeed with unsupported parameter or return types
+
 
 FOUNDATION_EXPORT NSString* _Nonnull LeafyEncryptWithEphemeralSocialPublicKey(NSString* _Nullable publicKeyHex, NSString* _Nullable data, NSError* _Nullable* _Nullable error);
 
@@ -346,7 +352,11 @@ The return type is a JSON serialization of the MobileTransaction
  */
 FOUNDATION_EXPORT NSData* _Nullable LeafyMobileCreateTransaction(NSString* _Nullable networkName, NSString* _Nullable utxos, NSString* _Nullable changeAddrSerialized, NSString* _Nullable destAddrSerialized, int64_t amount, double feeRate, NSError* _Nullable* _Nullable error);
 
+FOUNDATION_EXPORT NSString* _Nonnull LeafyMobileDecryptUtilizingFirstSeed(NSString* _Nullable networkName, NSString* _Nullable firstMnemonic, NSString* _Nullable encrypted, NSError* _Nullable* _Nullable error);
+
 FOUNDATION_EXPORT NSString* _Nonnull LeafyMobileDecryptWithEphemeralSocialPrivateKey(NSString* _Nullable privateKeyHex, NSString* _Nullable encrypted, NSError* _Nullable* _Nullable error);
+
+FOUNDATION_EXPORT NSString* _Nonnull LeafyMobileEncryptUtilizingFirstSeed(NSString* _Nullable networkName, NSString* _Nullable firstMnemonic, NSString* _Nullable data, NSError* _Nullable* _Nullable error);
 
 FOUNDATION_EXPORT NSString* _Nonnull LeafyMobileEncryptWithEphemeralSocialPublicKey(NSString* _Nullable publicKeyHex, NSString* _Nullable data, NSError* _Nullable* _Nullable error);
 
