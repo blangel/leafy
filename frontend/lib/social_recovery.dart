@@ -71,7 +71,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
           var data = _companionWallet!.serializedWallet;
           var encrypted = data;
           if (_walletFirstMnemonic != null) {
-            encrypted = await _encryptCompanionDataForRemoteAccountPersistenceNatively(_walletFirstMnemonic!, data);
+            encrypted = encryptLeafyData(_walletFirstMnemonic!, data);
           }
           var result = await _remoteAccount.persistCompanionData(_companionWallet!.companionId, encrypted);
           if (result) {
@@ -790,18 +790,6 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
       });
     } on PlatformException catch (e) {
       throw ArgumentError("failed to decryptWithEphemeralSocialPrivateKey: $e");
-    }
-  }
-
-  Future<String> _encryptCompanionDataForRemoteAccountPersistenceNatively(String firstMnemonic, String data) async {
-    try {
-      return await platform.invokeMethod("encryptUtilizingFirstSeed", <String, dynamic>{
-        'networkName': bitcoinClient.getBitcoinNetworkName(),
-        'firstMnemonic': firstMnemonic,
-        'data': data,
-      });
-    } on PlatformException catch (e) {
-      throw ArgumentError("failed to encryptUtilizingFirstSeed: $e");
     }
   }
 

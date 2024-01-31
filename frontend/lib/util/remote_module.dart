@@ -14,8 +14,6 @@ abstract class RemoteModule {
   // Retrieves persisted data within the user's remote account on behalf of companionId. If found, the data
   // is encrypted and will need to be decrypted based on 'First Seed'.
   Future<String?> getCompanionData(String companionId);
-  // Retrieves companion ids for any with persisted data within the user's remote account.
-  Future<List<String>?> getCompanionIds();
 }
 
 abstract class SecondSeedValidator {

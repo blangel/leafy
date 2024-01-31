@@ -274,7 +274,7 @@ Future<List<String>> getCompanionIds() async {
   ));
   var keyPrefix = 'leafy:companion:';
   var all = await storage.readAll();
-  var localCompanionIds = all.keys
+  return all.keys
       .where((element) => element.startsWith(keyPrefix))
       .map((element) => element.substring(keyPrefix.length)).toList();
 
