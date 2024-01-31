@@ -311,7 +311,7 @@ Leafy requires durable storage of three pieces of information. First Seed, Secon
 
 #### First Seed Storage
 
-The First Seed is stored encrypted within the user's device (via the [secure_storage](https://pub.dev/packages/flutter_secure_storage) library). To facilitate recovery scenarios, this data is also stored on one or more Companion Device(s). On the Companion Device the data is stored encrypted (via the [secure_storage](https://pub.dev/packages/flutter_secure_storage) library) as well as encrypted (via the companion's own First Seed's public key) on the companion's associated Remote Account. If the user has [elected to use a password/passphrase](#3-optional-passwordpassphrase), the data is first encrypted via the password/passphrase using [Fernet encryption](https://cryptography.io/en/latest/fernet/) before being given to the Companion Device(s).
+The First Seed is stored encrypted within the user's device (via the [secure_storage](https://pub.dev/packages/flutter_secure_storage) library). To facilitate recovery scenarios, this data is also stored on one or more Companion Device(s). On the Companion Device the data is stored encrypted (via the [secure_storage](https://pub.dev/packages/flutter_secure_storage) library) as well as encrypted (via the companion's own First Seed) on the companion's associated Remote Account. If the user has [elected to use a password/passphrase](#3-optional-passwordpassphrase), the data is first encrypted via the password/passphrase using [Fernet encryption](https://cryptography.io/en/latest/fernet/) before being given to the Companion Device(s).
 
 #### Second Seed Storage
 
@@ -319,7 +319,7 @@ The Second Seed is encrypted with the First Seed using [Fernet encryption](https
 
 #### Descriptor Storage
 
-The Second Seed Descriptor is stored encrypted within the user's device (via the [secure_storage](https://pub.dev/packages/flutter_secure_storage) library). To facilitate recovery scenarios, this data is also stored on one or more Companion Device(s). On the Companion Device the data is stored encrypted (via the [secure_storage](https://pub.dev/packages/flutter_secure_storage) library) as well as encrypted (via the companion's own First Seed's public key) on the companion's associated Remote Account. If the user has [elected to use a password/passphrase](#3-optional-passwordpassphrase), the data is first encrypted via the password/passphrase using [Fernet encryption](https://cryptography.io/en/latest/fernet/) before being given to the Companion Device(s).
+The Second Seed Descriptor is stored encrypted within the user's device (via the [secure_storage](https://pub.dev/packages/flutter_secure_storage) library). To facilitate recovery scenarios, this data is also stored on one or more Companion Device(s). On the Companion Device the data is stored encrypted (via the [secure_storage](https://pub.dev/packages/flutter_secure_storage) library) as well as encrypted (via the companion's own First Seed) on the companion's associated Remote Account. If the user has [elected to use a password/passphrase](#3-optional-passwordpassphrase), the data is first encrypted via the password/passphrase using [Fernet encryption](https://cryptography.io/en/latest/fernet/) before being given to the Companion Device(s).
 
 #### Storage Summary
 
@@ -329,11 +329,11 @@ In the table, `[Pwd]` represents the optional password/passphrase. If elected by
 |:------------|:-------------------------------|:--------------------------------------------------------------------------|
 | First Seed  | Phone                          | `[Pwd]` [secure_storage](https://pub.dev/packages/flutter_secure_storage) |
 |             | Companion Device(1..n)         | `[Pwd]` [secure_storage](https://pub.dev/packages/flutter_secure_storage) |
-|             | Companion Remote Account(1..n) | `[Pwd]` Companion's `First Seed` Public Key                               |
+|             | Companion Remote Account(1..n) | `[Pwd]` Companion's `First Seed`                                          |
 | Second Seed | Remote Account                 | First Seed                                                                |
 | Descriptor  | Phone                          | `[Pwd]` [secure_storage](https://pub.dev/packages/flutter_secure_storage) |
 |             | Companion Device(1..n)         | `[Pwd]` [secure_storage](https://pub.dev/packages/flutter_secure_storage) |
-|             | Companion Remote Account(1..n) | `[Pwd]` Companion's `First Seed` Public Key                               |
+|             | Companion Remote Account(1..n) | `[Pwd]` Companion's `First Seed`                                          |
 
 ## Terminology
 
