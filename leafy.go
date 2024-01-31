@@ -2,8 +2,6 @@ package leafy
 
 import (
 	"bytes"
-	"crypto/aes"
-	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -18,7 +16,6 @@ import (
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/tyler-smith/go-bip39"
-	"io"
 	"math"
 )
 
@@ -494,64 +491,6 @@ func parseEphemeralSocialPrivateKey(privateKeyHex string) (*rsa.PrivateKey, erro
 		return nil, err
 	}
 	return privateKey, err
-}
-
-func EncryptUtilizingFirstSeed(params *chaincfg.Params, wallet RecoveryWallet, data string) (string, error) {
-	key, err := getBip44Key(wallet.GetFirstMnemonic(), params, 0)
-	if err != nil {
-		return "", err
-	}
-	firstSeedKey, err := key.GetPrivateKey()
-	if err != nil {
-		return "", err
-	}
-	firstSeedKeyHash := computeHashRaw(firstSeedKey.Serialize())
-	block, err := aes.NewCipher(firstSeedKeyHash)
-	if err != nil {
-		return "", err
-	}
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return "", err
-	}
-	nonce := make([]byte, gcm.NonceSize())
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return "", err
-	}
-	encrypted := gcm.Seal(nonce, nonce, []byte(data), nil)
-	return hex.EncodeToString(encrypted), nil
-}
-
-func DecryptUtilizingFirstSeed(params *chaincfg.Params, wallet RecoveryWallet, hexEncrypted string) (string, error) {
-	key, err := getBip44Key(wallet.GetFirstMnemonic(), params, 0)
-	if err != nil {
-		return "", err
-	}
-	firstSeedKey, err := key.GetPrivateKey()
-	if err != nil {
-		return "", err
-	}
-	firstSeedKeyHash := computeHashRaw(firstSeedKey.Serialize())
-	block, err := aes.NewCipher(firstSeedKeyHash)
-	if err != nil {
-		return "", err
-	}
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return "", err
-	}
-	encrypted, err := hex.DecodeString(hexEncrypted)
-	if err != nil {
-		return "", err
-	}
-	nonceSize := gcm.NonceSize()
-	nonce, ciphertext := encrypted[:nonceSize], encrypted[nonceSize:]
-
-	decrypted, err := gcm.Open(nil, nonce, ciphertext, nil)
-	if err != nil {
-		return "", err
-	}
-	return string(decrypted), nil
 }
 
 // CreateTransaction constructs a transaction using the provided 'utxos' sending to 'destAddr'. If change is

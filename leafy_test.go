@@ -478,49 +478,6 @@ func TestEncryptAndDecryptWithEphemeralSocialPublicKeyAndPrivateKey(t *testing.T
 	require.EqualValues(t, message, decrypted)
 }
 
-func TestEncryptUtilizingFirstSeed(t *testing.T) {
-	params := &chaincfg.RegressionNetParams
-	wallet, err := leafy.CreateNewWallet()
-	require.NoError(t, err)
-
-	data := "foo bar foobar"
-	encrypted, err := leafy.EncryptUtilizingFirstSeed(params, wallet, data)
-	require.NoError(t, err)
-	require.NotNil(t, encrypted)
-
-	decrypted, err := leafy.DecryptUtilizingFirstSeed(params, wallet, encrypted)
-	require.NoError(t, err)
-	require.Equal(t, data, decrypted)
-
-	// invalid encryption
-	encrypted = "a" + encrypted + "z"
-	decrypted, err = leafy.DecryptUtilizingFirstSeed(params, wallet, encrypted)
-	require.Error(t, err)
-	require.Equal(t, "encoding/hex: invalid byte: U+007A 'z'", err.Error())
-}
-
-func TestDecryptUtilizingFirstSeed(t *testing.T) {
-	params := &chaincfg.RegressionNetParams
-	wallet, err := leafy.CreateNewWallet()
-	require.NoError(t, err)
-
-	data := "abcdefghijklmnopqrstuvwxyz0123456789"
-	encrypted, err := leafy.EncryptUtilizingFirstSeed(params, wallet, data)
-	require.NoError(t, err)
-	require.NotNil(t, encrypted)
-
-	decrypted, err := leafy.DecryptUtilizingFirstSeed(params, wallet, encrypted)
-	require.NoError(t, err)
-	require.Equal(t, data, decrypted)
-
-	// invalid decryption
-	otherWallet, err := leafy.CreateNewWallet()
-	require.NoError(t, err)
-	decrypted, err = leafy.DecryptUtilizingFirstSeed(params, otherWallet, encrypted)
-	require.Error(t, err)
-	require.Equal(t, "cipher: message authentication failed", err.Error())
-}
-
 func setupWallet(t *testing.T) (leafy.Wallet, []*wire.MsgTx, *LocalBitcoinClient, *leafy.Bip44Key, *leafy.Bip44Key) {
 	randomGenerator := rand.New(rand.NewSource(time.Now().UnixNano()))
 	walletName := fmt.Sprintf("leafy-unittests-%d", randomGenerator.Int())
