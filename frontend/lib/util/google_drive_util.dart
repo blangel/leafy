@@ -30,11 +30,11 @@ class GoogleDriveUtil {
     return getContent(updatedFile.id!);
   }
 
-  Future<List<Tuple2<File, List<File>?>>?> getFileFromAppDirectory(String fileName) async {
-    return getFileFromDirectory(_googleDriveAppDataFolder, fileName);
+  Future<List<Tuple2<File, List<File>?>>?> getFileFromAppDirectory(String fileName, bool prefixMatch) async {
+    return getFileFromDirectory(_googleDriveAppDataFolder, fileName, prefixMatch);
   }
 
-  Future<List<Tuple2<File, List<File>?>>?> getFileFromDirectory(String directoryName, String fileName) async {
+  Future<List<Tuple2<File, List<File>?>>?> getFileFromDirectory(String directoryName, String fileName, bool prefixMatch) async {
     if (_googleDriveAppDataFolder == directoryName) {
       // see https://developers.google.com/drive/api/guides/appdata#search-files
       var response = await _driveApi.files.list(spaces: directoryName);
@@ -42,7 +42,8 @@ class GoogleDriveUtil {
       if (response.files != null) {
         List<File> matchedFiles = [];
         for (var file in response.files!) {
-          if (file.name == fileName) {
+          if (file.name == fileName
+              || (prefixMatch && file.name != null && file.name!.startsWith(fileName))) {
             matchedFiles.add(file);
           }
         }
@@ -82,7 +83,7 @@ class GoogleDriveUtil {
       return File()..id=_googleDriveAppDataFolder;
     }
     File directory;
-    var directoryPair = await getFileFromDirectory(directoryName, fileName);
+    var directoryPair = await getFileFromDirectory(directoryName, fileName, false);
     if (directoryPair == null) {
       directory = File()
         ..name = directoryName

@@ -9,11 +9,13 @@ abstract class RemoteModule {
   // Note, callers should first encrypt data based on 'First Seed'.
   Future<bool> persistEncryptedSecondSeed(String encryptedSecondSeed, SecondSeedValidator validator);
   // Persists 'encryptedData' within the user's remote account. Note, callers should
-  // first encrypt data based on 'First Seed' Public Key.
+  // first encrypt data based on 'First Seed'.
   Future<bool> persistCompanionData(String companionId, String encryptedData);
   // Retrieves persisted data within the user's remote account on behalf of companionId. If found, the data
   // is encrypted and will need to be decrypted based on 'First Seed'.
   Future<String?> getCompanionData(String companionId);
+  // Retrieves companion ids for any with persisted data within the user's remote account.
+  Future<List<String>> getCompanionIds();
 }
 
 abstract class SecondSeedValidator {

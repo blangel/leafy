@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
 import 'package:leafy/util/mempool_space_connectivity.dart';
 import 'package:leafy/util/price_service.dart';
+import 'package:leafy/util/remote_module.dart';
 import 'package:leafy/util/wallet.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -267,17 +268,22 @@ Future<RecoveryWallet?> getRecoveryWalletViaBiometric() async {
   return null;
 }
 
-Future<List<String>> getCompanionIds() async {
-  // TODO - pull from remote and merge with local (need to think of place to sync between local and remote)
+Future<List<String>> getCompanionIds(RemoteModule? remoteModule) async {
   const storage = FlutterSecureStorage(aOptions: AndroidOptions(
     encryptedSharedPreferences: true,
   ));
   var keyPrefix = 'leafy:companion:';
   var all = await storage.readAll();
-  return all.keys
+  var local = all.keys
       .where((element) => element.startsWith(keyPrefix))
       .map((element) => element.substring(keyPrefix.length)).toList();
+  var set = Set<String>.from(local);
 
+  if (remoteModule != null) {
+    var remote = await remoteModule.getCompanionIds();
+    set.addAll(remote);
+  }
+  return set.toList();
 }
 
 Future<String> getRecoveryWalletSerialized() async {
@@ -302,13 +308,20 @@ Future<String> getRecoveryWalletSerializedForCompanion(String? walletPassword) a
   return jsonEncode(wrapper.toJson());
 }
 
-Future<String?> getCompanionIdWalletSerialized(String companionId) async {
+Future<String?> getCompanionIdWalletSerialized(String companionId, RemoteModule? remoteModule) async {
   const storage = FlutterSecureStorage(aOptions: AndroidOptions(
     encryptedSharedPreferences: true,
   ));
   String? walletSerialized = await storage.read(key: 'leafy:companion:$companionId');
   if (walletSerialized == null) {
-    return null;
+    if (remoteModule != null) {
+      walletSerialized = await remoteModule.getCompanionData(companionId);
+      if (walletSerialized == null) {
+        return null;
+      }
+    } else {
+      return null;
+    }
   }
   CompanionRecoveryWalletWrapper wrapper = CompanionRecoveryWalletWrapper(companionId: companionId, serializedWallet: walletSerialized);
   return jsonEncode(wrapper.toJson());

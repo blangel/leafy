@@ -48,7 +48,9 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
   bool _remoteAccountPersistenceFailed = false;
   CompanionRecoveryWalletWrapper? _companionWallet;
   late final GoogleSignInUtil _googleSignIn;
-  late final RemoteModule _remoteAccount;
+  RemoteModule? _remoteAccount;
+  _RemoteAccountUsage? _remoteAccountUsage;
+  bool _loadedRemoteAccountCompanionIds = false;
 
   String? _encryptedData;
 
@@ -68,15 +70,19 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
       try {
         if (account != null) {
           _remoteAccount = await GoogleDriveRemoteAccount.create(account);
-          var data = _companionWallet!.serializedWallet;
-          var encrypted = data;
-          if (_walletFirstMnemonic != null) {
-            encrypted = encryptLeafyData(_walletFirstMnemonic!, data);
-          }
-          var result = await _remoteAccount.persistCompanionData(_companionWallet!.companionId, encrypted);
-          if (result) {
-            _finalizeAssistanceForCompanion();
-            return;
+          if (_remoteAccountUsage == _RemoteAccountUsage.persist) {
+            var data = _companionWallet!.serializedWallet;
+            var encrypted = data;
+            if (_walletFirstMnemonic != null) {
+              encrypted = encryptLeafyData(_walletFirstMnemonic!, data);
+            }
+            var result = await _remoteAccount!.persistCompanionData(_companionWallet!.companionId, encrypted);
+            if (result) {
+              _finalizeAssistanceForCompanion();
+              return;
+            }
+          } else if (_remoteAccountUsage == _RemoteAccountUsage.load) {
+            _loadCompanionIds(); // TODO - add button sign-in to load remote companion-ids
           }
         }
       } on Exception catch(e) {
@@ -110,9 +116,12 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
   }
 
   void _loadCompanionIds() async {
-    var companionIds = await getCompanionIds();
+    bool localLoadedRemoteAccountCompanionIds = _remoteAccount != null;
+    var companionIds = await getCompanionIds(_remoteAccount);
     setState(() {
+      _companionIds.clear();
       _companionIds.addAll(companionIds);
+      _loadedRemoteAccountCompanionIds = localLoadedRemoteAccountCompanionIds;
     });
   }
 
@@ -210,7 +219,20 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                           onPressed: (context) {
                             Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recoveryCompanion, remoteAccountId: arguments.remoteAccountId, assistingWithCompanionId: companionId, walletPassword: arguments.walletPassword, walletFirstMnemonic: arguments.walletFirstMnemonic));
                           },
-                        )
+                        ),
+                        if (!_loadedRemoteAccountCompanionIds)
+                          SettingsTile.navigation(
+                            leading: const Icon(Icons.cloud_sync_outlined),
+                            title: const Text('Sync with Remote Account'),
+                            value: const Text(''),
+                            onPressed: (context) {
+                              setState(() {
+                                _loadedRemoteAccountCompanionIds = true;
+                                _remoteAccountUsage = _RemoteAccountUsage.load;
+                                _googleSignIn.signIn();
+                              });
+                            },
+                          ),
                       ],
                     )
                 ],
@@ -360,6 +382,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         onPressed: _loggingInRemoteAccount ? null : () {
                           setState(() {
                             _loggingInRemoteAccount = true;
+                            _remoteAccountUsage = _RemoteAccountUsage.persist;
                             _googleSignIn.signIn();
                           });
                         },
@@ -705,7 +728,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
       } else if (_assistingWithCompanionId == null) {
         walletData = await getRecoveryWalletSerializedForCompanion(walletPassword);
       } else {
-        var companionSerialized = await getCompanionIdWalletSerialized(_assistingWithCompanionId!);
+        var companionSerialized = await getCompanionIdWalletSerialized(_assistingWithCompanionId!, _remoteAccount);
         if (companionSerialized == null) {
           if (mounted) {
             ScaffoldMessenger.of(context).clearSnackBars();
@@ -805,6 +828,11 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     return chunks;
   }
 
+}
+
+enum _RemoteAccountUsage {
+  persist,
+  load;
 }
 
 class _SocialKeyPair {
