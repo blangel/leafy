@@ -37,8 +37,9 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
 
   final AssetImage _restoreImage = const AssetImage('images/restore.gif');
 
+  bool inited = false;
   final List<String> _companionIds = [];
-  bool addedSelf = false;
+  late String? _walletFirstMnemonic;
 
   _SocialKeyPair? _socialKeyPair;
   bool _attemptDataDecrypt = false;
@@ -68,8 +69,11 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
         if (account != null) {
           _remoteAccount = await GoogleDriveRemoteAccount.create(account);
           var data = _companionWallet!.serializedWallet;
-          // TODO - encrypt 'data' with First Seed Public Key
-          var result = await _remoteAccount.persistCompanionData(_companionWallet!.companionId, data);
+          var encrypted = data;
+          if (_walletFirstMnemonic != null) {
+            encrypted = await _encryptCompanionDataForRemoteAccountPersistenceNatively(_walletFirstMnemonic!, data);
+          }
+          var result = await _remoteAccount.persistCompanionData(_companionWallet!.companionId, encrypted);
           if (result) {
             _finalizeAssistanceForCompanion();
             return;
@@ -115,10 +119,11 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
   @override
   Widget build(BuildContext context) {
     final arguments = ModalRoute.of(context)!.settings.arguments as SocialRecoveryArguments;
-    if (!addedSelf) {
+    if (!inited) {
       setState(() {
-        addedSelf = true;
+        inited = true;
         _companionIds.add(arguments.remoteAccountId);
+        _walletFirstMnemonic = arguments.walletFirstMnemonic;
       });
     }
     if (arguments.assistingWithCompanionId != null) {
@@ -137,7 +142,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
               const WalletPasswordDialog(newPassword: false, unknownUsage: true),
             ).then((password) {
               if (context.mounted) {
-                Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: arguments.remoteAccountId, walletPassword: password));
+                Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: arguments.remoteAccountId, walletPassword: password, walletFirstMnemonic: arguments.walletFirstMnemonic));
               }
             });
           });
@@ -168,7 +173,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         title: const Text('Your Account'),
                         value: const Text(''),
                         onPressed: (context) {
-                          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: arguments.remoteAccountId, walletPassword: arguments.walletPassword));
+                          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: arguments.remoteAccountId, walletPassword: arguments.walletPassword, walletFirstMnemonic: arguments.walletFirstMnemonic));
                         },
                       ),
                     ],
@@ -181,7 +186,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         title: const Text('for Your Account'),
                         value: const Text(''),
                         onPressed: (context) {
-                          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.setup, remoteAccountId: arguments.remoteAccountId, walletPassword: arguments.walletPassword));
+                          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.setup, remoteAccountId: arguments.remoteAccountId, walletPassword: arguments.walletPassword, walletFirstMnemonic: arguments.walletFirstMnemonic));
                         },
                       ),
                       SettingsTile.navigation(
@@ -189,7 +194,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         title: const Text('for a Companion'),
                         value: const Text(''),
                         onPressed: (context) {
-                          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.setupCompanion, remoteAccountId: arguments.remoteAccountId, walletPassword: arguments.walletPassword));
+                          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.setupCompanion, remoteAccountId: arguments.remoteAccountId, walletPassword: arguments.walletPassword, walletFirstMnemonic: arguments.walletFirstMnemonic));
                         },
                       ),
                     ],
@@ -203,7 +208,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                           title: Text(arguments.remoteAccountId == companionId ? "$companionId  (self)" : companionId),
                           value: const Text(''),
                           onPressed: (context) {
-                            Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recoveryCompanion, remoteAccountId: arguments.remoteAccountId, assistingWithCompanionId: companionId, walletPassword: arguments.walletPassword));
+                            Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recoveryCompanion, remoteAccountId: arguments.remoteAccountId, assistingWithCompanionId: companionId, walletPassword: arguments.walletPassword, walletFirstMnemonic: arguments.walletFirstMnemonic));
                           },
                         )
                       ],
@@ -651,7 +656,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
       final decryptedWallet = decryptWallet(walletPassword, wallet);
       if (decryptedWallet == null) {
         if (mounted) {
-          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.walletPassword, remoteAccountId: remoteAccountId, walletPassword: null));
+          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.walletPassword, remoteAccountId: remoteAccountId, walletPassword: null, walletFirstMnemonic: _walletFirstMnemonic));
         }
         return;
       }
@@ -785,6 +790,18 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
       });
     } on PlatformException catch (e) {
       throw ArgumentError("failed to decryptWithEphemeralSocialPrivateKey: $e");
+    }
+  }
+
+  Future<String> _encryptCompanionDataForRemoteAccountPersistenceNatively(String firstMnemonic, String data) async {
+    try {
+      return await platform.invokeMethod("encryptUtilizingFirstSeed", <String, dynamic>{
+        'networkName': bitcoinClient.getBitcoinNetworkName(),
+        'firstMnemonic': firstMnemonic,
+        'data': data,
+      });
+    } on PlatformException catch (e) {
+      throw ArgumentError("failed to encryptUtilizingFirstSeed: $e");
     }
   }
 

@@ -99,7 +99,7 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
       _loadAddresses(context);
     }
     KeyArguments keyArguments = ModalRoute.of(context)!.settings.arguments as KeyArguments;
-    return buildHomeScaffoldWithRestore(context, '🌿 Wallet', keyArguments.walletPassword, Column(
+    return buildHomeScaffoldWithRestore(context, '🌿 Wallet', keyArguments.walletPassword, keyArguments.firstMnemonic, Column(
       mainAxisSize: MainAxisSize.max,
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,

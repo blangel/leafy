@@ -79,7 +79,7 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
           return;
         }
         if ((_uiState == _UiState.noLocalFoundRemote) && (account != null)) {
-          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.walletPassword, remoteAccountId: account.email, walletPassword: null));
+          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.walletPassword, remoteAccountId: account.email, walletPassword: null, walletFirstMnemonic: null));
           return;
         }
         if (account == null) {

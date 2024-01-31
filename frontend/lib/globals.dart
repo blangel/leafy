@@ -48,8 +48,8 @@ Scaffold buildHomeScaffold(BuildContext context, String title, Widget body) {
   return _buildScaffold(context, title, body, false, _Recovery.none);
 }
 
-Scaffold buildHomeScaffoldWithRestore(BuildContext context, String title, String? walletPassword, Widget body) {
-  return _buildScaffold(context, title, body, false, _Recovery(walletPassword));
+Scaffold buildHomeScaffoldWithRestore(BuildContext context, String title, String? walletPassword, String? firstMnemonic, Widget body) {
+  return _buildScaffold(context, title, body, false, _Recovery(walletPassword, firstMnemonic));
 }
 
 Scaffold buildScaffold(BuildContext context, String title, Widget body) {
@@ -57,11 +57,13 @@ Scaffold buildScaffold(BuildContext context, String title, Widget body) {
 }
 
 class _Recovery {
-  static final _Recovery none = _Recovery(null);
+  static final _Recovery none = _Recovery(null, null);
 
   final String? walletPassword;
 
-  _Recovery(this.walletPassword);
+  final String? firstMnemonic;
+
+  _Recovery(this.walletPassword, this.firstMnemonic);
 }
 
 Scaffold _buildScaffold(BuildContext context, String title, Widget body, bool addLeading, _Recovery recovery) {
@@ -74,7 +76,7 @@ Scaffold _buildScaffold(BuildContext context, String title, Widget body, bool ad
           icon: const Icon(Icons.more_vert),
           onSelected: (String value) {
             if (value == 'recovery') {
-              Navigator.pushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.branch, remoteAccountId: globalRemoteAccountId, walletPassword: recovery.walletPassword));
+              Navigator.pushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.branch, remoteAccountId: globalRemoteAccountId, walletPassword: recovery.walletPassword, walletFirstMnemonic: recovery.firstMnemonic));
             } else if (value == 'settings') {
               // TODO - settings
             } else {
@@ -226,10 +228,11 @@ enum SocialRecoveryType {
 class SocialRecoveryArguments {
   final SocialRecoveryType type;
   final String? walletPassword;
+  final String? walletFirstMnemonic;
   final String remoteAccountId;
   final String? assistingWithCompanionId;
 
-  SocialRecoveryArguments({required this.type, required this.walletPassword, required this.remoteAccountId, this.assistingWithCompanionId});
+  SocialRecoveryArguments({required this.type, required this.walletPassword, required this.walletFirstMnemonic, required this.remoteAccountId, this.assistingWithCompanionId});
 }
 
 // TODO - update to use biometric_storage (https://pub.dev/packages/biometric_storage) instead of flutter_secure_storage ?
