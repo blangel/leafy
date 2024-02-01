@@ -83,7 +83,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
               return;
             }
           } else if (_remoteAccountUsage == _RemoteAccountUsage.load) {
-            _loadCompanionIds(); // TODO - add button sign-in to load remote companion-ids
+            _loadCompanionIds();
           }
         }
       } on Exception catch(e) {
