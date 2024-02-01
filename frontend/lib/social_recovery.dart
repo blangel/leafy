@@ -38,6 +38,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
   final AssetImage _restoreImage = const AssetImage('images/restore.gif');
 
   bool inited = false;
+  late String _selfId;
   final List<String> _companionIds = [];
   late String? _walletFirstMnemonic;
 
@@ -120,6 +121,9 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     var companionIds = await getCompanionIds(_remoteAccount);
     setState(() {
       _companionIds.clear();
+      if (!companionIds.contains(_selfId)) {
+        _companionIds.add(_selfId);
+      }
       _companionIds.addAll(companionIds);
       _loadedRemoteAccountCompanionIds = localLoadedRemoteAccountCompanionIds;
     });
@@ -131,7 +135,10 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     if (!inited) {
       setState(() {
         inited = true;
-        _companionIds.add(arguments.remoteAccountId);
+        _selfId = arguments.remoteAccountId;
+        if (!_companionIds.contains(arguments.remoteAccountId)) {
+          _companionIds.add(arguments.remoteAccountId);
+        }
         _walletFirstMnemonic = arguments.walletFirstMnemonic;
       });
     }

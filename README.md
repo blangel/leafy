@@ -356,6 +356,8 @@ Leafy ("program"), like Bitcoin ("money"), is [open-source](https://github.com/b
 - [ ] Implement "Timelock Recovery"
 - [x] Add advanced option during setup for passphrase/password encryption
 - [ ] Add setting to customize the [Bitcoin Network Connectivity](#6-bitcoin-network-connectivity)
+- [ ] Marketing website (leafybitcoin.com)
 - [ ] Add Apple iCloud as a Remote Account
 - [ ] Implement binaries as discussed in [App Provider Obstruction](#app-provider-obstruction)
+- [ ] Research hardware wallets w.r.t. Remote Account possibility
 - [ ] Finalize research for [social bond](#2b-social-bond-recovery)
