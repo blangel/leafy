@@ -90,7 +90,7 @@ class AddressPage extends StatelessWidget {
               shrinkWrap: true,
               itemCount: transactions.length,
               itemBuilder: (context, index) {
-                return Padding(padding: const EdgeInsets.symmetric(horizontal: 10),
+                return Padding(padding: const EdgeInsets.symmetric(horizontal: 5),
                     child: InkWell(onTap: () {
                       Navigator.pushNamed(context, '/transaction',
                           arguments: TransactionArgument(keyArguments: arguments.keyArguments, transaction: transactions[index], transactions: arguments.allTransactions, changeAddress: arguments.changeAddress));
