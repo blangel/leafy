@@ -13,6 +13,7 @@ import 'package:leafy/receive_address.dart';
 import 'package:leafy/setup_new.dart';
 import 'package:leafy/social_recovery.dart';
 import 'package:leafy/start_branch.dart';
+import 'package:leafy/timelock_recovery.dart';
 import 'package:leafy/transaction.dart';
 import 'package:leafy/transactions_list.dart';
 import 'package:leafy/wallet.dart';
@@ -43,7 +44,7 @@ class LeafyApp extends StatelessWidget {
         '/start': (context) => const LeafyStartPage(),
         '/new': (context) => const LeafySetupNewPage(),
         '/social-recovery': (context) => const SocialRecoveryPage(),
-        // TODO : /timelock-recovery
+        '/timelock-recovery': (context) => const TimelockRecoveryPage(),
         '/addresses': (context) => const AddressesListPage(),
         '/address': (context) => const AddressPage(),
         '/transactions': (context) => const TransactionsListPage(),

@@ -236,6 +236,14 @@ class SocialRecoveryArguments {
   SocialRecoveryArguments({required this.type, required this.walletPassword, required this.walletFirstMnemonic, required this.remoteAccountId, this.assistingWithCompanionId});
 }
 
+class TimelockRecoveryArguments {
+  final String? walletPassword;
+  final String walletFirstMnemonic;
+  final String walletSecondDescriptor;
+
+  TimelockRecoveryArguments({required this.walletPassword, required this.walletFirstMnemonic, required this.walletSecondDescriptor});
+}
+
 // TODO - update to use biometric_storage (https://pub.dev/packages/biometric_storage) instead of flutter_secure_storage ?
 
 Future<void> persistLocallyViaBiometric(String? password, String firstMnemonic, String secondDescriptor, String remoteAccountId) async {

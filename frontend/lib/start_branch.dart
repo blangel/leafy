@@ -83,7 +83,7 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
           return;
         }
         if (account == null) {
-          Navigator.popAndPushNamed(context, '/timelock-recovery'); // TODO - timelock-recovery
+          Navigator.popAndPushNamed(context, '/timelock-recovery', arguments: TimelockRecoveryArguments(walletPassword: _password, walletFirstMnemonic: _recoveryWallet!.firstMnemonic, walletSecondDescriptor: _recoveryWallet!.secondDescriptor));
           return;
         } else {
           globalRemoteAccountId = account.email;
@@ -98,11 +98,11 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
               Navigator.popAndPushNamed(context, '/wallet', arguments: KeyArguments(firstMnemonic: _recoveryWallet!.firstMnemonic, secondMnemonic: decrypted, secondDescriptor: _recoveryWallet!.secondDescriptor, walletPassword: _password));
               return;
             } else {
-              Navigator.popAndPushNamed(context, '/timelock-recovery'); // TODO - timelock-recovery
+              Navigator.popAndPushNamed(context, '/timelock-recovery', arguments: TimelockRecoveryArguments(walletPassword: _password, walletFirstMnemonic: _recoveryWallet!.firstMnemonic, walletSecondDescriptor: _recoveryWallet!.secondDescriptor));
               return;
             }
           } else {
-            Navigator.popAndPushNamed(context, '/timelock-recovery'); // TODO - timelock-recovery
+            Navigator.popAndPushNamed(context, '/timelock-recovery', arguments: TimelockRecoveryArguments(walletPassword: _password, walletFirstMnemonic: _recoveryWallet!.firstMnemonic, walletSecondDescriptor: _recoveryWallet!.secondDescriptor));
             return;
           }
         }
