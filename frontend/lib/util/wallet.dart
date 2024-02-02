@@ -80,6 +80,22 @@ String encryptLeafyData(String password, String data) {
   return encrypter.encrypt(data).base64;
 }
 
+Future<List<String>> getAddresses(String firstMnemonic, String secondDescriptor, int startIndex, int num) async {
+  try {
+    final List<dynamic> list = await platform.invokeMethod("getAddresses", <String, dynamic>{
+      'networkName': bitcoinClient.getBitcoinNetworkName(),
+      'firstMnemonic': firstMnemonic,
+      'secondDescriptor': secondDescriptor,
+      'startIndex': startIndex.toString(),
+      'num': num.toString(),
+    });
+    return list.cast<String>();
+  } on PlatformException catch (e) {
+    // TODO - handle corruption of mnemonic (often manifests as "PlatformException(GenerateAddresses Failure, Checksum incorrect")
+    throw ArgumentError("failed to getAddresses: $e");
+  }
+}
+
 class Wallet {
 
   final String firstMnemonic;

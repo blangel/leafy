@@ -1,13 +1,10 @@
-import 'dart:async';
-import 'dart:developer' as developer;
 import 'dart:math';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:leafy/globals.dart';
+import 'package:leafy/util/address_loader.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
-import 'package:leafy/util/price_service.dart';
 import 'package:leafy/widget/transaction.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -25,22 +22,18 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
   final AssetImage _walletImage = const AssetImage('images/bitcoin_wallet.gif');
 
   bool loadingAddresses = true;
-  bool loadingAddressInfo = false;
   bool finishedAddressPaging = false;
+  late AddressLoader _loader;
+
   late List<String> addresses;
   String receiveAddress = "";
   late List<AddressInfo> addressInfos;
   late Map<String, List<Transaction>> transactionsByAddress;
   late List<Transaction> transactions;
 
-  // TODO - use websockets instead (need support from bitcoinClient implementation)
-  Timer? timer;
-
   double confirmedBitcoin = 0;
 
   double unconfirmedBitcoin = 0;
-
-  int startIndex = 0;
 
   double usdPrice = 0;
 
@@ -51,54 +44,37 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
     addressInfos = [];
     transactionsByAddress = {};
     transactions = [];
-    setupRefreshTimer();
+    _loader = AddressLoader();
   }
 
   @override
   void dispose() {
-    timer?.cancel();
+    _loader.dispose();
     super.dispose();
-  }
-
-  void setupRefreshTimer() {
-    timer?.cancel();
-    timer = Timer.periodic(const Duration(seconds: 10), (Timer t) => {
-      if (addresses.isNotEmpty) {
-        loadAddressInfo()
-      },
-      _loadPriceData()
-    });
-  }
-
-  void _loadPriceData() async {
-    var rnd = Random();
-    if (rnd.nextBool()) {
-      usdPrice = await priceService.getCurrentPrice(Currency.usd);
-    }
-  }
-
-  void _loadAddresses(BuildContext context) async {
-    final keyArguments = ModalRoute.of(context)!.settings.arguments as KeyArguments;
-    int num = 5;
-    developer.log("loading addresses: [$startIndex, ${startIndex + num})");
-    getAddresses(keyArguments.firstMnemonic, keyArguments.secondDescriptor, startIndex, num).then((addresses) async {
-      List<String> allAddresses = [];
-      allAddresses.addAll(this.addresses);
-      allAddresses.addAll(addresses);
-
-      setState(() {
-        this.addresses = allAddresses;
-        startIndex += num;
-      });
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (addresses.isEmpty) {
-      _loadAddresses(context);
-    }
     KeyArguments keyArguments = ModalRoute.of(context)!.settings.arguments as KeyArguments;
+    _loader.init(keyArguments.firstMnemonic, keyArguments.secondDescriptor, (addresses, metadata, paging, usdPrice) {
+      if (!context.mounted) {
+        return;
+      }
+      setState(() {
+        this.addresses = addresses;
+        if (metadata != null) {
+          confirmedBitcoin = metadata.confirmedBitcoin;
+          unconfirmedBitcoin = metadata.unconfirmedBitcoin;
+          addressInfos = metadata.addressInfos;
+          transactionsByAddress = metadata.transactionsByAddress;
+          transactions = metadata.transactions;
+          receiveAddress = metadata.receiveAddress;
+        }
+        this.usdPrice = usdPrice;
+        finishedAddressPaging = !paging;
+        loadingAddresses = false;
+      });
+    });
     return buildHomeScaffoldWithRestore(context, '🌿 Wallet', keyArguments.walletPassword, keyArguments.firstMnemonic, Column(
       mainAxisSize: MainAxisSize.max,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -225,85 +201,6 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
         ]))
       ],
     ));
-  }
-
-  Future<List<String>> getAddresses(String firstMnemonic, String secondDescriptor, int startIndex, int num) async {
-    try {
-      final List<dynamic> list = await platform.invokeMethod("getAddresses", <String, dynamic>{
-        'networkName': bitcoinClient.getBitcoinNetworkName(),
-        'firstMnemonic': firstMnemonic,
-        'secondDescriptor': secondDescriptor,
-        'startIndex': startIndex.toString(),
-        'num': num.toString(),
-      });
-      return list.cast<String>();
-    } on PlatformException catch (e) {
-      // TODO - handle corruption of mnemonic (often manifests as "PlatformException(GenerateAddresses Failure, Checksum incorrect")
-      throw ArgumentError("failed to getAddresses: $e");
-    }
-  }
-
-  Future<void> loadAddressInfo() async {
-    if (!context.mounted) {
-      timer?.cancel();
-      return;
-    }
-    if (loadingAddressInfo) {
-      return;
-    }
-    loadingAddressInfo = true;
-    double confirmedSats = 0;
-    double unconfirmedSats = 0;
-    List<AddressInfo> addressInfos = [];
-    Set<Transaction> allTransactions = {};
-    String addressWithoutTransactions = "";
-    int addressWithoutTransactionsCount = 0;
-    Map<String, List<Transaction>> transactionsByAddress = {};
-    for (String address in addresses) {
-      AddressInfo info = await bitcoinClient.getAddressInfo(address);
-      if (((info.chainStats.transactionCount + info.mempoolStats.transactionCount) == 0)
-          && ((info.chainStats.bitcoinSum + info.mempoolStats.bitcoinSum) == 0)) {
-        addressWithoutTransactionsCount++;
-        if (addressWithoutTransactions.isEmpty) {
-          addressWithoutTransactions = info.address;
-        }
-      } else {
-        addressInfos.add(info);
-        confirmedSats += (info.chainStats.bitcoinSum - info.chainStats.spentBitcoinSum);
-        unconfirmedSats += (info.mempoolStats.bitcoinSum - info.mempoolStats.spentBitcoinSum);
-        List<Transaction> addressTransactions = await bitcoinClient.getAddressTransactions(address);
-        addressTransactions = addressTransactions.map((item) => item.fromKnownAddresses(addresses)).toList();
-        List<Future<Transaction>> futureTransactions = addressTransactions.map((item) {
-          return bitcoinClient.augmentTransactionWithUnspentUtxos(item);
-        }).toList();
-        addressTransactions = await Future.wait(futureTransactions);
-        transactionsByAddress[address] = addressTransactions;
-        allTransactions.addAll(addressTransactions);
-      }
-    }
-    List<Transaction> transactionsSorted = allTransactions.toList();
-    transactionsSorted.sort();
-
-    if (context.mounted) {
-      // page until at least 3 addresses without txs found; can get
-      // sparse addr use via RBF txs (i.e. change addr of tx which is replaced
-      // where the replacement tx's change addr is different).
-      if (addressWithoutTransactionsCount < 3) {
-        _loadAddresses(context);
-      } else {
-        finishedAddressPaging = true;
-      }
-      setState(() {
-        confirmedBitcoin = fromSatsToBitcoin(confirmedSats);
-        unconfirmedBitcoin = fromSatsToBitcoin(unconfirmedSats);
-        this.addressInfos = addressInfos;
-        this.transactionsByAddress = transactionsByAddress;
-        transactions = transactionsSorted;
-        receiveAddress = addressWithoutTransactions;
-        loadingAddresses = false;
-      });
-    }
-    loadingAddressInfo = false;
   }
 
 }
