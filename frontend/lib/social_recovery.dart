@@ -317,7 +317,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                     ),
                     ),
                   ),
-                  CopyableDataWidget(data: _encryptedData!, shorten: true,),
+                  CopyableDataWidget(data: _encryptedData!),
                   Align(
                       alignment: Alignment.centerRight,
                       child: ElevatedButton.icon(onPressed: () {
@@ -350,7 +350,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         ),
                         ),
                       ),
-                      CopyableDataWidget(data: _socialKeyPair!.publicKey, shorten: true,),
+                      CopyableDataWidget(data: _socialKeyPair!.publicKey),
                       Align(
                           alignment: Alignment.centerRight, child: ElevatedButton.icon(onPressed: () {
                         setState(() {
@@ -483,7 +483,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         ),
                         ),
                       ),
-                      CopyableDataWidget(data: _socialKeyPair!.publicKey, shorten: true,),
+                      CopyableDataWidget(data: _socialKeyPair!.publicKey),
                       Align(
                           alignment: Alignment.centerRight, child: ElevatedButton.icon(onPressed: () {
                         setState(() {
@@ -659,7 +659,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                     ),
                     ),
                   ),
-                  CopyableDataWidget(data: _encryptedData!, shorten: true,),
+                  CopyableDataWidget(data: _encryptedData!),
                   Align(
                       alignment: Alignment.centerRight,
                       child: ElevatedButton.icon(onPressed: () {

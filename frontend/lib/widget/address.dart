@@ -6,24 +6,23 @@ import 'package:leafy/util/bitcoin_network_connectivity.dart';
 class CopyableDataWidget extends StatelessWidget {
 
   final String data;
-  final bool shorten;
 
-  const CopyableDataWidget({super.key, required this.data, this.shorten = false});
+  const CopyableDataWidget({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: const EdgeInsets.all(10), child: Row(
+    return Padding(padding: const EdgeInsets.all(5), child: Row(
       mainAxisSize: MainAxisSize.max,
-      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.end,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(width: 370, child: shorten ? AutoSizeText(data, maxLines: 1, overflow: TextOverflow.ellipsis,) : Text(data, textAlign: TextAlign.right,)),
-        Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: SizedBox(width: 24, child: IconButton(onPressed: () {
-          Clipboard.setData(ClipboardData(text: data)).then((_) {
-            ScaffoldMessenger.of(context).clearSnackBars();
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Copied $data', overflow: TextOverflow.ellipsis,),showCloseIcon: true));
-          });
-        }, icon: const Icon(Icons.copy, size: 16))))),
+        SizedBox(width: 375, child: AutoSizeText(data, maxLines: 1, overflow: TextOverflow.ellipsis,)),
+        Expanded(flex: 1, child: IconButton(onPressed: () {
+            Clipboard.setData(ClipboardData(text: data)).then((_) {
+              ScaffoldMessenger.of(context).clearSnackBars();
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Copied $data', overflow: TextOverflow.ellipsis,),showCloseIcon: true));
+            });
+          }, icon: const Icon(Icons.copy), iconSize: 20)),
       ],
     ));
   }
