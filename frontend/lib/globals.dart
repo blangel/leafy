@@ -1,6 +1,5 @@
 
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +15,8 @@ import 'package:leafy/util/wallet.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 const platform = MethodChannel('leafy/core');
+
+const int timelock = 52560;
 
 // TODO - user configured network?
 final BitcoinClient bitcoinClient = kDebugMode ? MempoolSpaceClient.regtest() : MempoolSpaceClient.mainnet();
@@ -160,9 +161,10 @@ class TransactionsArguments {
   // in case a referencable tx needs fee-bumping; needs keys, set of transactions(utxos) and a change-address
   final KeyArguments keyArguments;
   final String changeAddress;
+  final int currentBlockHeight;
 
   TransactionsArguments({required this.transactions, required this.keyArguments,
-    required this.changeAddress});
+    required this.changeAddress, required this.currentBlockHeight});
 }
 
 class TransactionArgument {
@@ -171,9 +173,10 @@ class TransactionArgument {
   final KeyArguments keyArguments;
   final List<Transaction> transactions;
   final String changeAddress;
+  final int currentBlockHeight;
 
   TransactionArgument({required this.transaction, required this.keyArguments,
-    required this.transactions, required this.changeAddress});
+    required this.transactions, required this.changeAddress, required this.currentBlockHeight});
 }
 
 class AddressArguments {
@@ -183,9 +186,11 @@ class AddressArguments {
   final KeyArguments keyArguments;
   final List<Transaction> allTransactions;
   final String changeAddress;
+  final int currentBlockHeight;
 
   AddressArguments({required this.addresses, required this.transactions,
-    required this.keyArguments, required this.allTransactions, required this.changeAddress});
+    required this.keyArguments, required this.allTransactions,
+    required this.changeAddress, required this.currentBlockHeight});
 }
 
 class AddressDetailArgument {
@@ -195,9 +200,11 @@ class AddressDetailArgument {
   final KeyArguments keyArguments;
   final List<Transaction> allTransactions;
   final String changeAddress;
+  final int currentBlockHeight;
 
   AddressDetailArgument({required this.addressInfo, required this.transactions,
-    required this.keyArguments, required this.allTransactions, required this.changeAddress});
+    required this.keyArguments, required this.allTransactions,
+    required this.changeAddress, required this.currentBlockHeight});
 }
 
 class AddressArgument {

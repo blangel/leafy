@@ -1,5 +1,6 @@
 
 import 'package:intl/intl.dart';
+import 'package:leafy/globals.dart';
 
 enum BitcoinNetwork {
   regtest, testnet, simnet, mainnet;
@@ -87,13 +88,7 @@ class TransactionStatus {
   }
 
   String getDateTime() {
-    int? localBlocktime = blockTime;
-    if (localBlocktime == null) {
-      return "";
-    }
-    DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(localBlocktime * 1000);
-    DateFormat formatter = DateFormat('MMM dd, yyyy hh:mm a');
-    return formatter.format(dateTime);
+    return getDateTimeFromBlockTime(blockTime);
   }
 
   String getAgoDuration() {
@@ -123,6 +118,11 @@ class TransactionStatus {
     }
   }
 
+  String getDurationUntil(int currentBlockHeight) {
+    int blocks = blocksToLiveliness(currentBlockHeight);
+    return blocksToDurationFormatted(blocks);
+  }
+
   String getAgoDurationParenthetical() {
     String duration = getAgoDuration();
     if (duration.isEmpty) {
@@ -137,11 +137,31 @@ class TransactionStatus {
     return "$formattedDateTime $duration";
   }
 
+  int blocksToLiveliness(int currentBlock) {
+    int confirmations = getConfirmations(currentBlock);
+    return timelock - confirmations;
+  }
+
+  bool needLivelinessCheck(int currentBlock) {
+    int confirmations = getConfirmations(currentBlock);
+    return confirmations >= timelock;
+  }
+
   @override
   String toString() {
     return 'TransactionStatus{confirmed: $confirmed, blockHeight: $blockHeight, blockHash: $blockHash, blockTime: $blockTime}';
   }
 }
+
+String getDateTimeFromBlockTime(int? blockTime) {
+  if (blockTime == null) {
+    return "";
+  }
+  DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(blockTime * 1000);
+  DateFormat formatter = DateFormat('MMM dd, yyyy hh:mm a');
+  return formatter.format(dateTime);
+}
+
 
 class PrevOut {
 

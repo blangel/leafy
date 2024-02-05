@@ -36,8 +36,8 @@ class TransactionsListPage extends StatelessWidget {
                     return Padding(padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: InkWell(onTap: () {
                           Navigator.pushNamed(context, '/transaction',
-                              arguments: TransactionArgument(keyArguments: arguments.keyArguments, transaction: transactions[index], transactions: arguments.transactions, changeAddress: arguments.changeAddress));
-                        }, child: TransactionRowWidget(transaction: transactions[index])));
+                              arguments: TransactionArgument(keyArguments: arguments.keyArguments, transaction: transactions[index], transactions: arguments.transactions, changeAddress: arguments.changeAddress, currentBlockHeight: arguments.currentBlockHeight));
+                        }, child: TransactionRowWidget(transaction: transactions[index], currentBlockHeight: arguments.currentBlockHeight,)));
                   },
                   separatorBuilder: (BuildContext context, int index) {
                     return Divider(color: Theme

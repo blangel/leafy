@@ -537,12 +537,6 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
     });
   }
 
-  List<Utxo> getUtxos(List<Transaction> transactions) {
-    return transactions.map((tx) =>
-        tx.vouts.where((vout) => vout.unspent && vout.toKnownAddress).map((vout) => Utxo(address: vout.scriptPubkeyAddress, outpoint: Outpoint.fromTxId(tx.id, vout.index), amount: vout.valueSat, script: vout.scriptPubkey))
-    ).expand((utxo) => utxo).toList();
-  }
-
   void submitTransaction() async {
     if (!readyToSubmit || (hex == null) || hex!.hex.isEmpty) {
       return;

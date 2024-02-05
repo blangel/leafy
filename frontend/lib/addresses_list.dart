@@ -38,7 +38,7 @@ class AddressesListPage extends StatelessWidget {
                 itemBuilder: (context, index) {
                   return InkWell(onTap: () {
                     Navigator.pushNamed(context, '/address',
-                        arguments: AddressDetailArgument(keyArguments: arguments.keyArguments, addressInfo: addresses[index], transactions: arguments.transactions[addresses[index].address], allTransactions: arguments.allTransactions, changeAddress: arguments.changeAddress));
+                        arguments: AddressDetailArgument(keyArguments: arguments.keyArguments, addressInfo: addresses[index], transactions: arguments.transactions[addresses[index].address], allTransactions: arguments.allTransactions, changeAddress: arguments.changeAddress, currentBlockHeight: arguments.currentBlockHeight));
                   }, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 10),
                       child: AddressRowWidget(address: addresses[index])));
                 },

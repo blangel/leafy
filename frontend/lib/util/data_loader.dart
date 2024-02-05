@@ -27,7 +27,7 @@ class AddressMetadata {
       this.receiveAddress);
 }
 
-class AddressLoader {
+class DataLoader {
 
   static const int _loadAmount = 5;
 
@@ -46,17 +46,17 @@ class AddressLoader {
   int _startIndex;
   bool _continuePaging = true;
   final bool _loadAddressInfo;
-  final bool _refresh;
   bool _loadingAddressInfos = false;
 
   double _usdPrice = 0.0;
 
-  AddressLoader({startIndex = 0, loadAddressInfo = true, refresh = true})
-      : _startIndex = startIndex,
-        _loadAddressInfo = loadAddressInfo,
-        _refresh = refresh;
+  int _currentBlockHeight = 0;
 
-  Future<void> init(String firstSeedMnemonic, String secondSeedDescriptor, void Function(List<String>, AddressMetadata?, bool, double) callback) async {
+  DataLoader({startIndex = 0, loadAddressInfo = true})
+      : _startIndex = startIndex,
+        _loadAddressInfo = loadAddressInfo;
+
+  Future<void> init(String firstSeedMnemonic, String secondSeedDescriptor, void Function(List<String>, AddressMetadata?, bool, double, int) callback) async {
     await _lock.synchronized(() {
       if (_init) {
         return;
@@ -65,7 +65,7 @@ class AddressLoader {
       _firstSeedMnemonic = firstSeedMnemonic;
       _secondSeedDescriptor = secondSeedDescriptor;
       _timer = Timer.periodic(const Duration(seconds: 10), (Timer t) {
-        if (!_refresh || !_continuePaging) {
+        if (!_continuePaging) {
           _timer.cancel();
           return;
         }
@@ -86,7 +86,13 @@ class AddressLoader {
     }
   }
 
-  void _loadAddresses(void Function(List<String>, AddressMetadata?, bool, double) callback) {
+  void _loadBlockHeight() async {
+    bitcoinClient.getCurrentBlockHeight().then((height) {
+      _currentBlockHeight = height;
+    });
+  }
+
+  void _loadAddresses(void Function(List<String>, AddressMetadata?, bool, double, int) callback) {
     developer.log("loading addresses: [$_startIndex, ${_startIndex + _loadAmount})");
     getAddresses(_firstSeedMnemonic, _secondSeedDescriptor, _startIndex, _loadAmount).then((addresses) async {
       List<String> allAddresses = [];
@@ -98,15 +104,16 @@ class AddressLoader {
       if (_loadAddressInfo) {
         _loadAddressInfoForAddresses(callback);
         _loadPriceData();
+        _loadBlockHeight();
       } else {
-        callback(allAddresses, null, _continuePaging, _usdPrice);
+        callback(allAddresses, null, _continuePaging, _usdPrice, _currentBlockHeight);
       }
     });
   }
 
-  Future<void> _loadAddressInfoForAddresses(void Function(List<String>, AddressMetadata?, bool, double) callback) async {
+  Future<void> _loadAddressInfoForAddresses(void Function(List<String>, AddressMetadata?, bool, double, int) callback) async {
     if (_addresses.isEmpty) {
-      callback(_addresses, null, _continuePaging, _usdPrice);
+      callback(_addresses, null, _continuePaging, _usdPrice, _currentBlockHeight);
       return;
     }
     if (_loadingAddressInfos) {
@@ -162,7 +169,7 @@ class AddressLoader {
         addressInfos,
         transactionsByAddress,
         transactionsSorted,
-        addressWithoutTransactions), _continuePaging, _usdPrice);
+        addressWithoutTransactions), _continuePaging, _usdPrice, _currentBlockHeight);
     _loadingAddressInfos = false;
   }
 

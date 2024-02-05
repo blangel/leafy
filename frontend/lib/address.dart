@@ -93,8 +93,8 @@ class AddressPage extends StatelessWidget {
                 return Padding(padding: const EdgeInsets.symmetric(horizontal: 5),
                     child: InkWell(onTap: () {
                       Navigator.pushNamed(context, '/transaction',
-                          arguments: TransactionArgument(keyArguments: arguments.keyArguments, transaction: transactions[index], transactions: arguments.allTransactions, changeAddress: arguments.changeAddress));
-                    }, child: TransactionRowWidget(transaction: transactions[index].fromSingleKnownAddress(arguments.addressInfo.address))));
+                          arguments: TransactionArgument(keyArguments: arguments.keyArguments, transaction: transactions[index], transactions: arguments.allTransactions, changeAddress: arguments.changeAddress, currentBlockHeight: arguments.currentBlockHeight));
+                    }, child: TransactionRowWidget(transaction: transactions[index].fromSingleKnownAddress(arguments.addressInfo.address), currentBlockHeight: arguments.currentBlockHeight,)));
               },
               separatorBuilder: (BuildContext context, int index) {
                 return Divider(color: Theme

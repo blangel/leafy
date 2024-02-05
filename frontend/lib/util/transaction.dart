@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:encrypt/encrypt.dart';
 import 'package:flutter/services.dart';
 import 'package:leafy/globals.dart';
+import 'package:leafy/util/bitcoin_network_connectivity.dart';
 
 class TransactionHex {
 
@@ -85,8 +86,14 @@ class Utxo {
   final Outpoint outpoint;
   final int amount;
   final String script;
+  final TransactionStatus status;
 
-  Utxo({required this.address, required this.outpoint, required this.amount, required this.script});
+  Utxo({required this.address, required this.outpoint, required this.amount,
+    required this.script, required this.status});
+
+  String getDateTime() {
+    return getDateTimeFromBlockTime(status.blockTime);
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -96,6 +103,12 @@ class Utxo {
       'Script': script,
     };
   }
+}
+
+List<Utxo> getUtxos(List<Transaction> transactions) {
+  return transactions.map((tx) =>
+      tx.vouts.where((vout) => vout.unspent && vout.toKnownAddress).map((vout) => Utxo(address: vout.scriptPubkeyAddress, outpoint: Outpoint.fromTxId(tx.id, vout.index), amount: vout.valueSat, script: vout.scriptPubkey, status: tx.status))
+  ).expand((utxo) => utxo).toList();
 }
 
 Future<TransactionHex> createTransaction(List<Utxo> utxos, String changeAddress, String destinationAddress, int amount, double feeRate) async {

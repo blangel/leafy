@@ -7,7 +7,9 @@ class TransactionRowWidget extends StatelessWidget {
 
   final Transaction transaction;
 
-  const TransactionRowWidget({super.key, required this.transaction});
+  final int currentBlockHeight;
+
+  const TransactionRowWidget({super.key, required this.transaction, required this.currentBlockHeight});
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +31,23 @@ class TransactionRowWidget extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10.0),
                     ),
                     child: const Text('unconfirmed'))),
+          ]
+        else if (transaction.status.needLivelinessCheck(currentBlockHeight))
+          ...[
+            Padding(padding: const EdgeInsets.fromLTRB(0, 0, 5, 0),
+                child: Column(
+                  children: [
+                    Text(transaction.status.getDateTime(), style: const TextStyle(fontSize: 10)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.yellowAccent,
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: const Text('needs liveliness check', style: TextStyle(fontSize: 10, color: Colors.black87)))
+                  ],
+                )
+            )
           ]
         else
           ...[

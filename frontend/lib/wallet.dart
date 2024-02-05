@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:leafy/globals.dart';
-import 'package:leafy/util/address_loader.dart';
+import 'package:leafy/util/data_loader.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
 import 'package:leafy/widget/transaction.dart';
 import 'package:shimmer/shimmer.dart';
@@ -23,7 +23,7 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
 
   bool loadingAddresses = true;
   bool finishedAddressPaging = false;
-  late AddressLoader _loader;
+  late DataLoader _loader;
 
   late List<String> addresses;
   String receiveAddress = "";
@@ -36,6 +36,7 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
   double unconfirmedBitcoin = 0;
 
   double usdPrice = 0;
+  int currentBlockHeight = 0;
 
   @override
   void initState() {
@@ -44,7 +45,7 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
     addressInfos = [];
     transactionsByAddress = {};
     transactions = [];
-    _loader = AddressLoader();
+    _loader = DataLoader();
   }
 
   @override
@@ -56,7 +57,7 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
   @override
   Widget build(BuildContext context) {
     KeyArguments keyArguments = ModalRoute.of(context)!.settings.arguments as KeyArguments;
-    _loader.init(keyArguments.firstMnemonic, keyArguments.secondDescriptor, (addresses, metadata, paging, usdPrice) {
+    _loader.init(keyArguments.firstMnemonic, keyArguments.secondDescriptor, (addresses, metadata, paging, usdPrice, currentBlockHeight) {
       if (!context.mounted) {
         return;
       }
@@ -71,6 +72,7 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
           receiveAddress = metadata.receiveAddress;
         }
         this.usdPrice = usdPrice;
+        this.currentBlockHeight = currentBlockHeight;
         finishedAddressPaging = !paging;
         loadingAddresses = false;
       });
@@ -156,8 +158,8 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
                       return Padding(padding: const EdgeInsets.symmetric(horizontal: 10),
                           child: InkWell(onTap: () {
                             Navigator.pushNamed(context, '/transaction',
-                                arguments: TransactionArgument(keyArguments: keyArguments, transaction: transactions[index], transactions: transactions, changeAddress: receiveAddress));
-                          }, child: TransactionRowWidget(transaction: transactions[index])));
+                                arguments: TransactionArgument(keyArguments: keyArguments, transaction: transactions[index], transactions: transactions, changeAddress: receiveAddress, currentBlockHeight: currentBlockHeight));
+                          }, child: TransactionRowWidget(transaction: transactions[index], currentBlockHeight: currentBlockHeight)));
                     },
                     separatorBuilder: (BuildContext context, int index) {
                       return Divider(color: Theme.of(context).textTheme.titleMedium!.color, indent: 20, endIndent: 20);
@@ -170,11 +172,11 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
                   children: [
                     TextButton(onPressed: () {
                       Navigator.pushNamed(context, '/transactions',
-                          arguments: TransactionsArguments(keyArguments: keyArguments, transactions: transactions, changeAddress: receiveAddress));
+                          arguments: TransactionsArguments(keyArguments: keyArguments, transactions: transactions, changeAddress: receiveAddress, currentBlockHeight: currentBlockHeight));
                     }, child: const Text("see all transactions", style: TextStyle(decoration: TextDecoration.underline),)),
                     TextButton(onPressed: () {
                       Navigator.pushNamed(context, '/addresses',
-                          arguments: AddressArguments(keyArguments: keyArguments, addresses: addressInfos, transactions: transactionsByAddress, allTransactions: transactions, changeAddress: receiveAddress));
+                          arguments: AddressArguments(keyArguments: keyArguments, addresses: addressInfos, transactions: transactionsByAddress, allTransactions: transactions, changeAddress: receiveAddress, currentBlockHeight: currentBlockHeight));
                     }, child: const Text("see all addresses", style: TextStyle(decoration: TextDecoration.underline))),
                   ],
                 )
