@@ -77,6 +77,7 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
         loadingAddresses = false;
       });
     });
+    var livelinessTransactions = numberOFLivelinessChecksNeeded();
     return buildHomeScaffoldWithRestore(context, '🌿 Wallet', keyArguments.walletPassword, keyArguments.firstMnemonic, Column(
       mainAxisSize: MainAxisSize.max,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -129,12 +130,12 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text("Liveliness Updates", style: TextStyle(fontSize: 24), textAlign: TextAlign.start),
-                Text("${numberOFLivelinessChecksNeeded()} transactions require a liveliness update."),
+                Text("$livelinessTransactions transaction${livelinessTransactions > 1 ? 's' : ''} require${livelinessTransactions > 1 ? '' : 's'} a liveliness update."),
                 Align(alignment: Alignment.centerRight, child: TextButton.icon(icon: const Icon(Icons.lock_clock),
                     onPressed: () {
 
                     },
-                    label: const Text("Perform Updates", style: TextStyle(fontSize: 14),))
+                    label: Text("Perform Update${livelinessTransactions > 1 ? 's' : ''}", style: const TextStyle(fontSize: 14)))
                 )
               ],
             ))

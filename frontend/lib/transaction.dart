@@ -301,14 +301,32 @@ class _TransactionState extends State<TransactionPage> {
                         const Text("Liveliness Update", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         if (transaction.status.needLivelinessCheck(currentBlockHeight))
                           ...[
-                            Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.redAccent,
-                                  borderRadius: BorderRadius.circular(15.0),
-                                ),
-                                child: const Text("needed now", style: TextStyle(color: Colors.black), textAlign: TextAlign.end,)
-                            )))
+                            Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child:
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.redAccent,
+                                        borderRadius: BorderRadius.circular(15.0),
+                                      ),
+                                      child: const Text("needed now", style: TextStyle(color: Colors.black), textAlign: TextAlign.end,)
+                                  ),
+                                  const SizedBox(width: 5),
+                                  TextButton(onPressed: () {
+                                    // TODO
+                                  }, style: TextButton.styleFrom(padding: EdgeInsets.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        Text("update ", style: TextStyle(decoration: TextDecoration.underline), textAlign: TextAlign.end,),
+                                        Icon(Icons.north_east, size: 10,),
+                                      ],
+                                  ))
+                                ],
+                              )))
                           ]
                         else
                           ...[
