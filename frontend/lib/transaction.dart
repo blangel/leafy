@@ -28,7 +28,6 @@ class _TransactionState extends State<TransactionPage> {
 
   MempoolSnapshot? mempoolSnapshot;
 
-
   @override
   void initState() {
     super.initState();
@@ -291,6 +290,30 @@ class _TransactionState extends State<TransactionPage> {
                       children: [
                         const Text("Locktime", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         Expanded(flex: 1, child: Text("${transaction.locktime}", textAlign: TextAlign.end,)),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text("Liveliness Update", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        if (transaction.status.needLivelinessCheck(currentBlockHeight))
+                          ...[
+                            Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                decoration: BoxDecoration(
+                                  color: Colors.redAccent,
+                                  borderRadius: BorderRadius.circular(15.0),
+                                ),
+                                child: const Text("needed now", style: TextStyle(color: Colors.black), textAlign: TextAlign.end,)
+                            )))
+                          ]
+                        else
+                          ...[
+                            Expanded(flex: 1, child: Text("in ${transaction.status.getDurationUntil(arguments.currentBlockHeight)}", textAlign: TextAlign.end,)),
+                          ]
                       ],
                     )
                   ],

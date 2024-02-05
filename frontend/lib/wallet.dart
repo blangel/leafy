@@ -122,6 +122,23 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
           ],
         )
         ),
+        if (needLivelinessCheck())
+          ...[
+            Padding(padding: const EdgeInsets.all(10), child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Liveliness Updates", style: TextStyle(fontSize: 24), textAlign: TextAlign.start),
+                Text("${numberOFLivelinessChecksNeeded()} transactions require a liveliness update."),
+                Align(alignment: Alignment.centerRight, child: TextButton.icon(icon: const Icon(Icons.lock_clock),
+                    onPressed: () {
+
+                    },
+                    label: const Text("Perform Updates", style: TextStyle(fontSize: 14),))
+                )
+              ],
+            ))
+          ],
         Expanded(flex: 1, child: ListView(shrinkWrap: true, children: [
           const Padding(padding: EdgeInsets.all(10), child: Text("Recent Transactions", style: TextStyle(fontSize: 24), textAlign: TextAlign.start)),
           if (loadingAddresses)
@@ -205,4 +222,17 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
     ));
   }
 
+  bool needLivelinessCheck() {
+    if (loadingAddresses) {
+      return false;
+    }
+    return transactions.any((tx) => tx.status.needLivelinessCheck(currentBlockHeight));
+  }
+
+  int numberOFLivelinessChecksNeeded() {
+    if (loadingAddresses) {
+      return 0;
+    }
+    return transactions.fold(0, (previousValue, tx) => tx.status.needLivelinessCheck(currentBlockHeight) ? previousValue + 1 : previousValue);
+  }
 }

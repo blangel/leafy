@@ -44,7 +44,7 @@ class TransactionRowWidget extends StatelessWidget {
                         color: Colors.yellowAccent,
                         borderRadius: BorderRadius.circular(10.0),
                       ),
-                      child: const Text('needs liveliness check', style: TextStyle(fontSize: 10, color: Colors.black87)))
+                      child: const Text('needs liveliness update', style: TextStyle(fontSize: 10, color: Colors.black87)))
                   ],
                 )
             )
