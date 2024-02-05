@@ -17,6 +17,8 @@ class TimelockRecoveryPage extends StatefulWidget {
 
 class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
 
+  final AssetImage _recoverImage = const AssetImage('images/timelock_recovery.gif');
+
   late List<String> _addresses;
 
   late AddressMetadata? _addressMetadata;
@@ -60,9 +62,7 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(padding: const EdgeInsets.fromLTRB(10, 10, 10, 0), child:
-          Container()
-        ),
+        Padding(padding: const EdgeInsets.fromLTRB(20, 20, 20, 10), child: Center(child: Image(height: 150, image: _recoverImage))),
         Expanded(flex: 1, child: ListView(shrinkWrap: true, children: [
           const Padding(padding: EdgeInsets.all(10), child: Text("Recoverable Transactions", style: TextStyle(fontSize: 24), textAlign: TextAlign.start)),
           if (_loadingAddresses)
