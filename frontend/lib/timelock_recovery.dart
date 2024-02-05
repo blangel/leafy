@@ -64,7 +64,7 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
           Container()
         ),
         Expanded(flex: 1, child: ListView(shrinkWrap: true, children: [
-          const Padding(padding: EdgeInsets.all(10), child: Text("Recovery Transactions", style: TextStyle(fontSize: 24), textAlign: TextAlign.start)),
+          const Padding(padding: EdgeInsets.all(10), child: Text("Recoverable Transactions", style: TextStyle(fontSize: 24), textAlign: TextAlign.start)),
           if (_loadingAddresses)
             ...[Shimmer.fromColors(
                 baseColor: Colors.black12,

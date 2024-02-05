@@ -66,10 +66,17 @@ class DataLoader {
       _secondSeedDescriptor = secondSeedDescriptor;
       _timer = Timer.periodic(const Duration(seconds: 10), (Timer t) {
         if (!_continuePaging) {
-          _timer.cancel();
-          return;
+          if (_loadAddressInfo) {
+            _loadPriceData();
+            _loadBlockHeight();
+            _loadAddressInfoForAddresses(callback);
+          } else {
+            _timer.cancel();
+            return;
+          }
+        } else {
+          _loadAddresses(callback);
         }
-        _loadAddresses(callback);
       });
       _loadAddresses(callback);
     });
@@ -160,7 +167,6 @@ class DataLoader {
         _loadAddresses(callback);
       } else {
         _continuePaging = false;
-        _timer.cancel();
       }
     }
     callback(_addresses, AddressMetadata(
