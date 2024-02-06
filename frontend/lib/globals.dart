@@ -17,6 +17,7 @@ import 'package:url_launcher/url_launcher.dart';
 const platform = MethodChannel('leafy/core');
 
 const int timelock = 52560;
+const int livelinessUpdateThreshold = 4320; // ~1 month
 
 // TODO - user configured network?
 final BitcoinClient bitcoinClient = kDebugMode ? MempoolSpaceClient.regtest() : MempoolSpaceClient.mainnet();

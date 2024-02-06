@@ -9,6 +9,7 @@ import 'package:leafy/addresses_list.dart';
 import 'package:leafy/create_transaction.dart';
 import 'package:leafy/firebase_options.dart';
 import 'package:leafy/globals.dart';
+import 'package:leafy/liveliness.dart';
 import 'package:leafy/receive_address.dart';
 import 'package:leafy/setup_new.dart';
 import 'package:leafy/social_recovery.dart';
@@ -45,6 +46,7 @@ class LeafyApp extends StatelessWidget {
         '/new': (context) => const LeafySetupNewPage(),
         '/social-recovery': (context) => const SocialRecoveryPage(),
         '/timelock-recovery': (context) => const TimelockRecoveryPage(),
+        '/liveliness': (context) => const LivelinessPage(),
         '/addresses': (context) => const AddressesListPage(),
         '/address': (context) => const AddressPage(),
         '/transactions': (context) => const TransactionsListPage(),

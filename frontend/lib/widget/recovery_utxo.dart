@@ -1,9 +1,9 @@
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:leafy/globals.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
 import 'package:leafy/util/transaction.dart';
-import 'package:leafy/widget/address.dart';
 
 class RecoveryUtxoRowWidget extends StatelessWidget {
 
@@ -11,9 +11,12 @@ class RecoveryUtxoRowWidget extends StatelessWidget {
 
   final int _currentBlockHeight;
 
-  const RecoveryUtxoRowWidget({super.key, required Utxo utxo, required int currentBlockHeight}) :
+  final bool _strict;
+
+  const RecoveryUtxoRowWidget({super.key, required Utxo utxo, required int currentBlockHeight, required bool strict}) :
     _utxo = utxo,
-    _currentBlockHeight = currentBlockHeight;
+    _currentBlockHeight = currentBlockHeight,
+    _strict = strict;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +28,7 @@ class RecoveryUtxoRowWidget extends StatelessWidget {
       children: [
         SizedBox(width: 175, child: Text(_utxo.getDateTime(), style: const TextStyle(fontSize: 14))),
         const SizedBox(width: 5,),
-        if (!_utxo.status.needLivelinessCheck(_currentBlockHeight))
+        if (!_utxo.status.needLivelinessCheck(_strict ? _currentBlockHeight : _currentBlockHeight + livelinessUpdateThreshold))
           ...[
             Container(
                 padding: const EdgeInsets.symmetric(horizontal: 5),
@@ -33,7 +36,7 @@ class RecoveryUtxoRowWidget extends StatelessWidget {
                   color: Colors.yellowAccent,
                   borderRadius: BorderRadius.circular(10.0),
                 ),
-                child: Text('recover in ${_utxo.status.getDurationUntil(_currentBlockHeight)}', style: const TextStyle(fontSize: 10, color: Colors.black87))
+                child: Text('recover in ${_utxo.status.getDurationUntil(_strict ? _currentBlockHeight : _currentBlockHeight + livelinessUpdateThreshold)}', style: const TextStyle(fontSize: 10, color: Colors.black87))
             )
           ]
         else

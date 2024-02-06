@@ -299,23 +299,35 @@ class _TransactionState extends State<TransactionPage> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const Text("Liveliness Update", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        if (transaction.status.needLivelinessCheck(currentBlockHeight))
+                        if (transaction.status.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold))
                           ...[
                             Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child:
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                                      decoration: BoxDecoration(
-                                        color: Colors.redAccent,
-                                        borderRadius: BorderRadius.circular(15.0),
+                                  if (transaction.status.needLivelinessCheck(currentBlockHeight))
+                                    ...[Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                                          decoration: BoxDecoration(
+                                            color: Colors.redAccent,
+                                            borderRadius: BorderRadius.circular(15.0),
+                                          ),
+                                          child: const Text("needed now", style: TextStyle(color: Colors.black), textAlign: TextAlign.end,)
                                       ),
-                                      child: const Text("needed now", style: TextStyle(color: Colors.black), textAlign: TextAlign.end,)
-                                  ),
+                                    ]
+                                  else
+                                    ...[Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                                        decoration: BoxDecoration(
+                                          color: Colors.yellowAccent,
+                                          borderRadius: BorderRadius.circular(15.0),
+                                        ),
+                                        child: const Text("needed soon", style: TextStyle(color: Colors.black), textAlign: TextAlign.end,)
+                                      ),
+                                    ],
                                   const SizedBox(width: 5),
                                   TextButton(onPressed: () {
-                                    // TODO
+                                    Navigator.pushNamed(context, '/liveliness', arguments: TransactionsArguments(keyArguments: arguments.keyArguments, transactions: arguments.transactions, changeAddress: arguments.changeAddress, currentBlockHeight: arguments.currentBlockHeight));
                                   }, style: TextButton.styleFrom(padding: EdgeInsets.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
                                     child: const Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -330,7 +342,7 @@ class _TransactionState extends State<TransactionPage> {
                           ]
                         else
                           ...[
-                            Expanded(flex: 1, child: Text("in ${transaction.status.getDurationUntil(arguments.currentBlockHeight)}", textAlign: TextAlign.end,)),
+                            Expanded(flex: 1, child: Text("in ${transaction.status.getDurationUntil(arguments.currentBlockHeight + livelinessUpdateThreshold)}", textAlign: TextAlign.end,)),
                           ]
                       ],
                     )

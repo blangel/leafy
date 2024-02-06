@@ -59,7 +59,7 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
     });
     return buildHomeScaffold(context, "Remote Account Recovery", Column(
       mainAxisSize: MainAxisSize.max,
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(padding: const EdgeInsets.fromLTRB(20, 20, 20, 10), child: Center(child: Image(height: 150, image: _recoverImage))),
@@ -97,7 +97,7 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
                     itemCount: _utxos.length,
                     itemBuilder: (context, index) {
                       return Padding(padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: InkWell(onTap: null, child: RecoveryUtxoRowWidget(utxo: _utxos[index], currentBlockHeight: _currentBlockHeight,)));
+                          child: InkWell(onTap: null, child: RecoveryUtxoRowWidget(utxo: _utxos[index], currentBlockHeight: _currentBlockHeight, strict: true,)));
                     },
                     separatorBuilder: (BuildContext context, int index) {
                       return Divider(color: Theme.of(context).textTheme.titleMedium!.color, indent: 20, endIndent: 20);

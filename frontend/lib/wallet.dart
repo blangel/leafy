@@ -77,7 +77,7 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
         loadingAddresses = false;
       });
     });
-    var livelinessTransactions = numberOFLivelinessChecksNeeded();
+    var livelinessTransactions = _numberOfLivelinessChecksNeeded();
     return buildHomeScaffoldWithRestore(context, '🌿 Wallet', keyArguments.walletPassword, keyArguments.firstMnemonic, Column(
       mainAxisSize: MainAxisSize.max,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -123,7 +123,7 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
           ],
         )
         ),
-        if (needLivelinessCheck())
+        if (_needLivelinessCheck())
           ...[
             Padding(padding: const EdgeInsets.all(10), child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -131,9 +131,9 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
               children: [
                 const Text("Liveliness Updates", style: TextStyle(fontSize: 24), textAlign: TextAlign.start),
                 Text("$livelinessTransactions transaction${livelinessTransactions > 1 ? 's' : ''} require${livelinessTransactions > 1 ? '' : 's'} a liveliness update."),
-                Align(alignment: Alignment.centerRight, child: TextButton.icon(icon: const Icon(Icons.lock_clock),
+                Align(alignment: Alignment.centerRight, child: TextButton.icon(icon: const Icon(Icons.monitor_heart_outlined),
                     onPressed: () {
-
+                      Navigator.pushNamed(context, '/liveliness', arguments: TransactionsArguments(keyArguments: keyArguments, transactions: transactions, changeAddress: receiveAddress, currentBlockHeight: currentBlockHeight));
                     },
                     label: Text("Perform Update${livelinessTransactions > 1 ? 's' : ''}", style: const TextStyle(fontSize: 14)))
                 )
@@ -223,17 +223,17 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
     ));
   }
 
-  bool needLivelinessCheck() {
+  bool _needLivelinessCheck() {
     if (loadingAddresses) {
       return false;
     }
-    return transactions.any((tx) => tx.status.needLivelinessCheck(currentBlockHeight));
+    return transactions.any((tx) => tx.status.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold));
   }
 
-  int numberOFLivelinessChecksNeeded() {
+  int _numberOfLivelinessChecksNeeded() {
     if (loadingAddresses) {
       return 0;
     }
-    return transactions.fold(0, (previousValue, tx) => tx.status.needLivelinessCheck(currentBlockHeight) ? previousValue + 1 : previousValue);
+    return transactions.fold(0, (previousValue, tx) => tx.status.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold) ? previousValue + 1 : previousValue);
   }
 }

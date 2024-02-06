@@ -134,7 +134,9 @@ class DataLoader {
     String addressWithoutTransactions = "";
     int addressWithoutTransactionsCount = 0;
     Map<String, List<Transaction>> transactionsByAddress = {};
-    for (String address in _addresses) {
+    List<String> copiedAddresses = [];
+    copiedAddresses.addAll(_addresses);
+    for (String address in copiedAddresses) {
       AddressInfo info = await bitcoinClient.getAddressInfo(address);
       if (((info.chainStats.transactionCount + info.mempoolStats.transactionCount) == 0)
           && ((info.chainStats.bitcoinSum + info.mempoolStats.bitcoinSum) == 0)) {
@@ -147,7 +149,7 @@ class DataLoader {
         confirmedSats += (info.chainStats.bitcoinSum - info.chainStats.spentBitcoinSum);
         unconfirmedSats += (info.mempoolStats.bitcoinSum - info.mempoolStats.spentBitcoinSum);
         List<Transaction> addressTransactions = await bitcoinClient.getAddressTransactions(address);
-        addressTransactions = addressTransactions.map((item) => item.fromKnownAddresses(_addresses)).toList();
+        addressTransactions = addressTransactions.map((item) => item.fromKnownAddresses(copiedAddresses)).toList();
         List<Future<Transaction>> futureTransactions = addressTransactions.map((item) {
           return bitcoinClient.augmentTransactionWithUnspentUtxos(item);
         }).toList();
@@ -169,7 +171,7 @@ class DataLoader {
         _continuePaging = false;
       }
     }
-    callback(_addresses, AddressMetadata(
+    callback(copiedAddresses, AddressMetadata(
         fromSatsToBitcoin(confirmedSats),
         fromSatsToBitcoin(unconfirmedSats),
         addressInfos,

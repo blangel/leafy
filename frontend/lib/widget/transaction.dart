@@ -1,6 +1,7 @@
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:leafy/globals.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
 
 class TransactionRowWidget extends StatelessWidget {
@@ -32,7 +33,7 @@ class TransactionRowWidget extends StatelessWidget {
                     ),
                     child: const Text('unconfirmed'))),
           ]
-        else if (transaction.status.needLivelinessCheck(currentBlockHeight))
+        else if (transaction.status.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold))
           ...[
             Padding(padding: const EdgeInsets.fromLTRB(0, 0, 5, 0),
                 child: Column(
