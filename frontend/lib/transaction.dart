@@ -312,7 +312,7 @@ class _TransactionState extends State<TransactionPage> {
                                             color: Colors.redAccent,
                                             borderRadius: BorderRadius.circular(15.0),
                                           ),
-                                          child: const Text("needed now", style: TextStyle(color: Colors.black), textAlign: TextAlign.end,)
+                                          child: const Text("past due", style: TextStyle(color: Colors.black), textAlign: TextAlign.end,)
                                       ),
                                     ]
                                   else
@@ -322,7 +322,7 @@ class _TransactionState extends State<TransactionPage> {
                                           color: Colors.yellowAccent,
                                           borderRadius: BorderRadius.circular(15.0),
                                         ),
-                                        child: const Text("needed soon", style: TextStyle(color: Colors.black), textAlign: TextAlign.end,)
+                                        child: const Text("available", style: TextStyle(color: Colors.black), textAlign: TextAlign.end,)
                                       ),
                                     ],
                                   const SizedBox(width: 5),

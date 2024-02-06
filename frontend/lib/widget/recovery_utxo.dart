@@ -54,7 +54,7 @@ class RecoveryUtxoRowWidget extends StatelessWidget {
                         color: Colors.redAccent,
                         borderRadius: BorderRadius.circular(10.0),
                       ),
-                      child: Text('$_verbiage past due', style: const TextStyle(fontSize: 10, color: Colors.black87))
+                      child: const Text('past due', style: TextStyle(fontSize: 10, color: Colors.black87))
                     )
                   ]
                 else
