@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:leafy/globals.dart';
+import 'package:leafy/util/bitcoin_network_connectivity.dart';
 import 'package:leafy/util/data_loader.dart';
 import 'package:leafy/util/transaction.dart';
 import 'package:leafy/widget/recovery_utxo.dart';
@@ -18,8 +19,6 @@ class TimelockRecoveryPage extends StatefulWidget {
 class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
 
   final AssetImage _recoverImage = const AssetImage('images/timelock_recovery.gif');
-
-  late List<String> _addresses;
 
   late AddressMetadata? _addressMetadata;
   late List<Utxo> _utxos;
@@ -47,13 +46,15 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
       if (!context.mounted) {
         return;
       }
+      List<Transaction> txs = [];
+      if (metadata != null) {
+        txs.addAll(metadata.transactions);
+        txs.sort((a, b) => b.compareTo(a));
+      }
       setState(() {
-        _addresses = addresses;
         _addressMetadata = metadata;
         _currentBlockHeight = currentBlockHeight;
-        if (_addressMetadata != null) {
-          _utxos = getUtxos(_addressMetadata!.transactions);
-        }
+        _utxos = getUtxos(txs);
         _loadingAddresses = false;
       });
     });

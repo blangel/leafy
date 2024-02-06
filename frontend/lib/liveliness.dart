@@ -23,7 +23,10 @@ class _LivelinessState extends State<LivelinessPage> {
   @override
   Widget build(BuildContext context) {
     TransactionsArguments arguments = ModalRoute.of(context)!.settings.arguments as TransactionsArguments;
-    List<Utxo> utxos = getUtxos(arguments.transactions);
+    List<Transaction> copiedTxs = [];
+    copiedTxs.addAll(arguments.transactions);
+    copiedTxs.sort((a, b) => b.compareTo(a));
+    List<Utxo> utxos = getUtxos(copiedTxs);
     return buildScaffold(context, "Liveliness Updates", Column(
       mainAxisSize: MainAxisSize.max,
       mainAxisAlignment: MainAxisAlignment.start,
@@ -32,9 +35,9 @@ class _LivelinessState extends State<LivelinessPage> {
         Padding(padding: const EdgeInsets.fromLTRB(20, 20, 20, 10), child: Center(child: Image(height: 150, image: _livelinessImage))),
         const Padding(padding: EdgeInsets.all(10), child: Text("Liveliness updates ensure your bitcoin is kept secure and accessible even in the case you loss access to your Remote Account. It is like a health check for your wallet.")),
         Divider(color: Theme.of(context).textTheme.titleMedium!.color, indent: 20, endIndent: 20),
-          if (!_needLivelinessUpdates(arguments.transactions, arguments.currentBlockHeight))
+          if (!_needLivelinessUpdates(utxos, arguments.currentBlockHeight))
             ...[
-              Padding(padding: const EdgeInsets.all(10), child: Text("No liveliness updates needed at this time.${arguments.transactions.isNotEmpty ? ' Next liveliness update needed in ${_getEarliestLivelinessUpdateDesc(arguments.transactions, arguments.currentBlockHeight)}.' : ''}")),
+              Padding(padding: const EdgeInsets.all(10), child: Text("No liveliness updates needed at this time.${utxos.isNotEmpty ? ' Next liveliness update needed in ${_getEarliestLivelinessUpdateDesc(utxos, arguments.currentBlockHeight)}.' : ''}")),
             ]
           else
             ...[
@@ -54,14 +57,13 @@ class _LivelinessState extends State<LivelinessPage> {
         ]));
   }
 
-  bool _needLivelinessUpdates(List<Transaction> txs, int currentBlockHeight) {
-    return txs.any((tx) => tx.status.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold));
+  bool _needLivelinessUpdates(List<Utxo> utxos, int currentBlockHeight) {
+    return utxos.any((utxo) => utxo.status.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold));
   }
 
-  String _getEarliestLivelinessUpdateDesc(List<Transaction> txs, int currentBlockHeight) {
-    List<int> blocksUntilLiveliness = txs.map((tx) => tx.status.blocksToLiveliness(currentBlockHeight + livelinessUpdateThreshold)).toList();
+  String _getEarliestLivelinessUpdateDesc(List<Utxo> utxos, int currentBlockHeight) {
+    List<int> blocksUntilLiveliness = utxos.map((utxo) => utxo.status.blocksToLiveliness(currentBlockHeight + livelinessUpdateThreshold)).toList();
     mergeSort(blocksUntilLiveliness);
-    log("$blocksUntilLiveliness");
     return blocksToDurationFormatted(blocksUntilLiveliness[0]);
   }
 
