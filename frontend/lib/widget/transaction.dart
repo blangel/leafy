@@ -42,10 +42,10 @@ class TransactionRowWidget extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5),
                       decoration: BoxDecoration(
-                        color: Colors.yellowAccent,
+                        color: transaction.status.needLivelinessCheck(currentBlockHeight) ? Colors.redAccent : Colors.greenAccent,
                         borderRadius: BorderRadius.circular(10.0),
                       ),
-                      child: const Text('needs liveliness update', style: TextStyle(fontSize: 10, color: Colors.black87)))
+                      child: Text(transaction.status.needLivelinessCheck(currentBlockHeight) ? 'liveliness past due' : 'liveliness available', style: const TextStyle(fontSize: 10, color: Colors.black87)))
                   ],
                 )
             )

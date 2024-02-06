@@ -65,7 +65,7 @@ class RecoveryUtxoRowWidget extends StatelessWidget {
                         color: Colors.greenAccent,
                         borderRadius: BorderRadius.circular(10.0),
                       ),
-                      child: Text('$_verbiage now', style: const TextStyle(fontSize: 10, color: Colors.black87))
+                      child: const Text('available', style: TextStyle(fontSize: 10, color: Colors.black87))
                     )
                   ]
               ]

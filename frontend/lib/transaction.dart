@@ -319,7 +319,7 @@ class _TransactionState extends State<TransactionPage> {
                                     ...[Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10),
                                         decoration: BoxDecoration(
-                                          color: Colors.yellowAccent,
+                                          color: Colors.greenAccent,
                                           borderRadius: BorderRadius.circular(15.0),
                                         ),
                                         child: const Text("available", style: TextStyle(color: Colors.black), textAlign: TextAlign.end,)
