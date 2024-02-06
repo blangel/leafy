@@ -13,10 +13,13 @@ class RecoveryUtxoRowWidget extends StatelessWidget {
 
   final bool _strict;
 
+  final String _verbiage;
+
   const RecoveryUtxoRowWidget({super.key, required Utxo utxo, required int currentBlockHeight, required bool strict}) :
     _utxo = utxo,
     _currentBlockHeight = currentBlockHeight,
-    _strict = strict;
+    _strict = strict,
+    _verbiage = strict ? 'recover' : 'update';
 
   @override
   Widget build(BuildContext context) {
@@ -36,19 +39,46 @@ class RecoveryUtxoRowWidget extends StatelessWidget {
                   color: Colors.yellowAccent,
                   borderRadius: BorderRadius.circular(10.0),
                 ),
-                child: Text('recover in ${_utxo.status.getDurationUntil(_strict ? _currentBlockHeight : _currentBlockHeight + livelinessUpdateThreshold)}', style: const TextStyle(fontSize: 10, color: Colors.black87))
+                child: Text('$_verbiage in ${_utxo.status.getDurationUntil(_strict ? _currentBlockHeight : _currentBlockHeight + livelinessUpdateThreshold)}', style: const TextStyle(fontSize: 10, color: Colors.black87))
             )
           ]
         else
           ...[
-            Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5),
-                decoration: BoxDecoration(
-                  color: Colors.greenAccent,
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                child: const Text('recover now', style: TextStyle(fontSize: 10, color: Colors.black87))
-            )
+            if (!_strict)
+              ...[
+                if (_utxo.status.needLivelinessCheck(_currentBlockHeight))
+                  ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: Text('$_verbiage past due', style: const TextStyle(fontSize: 10, color: Colors.black87))
+                    )
+                  ]
+                else
+                  ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.greenAccent,
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: Text('$_verbiage now', style: const TextStyle(fontSize: 10, color: Colors.black87))
+                    )
+                  ]
+              ]
+            else
+              ...[Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.greenAccent,
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  child: Text('$_verbiage now', style: const TextStyle(fontSize: 10, color: Colors.black87))
+                )
+              ]
           ],
         Expanded(flex: 1, child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
