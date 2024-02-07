@@ -227,13 +227,13 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
     if (loadingAddresses) {
       return false;
     }
-    return transactions.any((tx) => tx.status.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold));
+    return transactions.any((tx) => tx.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold));
   }
 
   int _numberOfLivelinessChecksNeeded() {
     if (loadingAddresses) {
       return 0;
     }
-    return transactions.fold(0, (previousValue, tx) => tx.status.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold) ? previousValue + 1 : previousValue);
+    return transactions.fold(0, (previousValue, tx) => tx.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold) ? previousValue + 1 : previousValue);
   }
 }

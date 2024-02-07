@@ -55,7 +55,7 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
         _addressMetadata = metadata;
         _currentBlockHeight = currentBlockHeight;
         _utxos = getUtxos(txs);
-        _loadingAddresses = false;
+        _loadingAddresses = paging;
       });
     });
     return buildHomeScaffold(context, "Remote Account Recovery", Column(
@@ -105,7 +105,20 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
                     }
                 ),
               ],
-        ]))
+        ])),
+        Align(
+          alignment: Alignment.bottomRight,
+          child: Padding(
+            padding: const EdgeInsets.all(25),
+            child: FloatingActionButton.extended(
+              onPressed: _loadingAddresses || _utxos.isEmpty ? null : () {
+
+              },
+              label: const Text('Recover'),
+              icon: const Icon(Icons.chevron_right),
+            ),
+          ),
+        )
       ],
     ));
   }

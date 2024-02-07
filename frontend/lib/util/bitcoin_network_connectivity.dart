@@ -416,6 +416,14 @@ class Transaction implements Comparable<Transaction> {
     return numberFormat.format(feeRate());
   }
 
+  bool hasAnyOwnedUtxo() {
+    return vouts.any((vout) => vout.toKnownAddress && vout.unspent);
+  }
+
+  bool needLivelinessCheck(int fromBlock) {
+    return hasAnyOwnedUtxo() && status.needLivelinessCheck(fromBlock);
+  }
+
   @override
   int compareTo(Transaction other) {
     if (status.confirmed != other.status.confirmed) {

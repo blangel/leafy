@@ -29,7 +29,7 @@ class RecoveryUtxoRowWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.max,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(width: 175, child: Text(_utxo.getDateTime(), style: const TextStyle(fontSize: 14))),
+        SizedBox(width: 170, child: Text(_utxo.getDateTime(), style: const TextStyle(fontSize: 14))),
         const SizedBox(width: 5,),
         if (!_utxo.status.needLivelinessCheck(_strict ? _currentBlockHeight : _currentBlockHeight + livelinessUpdateThreshold))
           ...[
@@ -85,7 +85,7 @@ class RecoveryUtxoRowWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(width: 50, child: AutoSizeText("${formatBitcoin(netBitcoin)} ₿", style: const TextStyle(fontSize: 20), textAlign: TextAlign.end, minFontSize: 14, stepGranularity: 1, maxLines: 1, overflow: TextOverflow.ellipsis,)),
+            SizedBox(width: 125, child: AutoSizeText("${formatBitcoin(netBitcoin)} ₿", style: const TextStyle(fontSize: 20), textAlign: TextAlign.end, minFontSize: 14, stepGranularity: 1, maxLines: 1, overflow: TextOverflow.ellipsis,)),
           ],
         ))
       ],

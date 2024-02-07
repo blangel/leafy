@@ -20,7 +20,7 @@ class TransactionRowWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.max,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(width: 145, child: Text(shortTransactionId(transaction.id), style: const TextStyle(fontSize: 18))),
+        SizedBox(width: 135, child: Text(shortTransactionId(transaction.id), style: const TextStyle(fontSize: 18))),
         const SizedBox(width: 5,),
         if (!transaction.status.confirmed)
           ...[
@@ -33,7 +33,7 @@ class TransactionRowWidget extends StatelessWidget {
                     ),
                     child: const Text('unconfirmed'))),
           ]
-        else if (transaction.status.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold))
+        else if (transaction.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold))
           ...[
             Padding(padding: const EdgeInsets.fromLTRB(0, 0, 5, 0),
                 child: Column(
@@ -42,10 +42,10 @@ class TransactionRowWidget extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5),
                       decoration: BoxDecoration(
-                        color: transaction.status.needLivelinessCheck(currentBlockHeight) ? Colors.redAccent : Colors.greenAccent,
+                        color: transaction.needLivelinessCheck(currentBlockHeight) ? Colors.redAccent : Colors.greenAccent,
                         borderRadius: BorderRadius.circular(10.0),
                       ),
-                      child: Text(transaction.status.needLivelinessCheck(currentBlockHeight) ? 'liveliness past due' : 'liveliness available', style: const TextStyle(fontSize: 10, color: Colors.black87)))
+                      child: Text(transaction.needLivelinessCheck(currentBlockHeight) ? 'liveliness past due' : 'liveliness available', style: const TextStyle(fontSize: 10, color: Colors.black87)))
                   ],
                 )
             )
@@ -59,7 +59,7 @@ class TransactionRowWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(width: 100, child: AutoSizeText("${formatBitcoin(netBitcoin)} ₿", style: const TextStyle(fontSize: 20), textAlign: TextAlign.end, minFontSize: 14, stepGranularity: 1, maxLines: 1, overflow: TextOverflow.ellipsis,)),
+            SizedBox(width: 125, child: AutoSizeText("${formatBitcoin(netBitcoin)} ₿", style: const TextStyle(fontSize: 20), textAlign: TextAlign.end, minFontSize: 14, stepGranularity: 1, maxLines: 1, overflow: TextOverflow.ellipsis,)),
             const SizedBox(width: 5),
             if (netBitcoin < 0)
               ...[

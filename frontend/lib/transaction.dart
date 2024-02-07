@@ -299,13 +299,13 @@ class _TransactionState extends State<TransactionPage> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const Text("Liveliness Update", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        if (transaction.status.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold))
+                        if (transaction.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold))
                           ...[
                             Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child:
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  if (transaction.status.needLivelinessCheck(currentBlockHeight))
+                                  if (transaction.needLivelinessCheck(currentBlockHeight))
                                     ...[Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 10),
                                           decoration: BoxDecoration(
@@ -340,9 +340,13 @@ class _TransactionState extends State<TransactionPage> {
                                 ],
                               )))
                           ]
-                        else
+                        else if (transaction.hasAnyOwnedUtxo())
                           ...[
                             Expanded(flex: 1, child: Text("in ${transaction.status.getDurationUntil(arguments.currentBlockHeight + livelinessUpdateThreshold)}", textAlign: TextAlign.end,)),
+                          ]
+                        else
+                          ...[
+                            const Expanded(flex: 1, child: Text("n/a", textAlign: TextAlign.end)),
                           ]
                       ],
                     )
