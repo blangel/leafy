@@ -133,14 +133,7 @@ class _TransactionState extends State<TransactionPage> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: getConfirmationColor(transaction),
-                        borderRadius: BorderRadius.circular(15.0),
-                      ),
-                      child: Text(getConfirmationText(transaction), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black), textAlign: TextAlign.end,)
-                  ))),
+                  Expanded(flex: 1, child: getConfirmationWidget(getConfirmationColor(transaction), getConfirmationText(transaction))),
                   if (isUnconfirmedSent(transaction))
                     ...[
                       TextButton(
@@ -429,4 +422,15 @@ class _TransactionState extends State<TransactionPage> {
     }
     return Colors.green;
   }
+}
+
+Widget getConfirmationWidget(Color confirmationColor, String confirmationText) {
+  return Align(alignment: Alignment.centerRight, child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: confirmationColor,
+        borderRadius: BorderRadius.circular(15.0),
+      ),
+      child: Text(confirmationText, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black), textAlign: TextAlign.end,)
+  ));
 }

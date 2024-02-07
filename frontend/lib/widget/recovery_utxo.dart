@@ -2,6 +2,7 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:leafy/globals.dart';
+import 'package:leafy/transaction.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
 import 'package:leafy/util/transaction.dart';
 
@@ -29,7 +30,22 @@ class RecoveryUtxoRowWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.max,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(width: 170, child: Text(_utxo.getDateTime(), style: const TextStyle(fontSize: 14))),
+        if (_utxo.status.blockTime == null)
+          ...[
+            SizedBox(width: 170, child:
+              Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  getConfirmationWidget(Colors.red, "unconfirmed")
+                ]
+              )
+            )
+          ]
+        else
+          ...[
+            SizedBox(width: 170, child: Text(_utxo.getDateTime(), style: const TextStyle(fontSize: 14))),
+          ],
         const SizedBox(width: 5,),
         if (!_utxo.status.needLivelinessCheck(_strict ? _currentBlockHeight : _currentBlockHeight + livelinessUpdateThreshold))
           ...[

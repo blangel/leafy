@@ -2,6 +2,7 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:leafy/globals.dart';
+import 'package:leafy/transaction.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
 
 class TransactionRowWidget extends StatelessWidget {
@@ -25,13 +26,7 @@ class TransactionRowWidget extends StatelessWidget {
         if (!transaction.status.confirmed)
           ...[
             Padding(padding: const EdgeInsets.fromLTRB(0, 0, 5, 0),
-                child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent,
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    child: const Text('unconfirmed'))),
+                child: getConfirmationWidget(Colors.red, "unconfirmed")),
           ]
         else if (transaction.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold))
           ...[

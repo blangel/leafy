@@ -81,6 +81,7 @@ class _LivelinessState extends State<LivelinessPage> {
                 padding: const EdgeInsets.all(25),
                 child: FloatingActionButton.extended(
                   onPressed: !_needLivelinessUpdates(utxos, arguments.currentBlockHeight) ? null : () {
+
                   },
                   label: const Text('Update'),
                   icon: const Icon(Icons.chevron_right),
