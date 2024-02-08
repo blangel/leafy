@@ -135,7 +135,7 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
                     onPressed: () {
                       Navigator.pushNamed(context, '/liveliness', arguments: TransactionsArguments(keyArguments: keyArguments, transactions: transactions, changeAddress: receiveAddress, currentBlockHeight: currentBlockHeight));
                     },
-                    label: Text("Perform Update${livelinessTransactions > 1 ? 's' : ''}", style: const TextStyle(fontSize: 14)))
+                    label: Text("Review Update${livelinessTransactions > 1 ? 's' : ''}", style: const TextStyle(fontSize: 14)))
                 )
               ],
             ))
