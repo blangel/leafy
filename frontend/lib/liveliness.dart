@@ -121,7 +121,7 @@ class _LivelinessState extends State<LivelinessPage> {
                   onPressed: !_needLivelinessUpdates(utxos, arguments.currentBlockHeight) ? null : () {
 
                   },
-                  label: const Text('Update'),
+                  label: const Text('Approve Update'),
                   icon: const Icon(Icons.chevron_right),
                 ),
               ),
