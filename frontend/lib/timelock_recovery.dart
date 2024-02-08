@@ -21,7 +21,10 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
   final AssetImage _recoverImage = const AssetImage('images/timelock_recovery.gif');
 
   late AddressMetadata? _addressMetadata;
-  late List<Utxo> _utxos;
+  List<Utxo> _utxos = [];
+  late int _countRecoverable;
+  late String _firstRecoverableTime;
+  late String _lastRecoverableTime;
   late int _currentBlockHeight;
 
   late DataLoader _loader;
@@ -55,6 +58,9 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
         _addressMetadata = metadata;
         _currentBlockHeight = currentBlockHeight;
         _utxos = getUtxos(txs);
+        _countRecoverable = _utxos.fold(0, (previousValue, utxo) => utxo.status.needLivelinessCheck(_currentBlockHeight) ? previousValue + 1 : previousValue);
+        _firstRecoverableTime = _getFirstRecoverable();
+        _lastRecoverableTime = _getLastRecoverable();
         _loadingAddresses = paging;
       });
     });
@@ -66,7 +72,7 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
         Padding(padding: const EdgeInsets.fromLTRB(20, 20, 20, 10), child: Center(child: Image(height: 150, image: _recoverImage))),
         const Padding(padding: EdgeInsets.all(10), child: Text("Your Remote Account is inaccessible or its Leafy wallet data has been deleted. To regain access to your wallet you will need to perform a recovery. Some of your funds may be timelocked by the Bitcoin blockchain. They will be recoverable after the designated timelock expires.")),
         Expanded(flex: 1, child: ListView(shrinkWrap: true, children: [
-          const Padding(padding: EdgeInsets.all(10), child: Text("Recoverable Transactions", style: TextStyle(fontSize: 24), textAlign: TextAlign.start)),
+          const Padding(padding: EdgeInsets.all(10), child: Text("Recoverable Funds", style: TextStyle(fontSize: 24), textAlign: TextAlign.start)),
           if (_loadingAddresses)
             ...[Shimmer.fromColors(
                 baseColor: Colors.black12,
@@ -90,9 +96,16 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
             )]
           else
             if (_utxos.isEmpty)
-              ...[const Padding(padding: EdgeInsets.all(10), child: Text("No recovery transactions"))]
+              ...[const Padding(padding: EdgeInsets.all(10), child: Text("No recoverable funds found"))]
             else
-              ...[
+              if (_countRecoverable == 0)
+                ...[
+                  Padding(padding: const EdgeInsets.all(10), child: Text("No recoverable funds currently. ${_firstRecoverableTime == _lastRecoverableTime ? 'In $_lastRecoverableTime all can be recovered.' : 'In $_firstRecoverableTime some can be recovered. In $_lastRecoverableTime all can be recovered.'}")),
+                ]
+              else
+                ...[
+                  Padding(padding: const EdgeInsets.all(10), child: Text("$_countRecoverable can be recovered now. In $_lastRecoverableTime all can be recovered.")),
+                ],
                 ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -105,7 +118,6 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
                       return Divider(color: Theme.of(context).textTheme.titleMedium!.color, indent: 20, endIndent: 20);
                     }
                 ),
-              ],
         ])),
         Align(
           alignment: Alignment.bottomRight,
@@ -124,4 +136,22 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
     ));
   }
 
+  String _getFirstRecoverable() {
+    if (_utxos.isEmpty) {
+      return "";
+    }
+    List<int> blocks = _utxos.map((utxo) => utxo.status.blocksToLiveliness(_currentBlockHeight)).toList();
+    blocks.sort();
+    return blocksToDurationFormatted(blocks.first);
+  }
+
+  String _getLastRecoverable() {
+    if (_utxos.isEmpty) {
+      return "";
+    }
+    List<int> blocks = _utxos.map((utxo) => utxo.status.blocksToLiveliness(_currentBlockHeight)).toList();
+    blocks.sort();
+    return blocksToDurationFormatted(blocks.last);
+  }
+  
 }
