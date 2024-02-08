@@ -1,4 +1,5 @@
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:leafy/globals.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
@@ -70,7 +71,17 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(padding: const EdgeInsets.fromLTRB(20, 20, 20, 10), child: Center(child: Image(height: 150, image: _recoverImage))),
-        const Padding(padding: EdgeInsets.all(10), child: Text("Your Remote Account is inaccessible or its Leafy wallet data has been deleted. To regain access to your wallet you will need to perform a recovery. Some of your funds may be timelocked by the Bitcoin blockchain. They will be recoverable after the designated timelock expires.")),
+        Padding(padding: const EdgeInsets.all(10), child: RichText(text: TextSpan(
+          text: "Your Remote Account is inaccessible or its Leafy wallet data has been deleted (",
+          children: [
+            TextSpan(text: "retry your Remote Account", style: const TextStyle(decoration: TextDecoration.underline),
+              recognizer: TapGestureRecognizer()..onTap = () {
+                Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+              }
+            ),
+            const TextSpan(text: ").\n\nTo regain access to your wallet you will need to perform a recovery. Some of your funds may be timelocked by the Bitcoin blockchain. They will be recoverable after the designated timelock expires.")
+          ]
+        ))),
         Expanded(flex: 1, child: ListView(shrinkWrap: true, children: [
           const Padding(padding: EdgeInsets.all(10), child: Text("Recoverable Funds", style: TextStyle(fontSize: 24), textAlign: TextAlign.start)),
           if (_loadingAddresses)
@@ -153,5 +164,5 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
     blocks.sort();
     return blocksToDurationFormatted(blocks.last);
   }
-  
+
 }
