@@ -45,16 +45,13 @@ class DataLoader {
 
   int _startIndex;
   bool _continuePaging = true;
-  final bool _loadAddressInfo;
   bool _loadingAddressInfos = false;
 
   double _usdPrice = 0.0;
 
   int _currentBlockHeight = 0;
 
-  DataLoader({startIndex = 0, loadAddressInfo = true})
-      : _startIndex = startIndex,
-        _loadAddressInfo = loadAddressInfo;
+  DataLoader({startIndex = 0}) : _startIndex = startIndex;
 
   Future<void> init(String firstSeedMnemonic, String secondSeedDescriptor, void Function(List<String>, AddressMetadata?, bool, double, int) callback) async {
     await _lock.synchronized(() {
@@ -65,18 +62,9 @@ class DataLoader {
       _firstSeedMnemonic = firstSeedMnemonic;
       _secondSeedDescriptor = secondSeedDescriptor;
       _timer = Timer.periodic(const Duration(seconds: 10), (Timer t) {
-        if (!_continuePaging) {
-          if (_loadAddressInfo) {
-            _loadPriceData();
-            _loadBlockHeight();
-            _loadAddressInfoForAddresses(callback);
-          } else {
-            _timer.cancel();
-            return;
-          }
-        } else {
-          _loadAddresses(callback);
-        }
+        _loadPriceData();
+        _loadBlockHeight();
+        _loadAddressInfoForAddresses(callback);
       });
       _loadAddresses(callback);
     });
@@ -108,13 +96,9 @@ class DataLoader {
       _startIndex += _loadAmount;
       _addresses.clear();
       _addresses.addAll(allAddresses);
-      if (_loadAddressInfo) {
-        _loadAddressInfoForAddresses(callback);
-        _loadPriceData();
-        _loadBlockHeight();
-      } else {
-        callback(allAddresses, null, _continuePaging, _usdPrice, _currentBlockHeight);
-      }
+      _loadAddressInfoForAddresses(callback);
+      _loadPriceData();
+      _loadBlockHeight();
     });
   }
 
