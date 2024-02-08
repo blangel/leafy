@@ -19,6 +19,7 @@ class _LivelinessState extends State<LivelinessPage> {
   final AssetImage _livelinessImage = const AssetImage('images/liveliness.gif');
 
   bool _updateAll = true;
+  bool _signing = false;
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +106,7 @@ class _LivelinessState extends State<LivelinessPage> {
                 const Padding(padding: EdgeInsets.all(10), child: SizedBox(width: 350, child: Text("Update all confirmed transactions, even those not yet required. This can make liveliness updates more efficient by batching them."))),
                 Switch(
                   value: _updateAll,
-                  onChanged: (bool value) {
+                  onChanged: _signing ? null : (bool value) {
                     setState(() {
                       _updateAll = value;
                     });
@@ -118,8 +119,11 @@ class _LivelinessState extends State<LivelinessPage> {
               child: Padding(
                 padding: const EdgeInsets.all(25),
                 child: FloatingActionButton.extended(
-                  onPressed: !_needLivelinessUpdates(utxos, arguments.currentBlockHeight) ? null : () {
-
+                  onPressed: _signing || utxos.isEmpty ? null : () {
+                    setState(() {
+                      _signing = true;
+                    });
+                    _createAndSignTransaction(context, utxos, arguments.changeAddress, arguments.keyArguments);
                   },
                   label: const Text('Approve Update'),
                   icon: const Icon(Icons.chevron_right),
@@ -129,14 +133,43 @@ class _LivelinessState extends State<LivelinessPage> {
         ]));
   }
 
-  bool _needLivelinessUpdates(List<Utxo> utxos, int currentBlockHeight) {
-    return utxos.any((utxo) => utxo.status.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold));
-  }
-
-  String _getEarliestLivelinessUpdateDesc(List<Utxo> utxos, int currentBlockHeight) {
-    List<int> blocksUntilLiveliness = utxos.map((utxo) => utxo.status.blocksToLiveliness(currentBlockHeight + livelinessUpdateThreshold)).toList();
-    mergeSort(blocksUntilLiveliness);
-    return blocksToDurationFormatted(blocksUntilLiveliness[0]);
+  void _createAndSignTransaction(BuildContext context, List<Utxo> utxos, String destAddr, KeyArguments keyArguments) async {
+    const spendAll = 0;
+    bitcoinClient.getRecommendedFees().then((fees) {
+      // use RecommendedFeeRateLevel.minimum always as normal course is to
+      // update 30 days prior to expiry. User always has the option to RBF tx.
+      var feeRate = fees.getRate(RecommendedFeeRateLevel.minimum).toDouble();
+      createTransaction(utxos, destAddr, destAddr, spendAll, feeRate).then((created) {
+        if (created.insufficientFunds) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).clearSnackBars();
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Insufficient fees currently, try again later.', overflow: TextOverflow.ellipsis,), showCloseIcon: true));
+            setState(() {
+              _signing = false;
+            });
+          }
+          return;
+        }
+        signTransaction(keyArguments.firstMnemonic, keyArguments.secondMnemonic!, utxos, destAddr, destAddr, spendAll, feeRate).then((signed) async {
+          try {
+            String txId = await bitcoinClient.submitTransaction(signed);
+            if (mounted) {
+              ScaffoldMessenger.of(context).clearSnackBars();
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Submitted $txId', overflow: TextOverflow.ellipsis), showCloseIcon: true));
+              Navigator.of(context).popUntil(ModalRoute.withName('/wallet'));
+            }
+          } on Exception catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).clearSnackBars();
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to submit liveliness update: ${e.toString()}', overflow: TextOverflow.ellipsis,), showCloseIcon: true));
+              setState(() {
+                _signing = false;
+              });
+            }
+          }
+        });
+      });
+    });
   }
 
 }
