@@ -31,7 +31,9 @@ public class MainActivity extends FlutterActivity {
                             } else if ("createTransaction".equals(call.method)) {
                                 handleCreateTransaction(call, result);
                             } else if ("createAndSignTransaction".equals(call.method)) {
-                                handleCreateandSignTransaction(call, result);
+                                handleCreateAndSignTransaction(call, result);
+                            } else if ("createAndSignRecoveryTransaction".equals(call.method)) {
+                                handleCreateAndSignRecoveryTransaction(call, result);
                             } else if ("createEphemeralSocialKeyPair".equals(call.method)) {
                                 handleCreateEphemeralSocialKeyPair(call, result);
                             } else if ("validateEphemeralSocialPublicKey".equals(call.method)) {
@@ -91,7 +93,7 @@ public class MainActivity extends FlutterActivity {
         }
     }
 
-    private void handleCreateandSignTransaction(MethodCall call, MethodChannel.Result result) {
+    private void handleCreateAndSignTransaction(MethodCall call, MethodChannel.Result result) {
         try {
             final String networkName = call.argument("networkName");
             final String firstMnemonic = call.argument("firstMnemonic");
@@ -107,6 +109,25 @@ public class MainActivity extends FlutterActivity {
             result.success(transacationHex);
         } catch (Exception e) {
             result.error("CreateandSignTransaction Failure", e.getMessage(), null);
+        }
+    }
+
+    private void handleCreateAndSignRecoveryTransaction(MethodCall call, MethodChannel.Result result) {
+        try {
+            final String networkName = call.argument("networkName");
+            final String firstMnemonic = call.argument("firstMnemonic");
+            final String secondDescriptor = call.argument("secondDescriptor");
+            final String utxos = call.argument("utxos");
+            final String changeAddress = call.argument("changeAddress");
+            final String destinationAddress = call.argument("destinationAddress");
+            final String amount = call.argument("amount");
+            final long amountLong = amount == null ? 0L : Long.parseLong(amount);
+            final String feeRate = call.argument("feeRate");
+            final double feeRateDouble = feeRate == null ? 0L : Double.parseDouble(feeRate);
+            byte[] transacationHex = Leafy.mobileCreateAndSignRecoveryTransaction(networkName, firstMnemonic, secondDescriptor, utxos, changeAddress, destinationAddress, amountLong, feeRateDouble);
+            result.success(transacationHex);
+        } catch (Exception e) {
+            result.error("CreateandSignRecoveryTransaction Failure", e.getMessage(), null);
         }
     }
 

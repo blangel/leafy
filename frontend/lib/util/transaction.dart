@@ -149,3 +149,22 @@ Future<String> signTransaction(String firstMnemonic, String secondMnemonic, List
     throw ArgumentError("failed to signTransaction: $e");
   }
 }
+
+Future<String> signRecoveryTransaction(String firstMnemonic, String secondDescriptor, List<Utxo> utxos, String changeAddress, String destinationAddress, int amount, double feeRate) async {
+  try {
+    List<int> jsonBytes = await platform.invokeMethod("createAndSignRecoveryTransaction", <String, dynamic>{
+      'networkName': bitcoinClient.getBitcoinNetworkName(),
+      'firstMnemonic': firstMnemonic,
+      'secondDescriptor': secondDescriptor,
+      'utxos': jsonEncode(utxos.map((utxo) => utxo.toJson()).toList()),
+      'changeAddress': changeAddress,
+      'destinationAddress': destinationAddress,
+      'amount': amount.toString(),
+      'feeRate': feeRate.toString(),
+    });
+    Map<String, dynamic> json = jsonDecode(utf8.decode(jsonBytes));
+    return json['Hex'];
+  } on PlatformException catch (e) {
+    throw ArgumentError("failed to signRecoveryTransaction: $e");
+  }
+}

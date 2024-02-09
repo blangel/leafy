@@ -204,7 +204,7 @@ TODO
 
 [^3]: This is the [liveliness updates](#liveliness-updates) requirement
 
-**Note** the value `1` for Companion Device is technically `T + F` and the value of `2` for Social Bond is technically `1 + T + F`[^4]. For this analysis it is assumed that `U` can fit entirely within `1` transaction and that transaction can pay for fees. The UTXOs are P2TR inputs where there need only be 2 outputs for the transaction. Over [17,000 inputs could fit within a 1 vMB transaction](https://bitcoinops.org/en/tools/calc-size/) and we'll assume Leafy users have less than this number of UTXOs.
+**Note** the value `1` for Companion Device is technically `T + F` and the value of `2` for Social Bond is technically `1 + T + F`[^4]. For this analysis it is assumed that `U` can fit entirely within `1` transaction and that transaction can pay for fees. The UTXOs are P2TR inputs where there need only be 2 outputs for the transaction. [Thousands of inputs could fit within a transaction](https://bitcoinops.org/en/tools/calc-size/), and we'll assume Leafy users have less than this number of UTXOs.
 [^4]: The additional `1` is the social bond transaction (`Tx_b` in the [social bond diagram](#2b-social-bond-recovery))
 
 | Symbol | Definition                                                      |

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:leafy/globals.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
 import 'package:leafy/util/data_loader.dart';
+import 'package:leafy/util/mempool_space_connectivity.dart';
 import 'package:leafy/util/transaction.dart';
 import 'package:leafy/widget/recovery_utxo.dart';
 import 'package:shimmer/shimmer.dart';
@@ -31,16 +32,38 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
   late DataLoader _loader;
   bool _loadingAddresses = true;
 
+  RecommendedFees? _recommendedFees;
+  MempoolSnapshot? _mempoolSnapshot;
+  RecommendedFeeRateLevel _level = RecommendedFeeRateLevel.fastest;
+
+  bool _signing = false;
+
   @override
   void initState() {
     super.initState();
     _loader = DataLoader();
+    _loadFeeAndMempoolData();
   }
 
   @override
   void dispose() {
     _loader.dispose();
     super.dispose();
+  }
+
+  void _loadFeeAndMempoolData() async {
+    // TODO - switch to bitcoinClient from 'globals'
+    BitcoinClient client = MempoolSpaceClient.mainnet();
+    client.getRecommendedFees().then((fees) {
+      setState(() {
+        _recommendedFees = fees;
+      });
+    });
+    client.getMempoolSnapshot().then((snapshot) {
+      setState(() {
+        _mempoolSnapshot = snapshot;
+      });
+    });
   }
 
   @override
@@ -82,6 +105,52 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
             const TextSpan(text: ").\n\nTo regain access to your wallet you will need to perform a recovery. Some of your funds may be timelocked by the Bitcoin blockchain. They will be recoverable after the designated timelock expires.")
           ]
         ))),
+        Padding(padding: const EdgeInsets.all(10), child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisSize: MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(width: 80, child: Text("Fee Rate", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+            Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: DropdownButton(
+              value: _level,
+              icon: const Icon(Icons.keyboard_arrow_down),
+              items: RecommendedFeeRateLevel.values.map((RecommendedFeeRateLevel level) {
+                return DropdownMenuItem(
+                    value: level,
+                    child: _recommendedFees == null ?
+                    Padding(padding: const EdgeInsets.all(5), child: Text(level.getLabel())) :
+                    Padding(padding: const EdgeInsets.all(5), child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(level.getLabel()),
+                        Expanded(flex: 1, child: RichText(textAlign: TextAlign.end, text: TextSpan(
+                            text: "${_recommendedFees!.getRate(level)} ",
+                            children: const [
+                              TextSpan(text: "sat/vB", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w200)),
+                            ]
+                        )))
+                      ],
+                    )));
+              }).toList(),
+              selectedItemBuilder: (context) {
+                return RecommendedFeeRateLevel.values.map((RecommendedFeeRateLevel level) {
+                  return Padding(padding: const EdgeInsets.all(5), child: Text(level.getLabel()));
+                }).toList();
+              },
+              onChanged: (value) {
+                if (value == null) {
+                  return;
+                }
+                setState(() {
+                  _level = value;
+                });
+                // TODO - create transaction to see if funds sufficient for fees
+              },
+            )))
+          ],
+        )),
         Expanded(flex: 1, child: ListView(shrinkWrap: true, children: [
           const Padding(padding: EdgeInsets.all(10), child: Text("Recoverable Funds", style: TextStyle(fontSize: 24), textAlign: TextAlign.start)),
           if (_loadingAddresses)
@@ -134,14 +203,21 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
           alignment: Alignment.bottomRight,
           child: Padding(
             padding: const EdgeInsets.all(25),
-            child: FloatingActionButton.extended(
-              onPressed: _loadingAddresses || _utxos.isEmpty ? null : () {
-
-              },
-              label: const Text('Recover'),
-              icon: const Icon(Icons.chevron_right),
+            child: Visibility(
+              visible: !_loadingAddresses && _getRecoverable().isNotEmpty,
+              child: FloatingActionButton.extended(
+                onPressed: () {
+                  setState(() {
+                    _signing = true;
+                  });
+                  // TODO - destAddr; where to send?
+                  var destAddr = "";
+                  _createAndSignRecoveryTransaction(context, destAddr, timelockArguments.walletFirstMnemonic, timelockArguments.walletSecondDescriptor);
+                },
+                label: const Text('Recover'),
+                icon: const Icon(Icons.chevron_right),
             ),
-          ),
+          )),
         )
       ],
     ));
@@ -165,4 +241,44 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
     return blocksToDurationFormatted(blocks.last);
   }
 
+  List<Utxo> _getRecoverable() {
+    return _utxos.where((utxo) => utxo.status.needLivelinessCheck(_currentBlockHeight)).toList();
+  }
+
+  void _createAndSignRecoveryTransaction(BuildContext context, String destAddr, String firstMnemonic, String secondDescriptor) async {
+    List<Utxo> recoverable = _getRecoverable();
+    const spendAll = 0;
+    var feeRate = _recommendedFees!.getRate(_level).toDouble();
+    // TODO - createTransaction is the internal-key transaction, no need to use?
+    createTransaction(recoverable, destAddr, destAddr, spendAll, feeRate).then((created) {
+      if (created.insufficientFunds) {
+        // TODO - show insufficient funds to allow user to adjust fees
+        if (mounted) {
+          setState(() {
+            _signing = false;
+          });
+        }
+        return;
+      }
+      signRecoveryTransaction(firstMnemonic, secondDescriptor, recoverable, destAddr, destAddr, spendAll, feeRate).then((signed) async {
+        try {
+          String txId = await bitcoinClient.submitTransaction(signed);
+          if (mounted) {
+            ScaffoldMessenger.of(context).clearSnackBars();
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Submitted $txId', overflow: TextOverflow.ellipsis), showCloseIcon: true));
+            // TODO - now where?
+            //Navigator.of(context).popUntil(ModalRoute.withName('/wallet'));
+          }
+        } on Exception catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).clearSnackBars();
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to submit recovery transaction: ${e.toString()}', overflow: TextOverflow.ellipsis,), showCloseIcon: true));
+            setState(() {
+              _signing = false;
+            });
+          }
+        }
+      });
+    });
+  }
 }

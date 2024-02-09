@@ -228,8 +228,8 @@ func CreateAndSignRecoveryTransaction(
 	if err != nil {
 		return nil, err
 	}
+	// add sequence for tapscript's timelock
 	msgTx := tx.MsgTx.Copy()
-	// TODO - should be handled by CreateTransaction?
 	for _, txin := range msgTx.TxIn {
 		txin.Sequence = Timelock
 	}
@@ -507,7 +507,6 @@ func parseEphemeralSocialPrivateKey(privateKeyHex string) (*rsa.PrivateKey, erro
 // value minus the fourth return value and the fifth return value will be the 'amount'.  If 'amount' is zero,
 // the third return value minus the fourth return value will be the value sent to 'destAddr' and the fifth return value,
 // the change, will be zero.
-// TODO - should this be overloaded to take in the Timelock on the inputs?
 func CreateTransaction(
 	utxos []Utxo,
 	changeAddr btcutil.Address,

@@ -118,17 +118,19 @@ class _LivelinessState extends State<LivelinessPage> {
               alignment: Alignment.bottomRight,
               child: Padding(
                 padding: const EdgeInsets.all(25),
-                child: FloatingActionButton.extended(
-                  onPressed: _signing || utxos.isEmpty ? null : () {
-                    setState(() {
-                      _signing = true;
-                    });
-                    _createAndSignTransaction(context, utxos, arguments.changeAddress, arguments.keyArguments);
-                  },
-                  label: const Text('Approve Update'),
-                  icon: const Icon(Icons.chevron_right),
-                ),
-              ),
+                child: Visibility(
+                  visible: !_signing && utxos.isNotEmpty,
+                  child: FloatingActionButton.extended(
+                    onPressed: () {
+                      setState(() {
+                        _signing = true;
+                      });
+                      _createAndSignTransaction(context, utxos, arguments.changeAddress, arguments.keyArguments);
+                    },
+                    label: const Text('Approve Update'),
+                    icon: const Icon(Icons.chevron_right),
+                  ),
+              )),
             )
         ]));
   }

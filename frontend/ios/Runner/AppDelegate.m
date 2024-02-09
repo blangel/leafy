@@ -20,6 +20,8 @@
         [self handleCreateTransaction:call andResult:result];
       } else if ([@"createAndSignTransaction" isEqualToString:call.method]) {
         [self handleCreateAndSignTransaction:call andResult:result];
+      } else if ([@"createAndSignRecoveryTransaction" isEqualToString:call.method]) {
+          [self handleCreateAndSignRecoveryTransaction:call andResult:result];
       } else if ([@"createEphemeralSocialKeyPair" isEqualToString:call.method]) {
         [self handleCreateEphemeralSocialKeyPair:call andResult:result];
       } else if ([@"validateEphemeralSocialPublicKey" isEqualToString:call.method]) {
@@ -140,6 +142,33 @@
                                message:[e reason]
                                details:nil]);
   }
+}
+
+- (void) handleCreateAndSignRecoveryTransaction:(FlutterMethodCall*) call
+                              andResult:(FlutterResult) result {
+    @try {
+        NSString *networkName = call.arguments[@"networkName"];
+        NSString *firstMnemonic = call.arguments[@"firstMnemonic"];
+        NSString *secondDescriptor = call.arguments[@"secondDescriptor"];
+        NSString *utxos = call.arguments[@"utxos"];
+        NSString *changeAddress = call.arguments[@"changeAddress"];
+        NSString *destinationAddress = call.arguments[@"destinationAddress"];
+        NSString *amount = call.arguments[@"amount"];
+        NSString *feeRate = call.arguments[@"feeRate"];
+        NSError *error;
+        NSData *transactionHex = LeafyMobileCreateAndSignRecoveryTransaction(networkName, firstMnemonic, secondDescriptor, utxos, changeAddress, destinationAddress, [amount longLongValue], [feeRate doubleValue], &error);
+        if (error) {
+            result([FlutterError errorWithCode:@"CreateAndSignRecoveryTransaction Failure"
+                                       message:[error localizedDescription]
+                                       details:nil]);
+        } else {
+            result(transactionHex);
+        }
+    } @catch (NSException *e) {
+        result([FlutterError errorWithCode:@"CreateAndSignRecoveryTransaction Failure"
+                                   message:[e reason]
+                                   details:nil]);
+    }
 }
 
 - (void) handleCreateEphemeralSocialKeyPair:(FlutterMethodCall*) call
