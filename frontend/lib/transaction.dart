@@ -128,40 +128,42 @@ class _TransactionState extends State<TransactionPage> {
                   )))
                 ],
               ),
-              Row(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(flex: 1, child: getConfirmationWidget(getConfirmationColor(transaction), getConfirmationText(transaction))),
-                  if (isUnconfirmedSent(transaction))
-                    ...[
-                      TextButton(
-                        onPressed: () {
-                          List<Transaction> transactions = getTransactionsForBip125Replacement(arguments.transactions, transaction);
-                          Navigator.pushNamed(context, '/create-transaction',
-                              arguments: CreateTransactionArguments(keyArguments: arguments.keyArguments,
-                                  transactions: transactions, changeAddress: arguments.changeAddress, toReplace: transaction));
-                        },
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.upgrade),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text("Confirm Faster", style: TextStyle(fontSize: 12)),
-                                Text("replace by increasing fees", style: TextStyle(fontSize: 8)),
-                              ],
-                            )
+              if (currentBlockHeight != 0) // still loading
+                ...[Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(flex: 1, child: getConfirmationWidget(getConfirmationColor(transaction), getConfirmationText(transaction))),
+                    if (isUnconfirmedSent(transaction))
+                      ...[
+                        TextButton(
+                          onPressed: () {
+                            List<Transaction> transactions = getTransactionsForBip125Replacement(arguments.transactions, transaction);
+                            Navigator.pushNamed(context, '/create-transaction',
+                                arguments: CreateTransactionArguments(keyArguments: arguments.keyArguments,
+                                    transactions: transactions, changeAddress: arguments.changeAddress, toReplace: transaction));
+                          },
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.upgrade),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text("Confirm Faster", style: TextStyle(fontSize: 12)),
+                                  Text("replace by increasing fees", style: TextStyle(fontSize: 8)),
+                                ],
+                              )
 
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ]
-                ],
-              ),
+                      ]
+                  ],
+                ),
+              ]
             ]
         ),
         const SizedBox(height: 10),
@@ -395,6 +397,9 @@ class _TransactionState extends State<TransactionPage> {
   }
 
   bool isUnconfirmed(Transaction transaction) {
+    if (currentBlockHeight == 0) {
+      return false; // not loaded
+    }
     int numConfirms = transaction.status.getConfirmations(currentBlockHeight);
     return (numConfirms < 1);
   }
