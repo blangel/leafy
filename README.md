@@ -364,3 +364,4 @@ Leafy ("program"), like Bitcoin ("money"), is [open-source](https://github.com/b
 - [ ] Implement binaries as discussed in [App Provider Obstruction](#app-provider-obstruction)
 - [ ] Research hardware wallets w.r.t. Remote Account possibility
 - [ ] Finalize research for [social bond](#2b-social-bond-recovery)
+- [ ] Allow for timelock-recovery on same phone

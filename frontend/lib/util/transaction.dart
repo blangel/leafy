@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:encrypt/encrypt.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:leafy/globals.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
@@ -68,6 +69,20 @@ class Outpoint {
     };
   }
 
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Outpoint && listEquals(other.hash, hash) && other.index == index;
+  }
+
+  @override
+  int get hashCode => Object.hash(Object.hashAll(hash), index);
+
+  @override
+  String toString() {
+    return 'Outpoint{hash: $hash, index: $index}';
+  }
+
   static Outpoint fromTxId(String txId, int index) {
     Uint8List inverted = Uint8List.fromList(decodeHexString(txId));
     Uint8List invertedByteArray = _invertEndianness(inverted);
@@ -93,6 +108,21 @@ class Utxo {
 
   String getDateTime() {
     return getDateTimeFromBlockTime(status.blockTime);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Utxo && other.outpoint == outpoint;
+  }
+
+  @override
+  int get hashCode => outpoint.hashCode;
+
+
+  @override
+  String toString() {
+    return 'Utxo{outpoint: $outpoint}';
   }
 
   Map<String, dynamic> toJson() {

@@ -1,11 +1,12 @@
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_multi_formatter/utils/bitcoin_validator/bitcoin_validator.dart';
 import 'package:leafy/globals.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
 import 'package:leafy/util/data_loader.dart';
 import 'package:leafy/util/mempool_space_connectivity.dart';
 import 'package:leafy/util/transaction.dart';
+import 'package:leafy/widget/address.dart';
 import 'package:leafy/widget/recovery_utxo.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -20,14 +21,26 @@ class TimelockRecoveryPage extends StatefulWidget {
 
 class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
 
+  // matches any CSV of 50cd00; this is used to find existing recovery transactions
+  // and is only applied when the input is from a known-address (thus implying a
+  // recovery transaction)
+  static const String _existingRecoveryWitnessMatch = "OP_PUSHBYTES_3 50cd00 OP_CSV";
+
   final AssetImage _recoverImage = const AssetImage('images/timelock_recovery.gif');
 
-  late AddressMetadata? _addressMetadata;
-  List<Utxo> _utxos = [];
+  final List<Utxo> _utxos = [];
   late int _countRecoverable;
   late String _firstRecoverableTime;
   late String _lastRecoverableTime;
   late int _currentBlockHeight;
+  late double _usdPrice;
+  double _feesPaid = 0;
+  String _destAddress = "";
+
+  final Set<Transaction> _existingRecovery = {};
+
+  final TextEditingController newAddressController = TextEditingController();
+  final List<String> _addresses = [];
 
   late DataLoader _loader;
   bool _loadingAddresses = true;
@@ -48,6 +61,7 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
   @override
   void dispose() {
     _loader.dispose();
+    newAddressController.dispose();
     super.dispose();
   }
 
@@ -74,19 +88,44 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
         return;
       }
       List<Transaction> txs = [];
+      List<Transaction> recoveryTxs = [];
       if (metadata != null) {
         txs.addAll(metadata.transactions);
         txs.sort((a, b) => b.compareTo(a));
+        recoveryTxs.addAll(metadata.transactions);
+        recoveryTxs = recoveryTxs.where((tx) => tx.vins.any((vin) => vin.fromKnownAddress
+            && vin.innerWitnessScriptAsm != null
+            && vin.innerWitnessScriptAsm!.contains(_existingRecoveryWitnessMatch))).toList();
+      }
+      Set<Utxo> allUtxos = {};
+      allUtxos.addAll(_utxos);
+      allUtxos.addAll(getUtxos(txs));
+      Set<String> uniqueRecoveredAddresses = {};
+      uniqueRecoveredAddresses.addAll(_addresses);
+      for (var tx in recoveryTxs) {
+        for (var vout in tx.vouts) {
+          uniqueRecoveredAddresses.add(vout.scriptPubkeyAddress);
+        }
       }
       setState(() {
-        _addressMetadata = metadata;
+        _usdPrice = usdPrice;
         _currentBlockHeight = currentBlockHeight;
-        _utxos = getUtxos(txs);
-        _countRecoverable = _utxos.fold(0, (previousValue, utxo) => utxo.status.needLivelinessCheck(_currentBlockHeight) ? previousValue + 1 : previousValue);
+        _utxos.clear();
+        _utxos.addAll(allUtxos);
+        _existingRecovery.addAll(recoveryTxs);
+        _addresses.clear();
+        _addresses.addAll(uniqueRecoveredAddresses);
+        if (_destAddress.isEmpty && _addresses.isNotEmpty) {
+          _destAddress = _addresses.first;
+        }
+        _countRecoverable = _countRecoverableTxs();
         _firstRecoverableTime = _getFirstRecoverable();
         _lastRecoverableTime = _getLastRecoverable();
         _loadingAddresses = paging;
       });
+      if (_feesPaid == 0 && _destAddress.isNotEmpty) {
+        _createTransaction(context, _destAddress);
+      }
     });
     return buildHomeScaffold(context, "Remote Account Recovery", Column(
       mainAxisSize: MainAxisSize.max,
@@ -102,9 +141,60 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
                 Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
               }
             ),
-            const TextSpan(text: ").\n\nTo regain access to your wallet you will need to perform a recovery. Some of your funds may be timelocked by the Bitcoin blockchain. They will be recoverable after the designated timelock expires.")
+            const TextSpan(text: ").\n\nTo regain access to your wallet you will need to perform a recovery."),
+            if (_utxos.isNotEmpty)
+              if (_countRecoverable == 0)
+                ...[
+                  TextSpan(text: " No recoverable funds currently. ${_firstRecoverableTime == _lastRecoverableTime ? 'In $_lastRecoverableTime all funds can be recovered.' : 'In $_firstRecoverableTime some funds can be recovered. In $_lastRecoverableTime all funds can be recovered.'}"),
+                ]
+              else
+                ...[
+                TextSpan(text: " Currently, $_countRecoverable funds can be recovered. In $_lastRecoverableTime all funds can be recovered."),
+                ],
+            if (_existingRecovery.isNotEmpty)
+              // TODO - link to new page to show these existing recovered transactions
+              if (_existingRecovery.length == 1)
+                ...[
+                  const TextSpan(text: " There is 1 already recovered fund."),
+                ]
+              else
+                ...[
+                  TextSpan(text: " There are ${_existingRecovery.length} already recovered funds."),
+                ],
           ]
         ))),
+        Padding(padding: const EdgeInsets.fromLTRB(10, 10, 0, 0), child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisSize: MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(width: 70, child: Text("To", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+            Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: DropdownButton(
+              value: _destAddress,
+              icon: const Icon(Icons.keyboard_arrow_down),
+              items: _addresses.map((String address) {
+                return DropdownMenuItem(
+                  value: address,
+                  child: Padding(padding: const EdgeInsets.all(5), child: Text(shortData(address), style: const TextStyle(fontSize: 14),)),
+                );
+              }).toList(),
+              onChanged: <String>(value) {
+                setState(() {
+                  _destAddress = value;
+                });
+                _createTransaction(context, value);
+              },
+            ))),
+            IconButton(
+              iconSize: 20,
+              tooltip: 'Add address',
+              icon: const Icon(Icons.add),
+              onPressed: () {
+                _newAddressDialogBuilder(context, setState);
+              },
+            )
+          ],
+        )),
         Padding(padding: const EdgeInsets.all(10), child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           mainAxisSize: MainAxisSize.max,
@@ -146,11 +236,40 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
                 setState(() {
                   _level = value;
                 });
-                // TODO - create transaction to see if funds sufficient for fees
+                if (_destAddress.isNotEmpty) {
+                  _createTransaction(context, _destAddress);
+                }
               },
             )))
           ],
         )),
+        if (_feesPaid != 0)
+          ...[Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              RichText(textAlign: TextAlign.end, text: TextSpan(
+                  text: "you will spend  ",
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w200),
+                  children: [
+                    TextSpan(text: "${formatBitcoin(fromSatsToBitcoin(_feesPaid))} ₿", style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const TextSpan(text: " (", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w200)),
+                    TextSpan(text: formatCurrency(fromSatsToBitcoin(_feesPaid * _usdPrice)), style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const TextSpan(text: ") on this recovery", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w200)),
+                  ]
+              )),
+              if ((_recommendedFees != null) && (_mempoolSnapshot != null))
+                RichText(textAlign: TextAlign.end, text: TextSpan(
+                    text: "likely confirming within  ",
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w200),
+                    children: [
+                      TextSpan(text: _recommendedFees!.getExpectedDuration(_level, _mempoolSnapshot!), style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ]
+                ))
+            ],
+          )
+        ],
         Expanded(flex: 1, child: ListView(shrinkWrap: true, children: [
           const Padding(padding: EdgeInsets.all(10), child: Text("Recoverable Funds", style: TextStyle(fontSize: 24), textAlign: TextAlign.start)),
           if (_loadingAddresses)
@@ -178,14 +297,6 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
             if (_utxos.isEmpty)
               ...[const Padding(padding: EdgeInsets.all(10), child: Text("No recoverable funds found"))]
             else
-              if (_countRecoverable == 0)
-                ...[
-                  Padding(padding: const EdgeInsets.all(10), child: Text("No recoverable funds currently. ${_firstRecoverableTime == _lastRecoverableTime ? 'In $_lastRecoverableTime all can be recovered.' : 'In $_firstRecoverableTime some can be recovered. In $_lastRecoverableTime all can be recovered.'}")),
-                ]
-              else
-                ...[
-                  Padding(padding: const EdgeInsets.all(10), child: Text("$_countRecoverable can be recovered now. In $_lastRecoverableTime all can be recovered.")),
-                ],
                 ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -204,15 +315,13 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
           child: Padding(
             padding: const EdgeInsets.all(25),
             child: Visibility(
-              visible: !_loadingAddresses && _getRecoverable().isNotEmpty,
+              visible: !_signing && _destAddress.isNotEmpty && !_loadingAddresses && _getRecoverable().isNotEmpty,
               child: FloatingActionButton.extended(
                 onPressed: () {
                   setState(() {
                     _signing = true;
                   });
-                  // TODO - destAddr; where to send?
-                  var destAddr = "";
-                  _createAndSignRecoveryTransaction(context, destAddr, timelockArguments.walletFirstMnemonic, timelockArguments.walletSecondDescriptor);
+                  _createAndSignRecoveryTransaction(context, _destAddress, timelockArguments.walletFirstMnemonic, timelockArguments.walletSecondDescriptor);
                 },
                 label: const Text('Recover'),
                 icon: const Icon(Icons.chevron_right),
@@ -221,6 +330,63 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
         )
       ],
     ));
+  }
+
+  Future<void> _newAddressDialogBuilder(BuildContext context, StateSetter parentState) {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return AlertDialog(
+                title: const Text('Add Address'),
+                content: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.max,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 1, child: TextFormField(textAlign: TextAlign.end,
+                        validator: (value) {
+                          var valid = isBitcoinWalletValid(value);
+                          return !valid ? 'Address must be a valid Bitcoin address' : null;
+                        },
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        controller: newAddressController,
+                        onSaved: (value) {
+                          setState(() {});
+                        },
+                        onChanged: (value) {
+                          setState(() {});
+                        },
+                      ))
+                    ]
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      textStyle: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    onPressed: newAddressController.text.isEmpty || !isBitcoinWalletValid(newAddressController.text) ? null : () {
+                      parentState(() {
+                        if (!_addresses.contains(newAddressController.text)) {
+                          _addresses.add(newAddressController.text);
+                        }
+                        _destAddress = newAddressController.text;
+                      });
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Add'),
+                  ),
+                ],
+              );
+            }
+        );
+      },
+    );
+  }
+
+  int _countRecoverableTxs() {
+    return _utxos.fold(0, (previousValue, utxo) => utxo.status.needLivelinessCheck(_currentBlockHeight) ? previousValue + 1 : previousValue);
   }
 
   String _getFirstRecoverable() {
@@ -245,29 +411,43 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
     return _utxos.where((utxo) => utxo.status.needLivelinessCheck(_currentBlockHeight)).toList();
   }
 
+  void _createTransaction(BuildContext context, String destAddress) async {
+    List<Utxo> recoverable = _getRecoverable();
+    const spendAll = 0;
+    var feeRate = _recommendedFees!.getRate(_level).toDouble();
+    createTransaction(recoverable, destAddress, destAddress, spendAll, feeRate).then((created) {
+      _handleTransactionCreated(created);
+    });
+  }
+
+  void _handleTransactionCreated(TransactionHex created) {
+    if (created.insufficientFunds) {
+      if (mounted) {
+        setState(() {
+          _signing = false;
+        });
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Insufficient fees, try again with lower fees or when fees may be lower.'), showCloseIcon: true));
+      }
+      return;
+    }
+    setState(() {
+      _feesPaid = created.fees.toDouble();
+    });
+  }
+
   void _createAndSignRecoveryTransaction(BuildContext context, String destAddr, String firstMnemonic, String secondDescriptor) async {
     List<Utxo> recoverable = _getRecoverable();
     const spendAll = 0;
     var feeRate = _recommendedFees!.getRate(_level).toDouble();
-    // TODO - createTransaction is the internal-key transaction, no need to use?
     createTransaction(recoverable, destAddr, destAddr, spendAll, feeRate).then((created) {
-      if (created.insufficientFunds) {
-        // TODO - show insufficient funds to allow user to adjust fees
-        if (mounted) {
-          setState(() {
-            _signing = false;
-          });
-        }
-        return;
-      }
+      _handleTransactionCreated(created);
       signRecoveryTransaction(firstMnemonic, secondDescriptor, recoverable, destAddr, destAddr, spendAll, feeRate).then((signed) async {
         try {
           String txId = await bitcoinClient.submitTransaction(signed);
           if (mounted) {
             ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Submitted $txId', overflow: TextOverflow.ellipsis), showCloseIcon: true));
-            // TODO - now where?
-            //Navigator.of(context).popUntil(ModalRoute.withName('/wallet'));
           }
         } on Exception catch (e) {
           if (mounted) {
