@@ -152,14 +152,20 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
                 TextSpan(text: " Currently, $_countRecoverable funds can be recovered. In $_lastRecoverableTime all funds can be recovered."),
                 ],
             if (_existingRecovery.isNotEmpty)
-              // TODO - link to new page to show these existing recovered transactions
               if (_existingRecovery.length == 1)
                 ...[
-                  const TextSpan(text: " There is 1 already recovered fund."),
+                  const TextSpan(text: " "),
+                  TextSpan(text: "You have already recovered 1 fund.", style: const TextStyle(decoration: TextDecoration.underline),
+                    recognizer: TapGestureRecognizer()..onTap = () {
+                      Navigator.of(context).pushNamed('/transactions', arguments: TransactionsArguments(transactions: _existingRecovery.toList(), keyArguments: KeyArguments(firstMnemonic: timelockArguments.walletFirstMnemonic, secondDescriptor: timelockArguments.walletSecondDescriptor, secondMnemonic: null, walletPassword: null), changeAddress: _destAddress, currentBlockHeight: _currentBlockHeight, recovery: true));
+                  }),
                 ]
               else
                 ...[
-                  TextSpan(text: " There are ${_existingRecovery.length} already recovered funds."),
+                  TextSpan(text: "You have already recovered ${_existingRecovery.length} funds.", style: const TextStyle(decoration: TextDecoration.underline),
+                      recognizer: TapGestureRecognizer()..onTap = () {
+                        Navigator.of(context).pushNamed('/transactions', arguments: TransactionsArguments(transactions: _existingRecovery.toList(), keyArguments: KeyArguments(firstMnemonic: timelockArguments.walletFirstMnemonic, secondDescriptor: timelockArguments.walletSecondDescriptor, secondMnemonic: null, walletPassword: null), changeAddress: _destAddress, currentBlockHeight: _currentBlockHeight));
+                      }),
                 ],
           ]
         ))),

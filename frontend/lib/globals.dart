@@ -163,9 +163,10 @@ class TransactionsArguments {
   final KeyArguments keyArguments;
   final String changeAddress;
   final int currentBlockHeight;
+  final bool recovery;
 
   TransactionsArguments({required this.transactions, required this.keyArguments,
-    required this.changeAddress, required this.currentBlockHeight});
+    required this.changeAddress, required this.currentBlockHeight, this.recovery=false});
 }
 
 class TransactionArgument {

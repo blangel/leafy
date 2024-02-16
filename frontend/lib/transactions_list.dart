@@ -14,7 +14,7 @@ class TransactionsListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final arguments = ModalRoute.of(context)!.settings.arguments as TransactionsArguments;
     List<Transaction> transactions = arguments.transactions;
-    return buildScaffold(context, "Transactions",
+    return buildScaffold(context, arguments.recovery ? "Recovery Transactions" : "Transactions",
         Column(
             mainAxisSize: MainAxisSize.max,
             mainAxisAlignment: MainAxisAlignment.start,
@@ -26,7 +26,7 @@ class TransactionsListPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Image(height: 75, image: _transactionsImage, alignment: Alignment.centerLeft),
-                  const Padding(padding: EdgeInsets.all(10), child: Text("Historical Transactions", style: TextStyle(fontSize: 20))),
+                  Padding(padding: const EdgeInsets.all(10), child: Text(arguments.recovery ? "Recovery Transactions" : "Historical Transactions", style: TextStyle(fontSize: 20))),
                 ],
               )),
               Expanded(flex: 1, child: Padding(padding: const EdgeInsets.all(10), child: ListView.separated(
