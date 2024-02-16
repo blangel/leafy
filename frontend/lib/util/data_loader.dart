@@ -62,9 +62,7 @@ class DataLoader {
       _firstSeedMnemonic = firstSeedMnemonic;
       _secondSeedDescriptor = secondSeedDescriptor;
       _timer = Timer.periodic(const Duration(seconds: 10), (Timer t) {
-        _loadPriceData();
-        _loadBlockHeight();
-        _loadAddressInfoForAddresses(callback);
+        _load(callback);
       });
       _loadAddresses(callback);
     });
@@ -72,6 +70,16 @@ class DataLoader {
 
   void dispose() {
     _timer.cancel();
+  }
+
+  void forceLoad(void Function(List<String>, AddressMetadata?, bool, double, int) callback) async {
+    _load(callback);
+  }
+
+  void _load(void Function(List<String>, AddressMetadata?, bool, double, int) callback) async {
+    _loadPriceData();
+    _loadBlockHeight();
+    _loadAddressInfoForAddresses(callback);
   }
 
   void _loadPriceData() async {

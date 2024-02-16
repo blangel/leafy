@@ -80,10 +80,7 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final timelockArguments = ModalRoute.of(context)!.settings.arguments as TimelockRecoveryArguments;
-    _loader.init(timelockArguments.walletFirstMnemonic, timelockArguments.walletSecondDescriptor, (addresses, metadata, paging, usdPrice, currentBlockHeight) {
+  void _dataLoaderCallback(List<String> addresses, AddressMetadata? metadata, bool paging, double usdPrice, int currentBlockHeight) {
       if (!context.mounted) {
         return;
       }
@@ -126,7 +123,12 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
       if (_feesPaid == 0 && _destAddress.isNotEmpty) {
         _createTransaction(context, _destAddress);
       }
-    });
+    }
+
+  @override
+  Widget build(BuildContext context) {
+    final timelockArguments = ModalRoute.of(context)!.settings.arguments as TimelockRecoveryArguments;
+    _loader.init(timelockArguments.walletFirstMnemonic, timelockArguments.walletSecondDescriptor, _dataLoaderCallback);
     return buildHomeScaffold(context, "Remote Account Recovery", Column(
       mainAxisSize: MainAxisSize.max,
       mainAxisAlignment: MainAxisAlignment.start,
@@ -147,6 +149,10 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
                 ...[
                   TextSpan(text: " No recoverable funds currently. ${_firstRecoverableTime == _lastRecoverableTime ? 'In $_lastRecoverableTime all funds can be recovered.' : 'In $_firstRecoverableTime some funds can be recovered. In $_lastRecoverableTime all funds can be recovered.'}"),
                 ]
+              else if (_countRecoverable == _utxos.length)
+                ...[
+                  const TextSpan(text: " Currently, all funds can be recovered."),
+                ]
               else
                 ...[
                 TextSpan(text: " Currently, $_countRecoverable funds can be recovered. In $_lastRecoverableTime all funds can be recovered."),
@@ -162,94 +168,98 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
                 ]
               else
                 ...[
+                  const TextSpan(text: " "),
                   TextSpan(text: "You have already recovered ${_existingRecovery.length} funds.", style: const TextStyle(decoration: TextDecoration.underline),
                       recognizer: TapGestureRecognizer()..onTap = () {
-                        Navigator.of(context).pushNamed('/transactions', arguments: TransactionsArguments(transactions: _existingRecovery.toList(), keyArguments: KeyArguments(firstMnemonic: timelockArguments.walletFirstMnemonic, secondDescriptor: timelockArguments.walletSecondDescriptor, secondMnemonic: null, walletPassword: null), changeAddress: _destAddress, currentBlockHeight: _currentBlockHeight));
+                        Navigator.of(context).pushNamed('/transactions', arguments: TransactionsArguments(transactions: _existingRecovery.toList(), keyArguments: KeyArguments(firstMnemonic: timelockArguments.walletFirstMnemonic, secondDescriptor: timelockArguments.walletSecondDescriptor, secondMnemonic: null, walletPassword: null), changeAddress: _destAddress, currentBlockHeight: _currentBlockHeight, recovery: true));
                       }),
                 ],
           ]
         ))),
-        Padding(padding: const EdgeInsets.fromLTRB(10, 10, 0, 0), child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          mainAxisSize: MainAxisSize.max,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(width: 70, child: Text("To", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-            Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: DropdownButton(
-              value: _destAddress,
-              icon: const Icon(Icons.keyboard_arrow_down),
-              items: _addresses.map((String address) {
-                return DropdownMenuItem(
-                  value: address,
-                  child: Padding(padding: const EdgeInsets.all(5), child: Text(shortData(address), style: const TextStyle(fontSize: 14),)),
-                );
-              }).toList(),
-              onChanged: <String>(value) {
-                setState(() {
-                  _destAddress = value;
-                });
-                _createTransaction(context, value);
-              },
-            ))),
-            IconButton(
-              iconSize: 20,
-              tooltip: 'Add address',
-              icon: const Icon(Icons.add),
-              onPressed: () {
-                _newAddressDialogBuilder(context, setState);
-              },
-            )
-          ],
-        )),
-        Padding(padding: const EdgeInsets.all(10), child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          mainAxisSize: MainAxisSize.max,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(width: 80, child: Text("Fee Rate", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-            Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: DropdownButton(
-              value: _level,
-              icon: const Icon(Icons.keyboard_arrow_down),
-              items: RecommendedFeeRateLevel.values.map((RecommendedFeeRateLevel level) {
-                return DropdownMenuItem(
-                    value: level,
-                    child: _recommendedFees == null ?
-                    Padding(padding: const EdgeInsets.all(5), child: Text(level.getLabel())) :
-                    Padding(padding: const EdgeInsets.all(5), child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(level.getLabel()),
-                        Expanded(flex: 1, child: RichText(textAlign: TextAlign.end, text: TextSpan(
-                            text: "${_recommendedFees!.getRate(level)} ",
-                            children: const [
-                              TextSpan(text: "sat/vB", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w200)),
-                            ]
-                        )))
-                      ],
-                    )));
-              }).toList(),
-              selectedItemBuilder: (context) {
-                return RecommendedFeeRateLevel.values.map((RecommendedFeeRateLevel level) {
-                  return Padding(padding: const EdgeInsets.all(5), child: Text(level.getLabel()));
-                }).toList();
-              },
-              onChanged: (value) {
-                if (value == null) {
-                  return;
-                }
-                setState(() {
-                  _level = value;
-                });
-                if (_destAddress.isNotEmpty) {
-                  _createTransaction(context, _destAddress);
-                }
-              },
-            )))
-          ],
-        )),
-        if (_feesPaid != 0)
+        if (_utxos.isNotEmpty)
+          ...[
+            Padding(padding: const EdgeInsets.fromLTRB(10, 10, 0, 0), child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(width: 70, child: Text("To", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+                Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: DropdownButton(
+                  value: _destAddress,
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                  items: _addresses.map((String address) {
+                    return DropdownMenuItem(
+                      value: address,
+                      child: Padding(padding: const EdgeInsets.all(5), child: Text(shortData(address), style: const TextStyle(fontSize: 14),)),
+                    );
+                  }).toList(),
+                  onChanged: <String>(value) {
+                    setState(() {
+                      _destAddress = value;
+                    });
+                    _createTransaction(context, value);
+                  },
+                ))),
+                IconButton(
+                  iconSize: 20,
+                  tooltip: 'Add address',
+                  icon: const Icon(Icons.add),
+                  onPressed: () {
+                    _newAddressDialogBuilder(context, setState);
+                  },
+                )
+              ],
+            )),
+            Padding(padding: const EdgeInsets.all(10), child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(width: 80, child: Text("Fee Rate", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+                Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: DropdownButton(
+                  value: _level,
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                  items: RecommendedFeeRateLevel.values.map((RecommendedFeeRateLevel level) {
+                    return DropdownMenuItem(
+                        value: level,
+                        child: _recommendedFees == null ?
+                        Padding(padding: const EdgeInsets.all(5), child: Text(level.getLabel())) :
+                        Padding(padding: const EdgeInsets.all(5), child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(level.getLabel()),
+                            Expanded(flex: 1, child: RichText(textAlign: TextAlign.end, text: TextSpan(
+                                text: "${_recommendedFees!.getRate(level)} ",
+                                children: const [
+                                  TextSpan(text: "sat/vB", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w200)),
+                                ]
+                            )))
+                          ],
+                        )));
+                  }).toList(),
+                  selectedItemBuilder: (context) {
+                    return RecommendedFeeRateLevel.values.map((RecommendedFeeRateLevel level) {
+                      return Padding(padding: const EdgeInsets.all(5), child: Text(level.getLabel()));
+                    }).toList();
+                  },
+                  onChanged: (value) {
+                    if (value == null) {
+                      return;
+                    }
+                    setState(() {
+                      _level = value;
+                    });
+                    if (_destAddress.isNotEmpty) {
+                      _createTransaction(context, _destAddress);
+                    }
+                  },
+                )))
+              ],
+            )),
+        ],
+        if (_utxos.isNotEmpty && _feesPaid != 0)
           ...[Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.start,
@@ -301,7 +311,7 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
             )]
           else
             if (_utxos.isEmpty)
-              ...[const Padding(padding: EdgeInsets.all(10), child: Text("No recoverable funds found"))]
+              ...[Padding(padding: const EdgeInsets.all(10), child: Text(_existingRecovery.isNotEmpty ? "No more recoverable funds found" : "No recoverable funds found"))]
             else
                 ListView.separated(
                     shrinkWrap: true,
@@ -454,6 +464,7 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
           if (mounted) {
             ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Submitted $txId', overflow: TextOverflow.ellipsis), showCloseIcon: true));
+            _loader.forceLoad(_dataLoaderCallback);
           }
         } on Exception catch (e) {
           if (mounted) {

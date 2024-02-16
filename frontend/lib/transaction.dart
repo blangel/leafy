@@ -137,6 +137,7 @@ class _TransactionState extends State<TransactionPage> {
                     Expanded(flex: 1, child: getConfirmationWidget(getConfirmationColor(transaction), getConfirmationText(transaction))),
                     if (isUnconfirmedSent(transaction))
                       ...[
+                        // TODO - if recovery, handle differently
                         TextButton(
                           onPressed: () {
                             List<Transaction> transactions = getTransactionsForBip125Replacement(arguments.transactions, transaction);
