@@ -19,7 +19,7 @@ class TimelockRecoveryPage extends StatefulWidget {
 
 }
 
-class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
+class _TimelockRecoveryState extends State<TimelockRecoveryPage> with RouteAware {
 
   // matches any CSV of 50cd00; this is used to find existing recovery transactions
   // and is only applied when the input is from a known-address (thus implying a
@@ -81,7 +81,7 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
   }
 
   void _dataLoaderCallback(List<String> addresses, AddressMetadata? metadata, bool paging, double usdPrice, int currentBlockHeight) {
-      if (!context.mounted) {
+      if (!mounted) {
         return;
       }
       List<Transaction> txs = [];
@@ -401,6 +401,13 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
     );
   }
 
+  @override
+  void didPopNext() {
+    if (mounted) {
+      _loader.forceLoad(_dataLoaderCallback);
+    }
+  }
+
   int _countRecoverableTxs() {
     return _utxos.fold(0, (previousValue, utxo) => utxo.status.needLivelinessCheck(_currentBlockHeight) ? previousValue + 1 : previousValue);
   }
@@ -465,6 +472,9 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> {
             ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Submitted $txId', overflow: TextOverflow.ellipsis), showCloseIcon: true));
             _loader.forceLoad(_dataLoaderCallback);
+            setState(() {
+              _signing = false;
+            });
           }
         } on Exception catch (e) {
           if (mounted) {

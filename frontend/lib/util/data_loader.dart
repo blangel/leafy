@@ -125,6 +125,7 @@ class DataLoader {
     Set<Transaction> allTransactions = {};
     String addressWithoutTransactions = "";
     int addressWithoutTransactionsCount = 0;
+    List<Transaction> mempoolTxs = await bitcoinClient.getMempoolTransactions();
     Map<String, List<Transaction>> transactionsByAddress = {};
     List<String> copiedAddresses = [];
     copiedAddresses.addAll(_addresses);
@@ -141,6 +142,7 @@ class DataLoader {
         confirmedSats += (info.chainStats.bitcoinSum - info.chainStats.spentBitcoinSum);
         unconfirmedSats += (info.mempoolStats.bitcoinSum - info.mempoolStats.spentBitcoinSum);
         List<Transaction> addressTransactions = await bitcoinClient.getAddressTransactions(address);
+        addressTransactions = _augmentWithMempool(addressTransactions, mempoolTxs, address);
         addressTransactions = addressTransactions.map((item) => item.fromKnownAddresses(copiedAddresses)).toList();
         List<Future<Transaction>> futureTransactions = addressTransactions.map((item) {
           return bitcoinClient.augmentTransactionWithUnspentUtxos(item);
@@ -171,6 +173,19 @@ class DataLoader {
         transactionsSorted,
         addressWithoutTransactions), _continuePaging, _usdPrice, _currentBlockHeight);
     _loadingAddressInfos = false;
+  }
+
+  List<Transaction> _augmentWithMempool(List<Transaction> addressTransactions, List<Transaction> mempoolTransactions, String address) {
+    List<Transaction> result = [];
+    result.addAll(addressTransactions);
+
+    List<Transaction> matches = mempoolTransactions.where((tx) =>
+      tx.vins.any((vin) => vin.prevOut.scriptPubkeyAddress == address) ||
+        tx.vouts.any((vout) => vout.scriptPubkeyAddress == address)).toList();
+
+    result.addAll(matches);
+
+    return result;
   }
 
 }

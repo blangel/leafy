@@ -17,7 +17,7 @@ class LeafyWalletPage extends StatefulWidget {
 
 }
 
-class _LeafyWalletState extends State<LeafyWalletPage> {
+class _LeafyWalletState extends State<LeafyWalletPage> with RouteAware {
 
   final AssetImage _walletImage = const AssetImage('images/bitcoin_wallet.gif');
 
@@ -57,26 +57,7 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
   @override
   Widget build(BuildContext context) {
     KeyArguments keyArguments = ModalRoute.of(context)!.settings.arguments as KeyArguments;
-    _loader.init(keyArguments.firstMnemonic, keyArguments.secondDescriptor, (addresses, metadata, paging, usdPrice, currentBlockHeight) {
-      if (!context.mounted) {
-        return;
-      }
-      setState(() {
-        this.addresses = addresses;
-        if (metadata != null) {
-          confirmedBitcoin = metadata.confirmedBitcoin;
-          unconfirmedBitcoin = metadata.unconfirmedBitcoin;
-          addressInfos = metadata.addressInfos;
-          transactionsByAddress = metadata.transactionsByAddress;
-          transactions = metadata.transactions;
-          receiveAddress = metadata.receiveAddress;
-        }
-        this.usdPrice = usdPrice;
-        this.currentBlockHeight = currentBlockHeight;
-        finishedAddressPaging = !paging;
-        loadingAddresses = false;
-      });
-    });
+    _loader.init(keyArguments.firstMnemonic, keyArguments.secondDescriptor, _handleDataLoad);
     var livelinessTransactions = _numberOfLivelinessChecksNeeded();
     return buildHomeScaffoldWithRestore(context, '🌿 Wallet', keyArguments.walletPassword, keyArguments.firstMnemonic, Column(
       mainAxisSize: MainAxisSize.max,
@@ -221,6 +202,32 @@ class _LeafyWalletState extends State<LeafyWalletPage> {
         ]))
       ],
     ));
+  }
+
+  @override
+  void didPopNext() {
+    _loader.forceLoad(_handleDataLoad);
+  }
+
+  void _handleDataLoad(List<String> addresses, AddressMetadata? metadata, bool paging, double usdPrice, int currentBlockHeight) {
+    if (!context.mounted) {
+      return;
+    }
+    setState(() {
+      this.addresses = addresses;
+      if (metadata != null) {
+        confirmedBitcoin = metadata.confirmedBitcoin;
+        unconfirmedBitcoin = metadata.unconfirmedBitcoin;
+        addressInfos = metadata.addressInfos;
+        transactionsByAddress = metadata.transactionsByAddress;
+        transactions = metadata.transactions;
+        receiveAddress = metadata.receiveAddress;
+      }
+      this.usdPrice = usdPrice;
+      this.currentBlockHeight = currentBlockHeight;
+      finishedAddressPaging = !paging;
+      loadingAddresses = false;
+    });
   }
 
   bool _needLivelinessCheck() {

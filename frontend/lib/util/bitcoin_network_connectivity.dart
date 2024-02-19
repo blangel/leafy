@@ -612,6 +612,7 @@ abstract class BitcoinClient {
   String getBitcoinProviderAddressUrl(String address);
   String getBitcoinNetworkName();
   Future<AddressInfo> getAddressInfo(String address);
+  Future<List<Transaction>> getMempoolTransactions();
   Future<List<Transaction>> getAddressTransactions(String address);
   Future<Transaction> augmentTransactionWithUnspentUtxos(Transaction transaction);
   Future<int> getCurrentBlockHeight();

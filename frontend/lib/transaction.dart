@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:leafy/globals.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
 import 'package:leafy/util/mempool_space_connectivity.dart';
+import 'package:leafy/util/transaction.dart';
 import 'package:leafy/widget/transaction.dart';
 import 'package:leafy/widget/vin.dart';
 import 'package:leafy/widget/vout.dart';
@@ -137,13 +138,35 @@ class _TransactionState extends State<TransactionPage> {
                     Expanded(flex: 1, child: getConfirmationWidget(getConfirmationColor(transaction), getConfirmationText(transaction))),
                     if (isUnconfirmedSent(transaction))
                       ...[
-                        // TODO - if recovery, handle differently
                         TextButton(
                           onPressed: () {
-                            List<Transaction> transactions = getTransactionsForBip125Replacement(arguments.transactions, transaction);
-                            Navigator.pushNamed(context, '/create-transaction',
-                                arguments: CreateTransactionArguments(keyArguments: arguments.keyArguments,
-                                    transactions: transactions, changeAddress: arguments.changeAddress, toReplace: transaction));
+                            if (arguments.recovery) {
+                              const spendAll = 0;
+                              var updatedFeeRate = transaction.feeRate() * 2;
+                              var utxos = getRecoveryTransactionUtxoForBip125Replacement(transaction);
+                              signRecoveryTransaction(arguments.keyArguments.firstMnemonic, arguments.keyArguments.secondDescriptor,
+                                utxos, arguments.changeAddress, arguments.changeAddress, spendAll, updatedFeeRate).then((signed) async {
+                                try {
+                                  String txId = await bitcoinClient.submitTransaction(signed);
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).clearSnackBars();
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Submitted $txId', overflow: TextOverflow.ellipsis), showCloseIcon: true));
+                                    Navigator.pushNamedAndRemoveUntil(context, '/timelock-recovery', (route) => false);
+                                  }
+                                } on Exception catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).clearSnackBars();
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to submit recovery transaction: ${e.toString()}', overflow: TextOverflow.ellipsis,), showCloseIcon: true));
+                                  }
+                                }
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('TODO', overflow: TextOverflow.ellipsis,), showCloseIcon: true));
+                            } else {
+                              List<Transaction> transactions = getTransactionsForBip125Replacement(arguments.transactions, transaction);
+                              Navigator.pushNamed(context, '/create-transaction',
+                                  arguments: CreateTransactionArguments(keyArguments: arguments.keyArguments,
+                                      transactions: transactions, changeAddress: arguments.changeAddress, toReplace: transaction));
+                            }
                           },
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
@@ -370,6 +393,12 @@ class _TransactionState extends State<TransactionPage> {
         ))
       ],
     )));
+  }
+
+  List<Utxo> getRecoveryTransactionUtxoForBip125Replacement(Transaction toReplace) {
+    return toReplace.vins.map((vin) =>
+        Utxo(address: vin.prevOut.scriptPubkeyAddress, outpoint: Outpoint.fromTxId(vin.txId, vin.index), amount: vin.prevOut.valueSat, script: vin.prevOut.scriptPubkey, status: toReplace.status)
+    ).toList();
   }
 
   List<Transaction> getTransactionsForBip125Replacement(List<Transaction> transactions, Transaction toReplace) {

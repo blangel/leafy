@@ -50,6 +50,11 @@ class MempoolSpaceClient extends BitcoinClient {
   }
 
   @override
+  Future<List<Transaction>> getMempoolTransactions() async {
+    return await _fetchMempoolTransactions();
+  }
+
+  @override
   Future<List<Transaction>> getAddressTransactions(String address) async {
     return await _fetchAddressTransactions(address);
   }
@@ -94,6 +99,40 @@ class MempoolSpaceClient extends BitcoinClient {
       log("failed to load address info (status code ${response.statusCode}): ${response.body}");
       throw Exception('Failed to load address info: ${response.statusCode}');
     }
+  }
+
+  Future<List<Transaction>> _fetchMempoolTransactions() async {
+    final response = await get(
+      Uri.parse('$internetProtocol://$baseUrl/api/mempool/txids'),
+    );
+    if (response.statusCode == 200) {
+      var json = jsonDecode(response.body);
+      if (json is List) {
+        return List.from((await _fetchTransactions(json)).where((tx) => tx != null));
+      }
+    }
+    log("failed to load mempool transactions (status code ${response.statusCode}): ${response.body}");
+    throw Exception('Failed to load mempool transactions: ${response.statusCode}');
+  }
+
+  Future<List<Transaction?>> _fetchTransactions(List<dynamic> txIds) async {
+    List<Transaction?> txs = [];
+    for (String txId in txIds) {
+      txs.add(await _fetchTransaction(txId).then((Transaction transaction) => transaction, onError: (error) => null));
+    }
+    return txs;
+  }
+
+  Future<Transaction> _fetchTransaction(String txId) async {
+    final response = await get(
+      Uri.parse('$internetProtocol://$baseUrl/api/tx/$txId'),
+    );
+    if (response.statusCode == 200) {
+      var json = jsonDecode(response.body);
+      return Transaction.fromMempoolApiJson(json);
+    }
+    log("failed to load mempool transaction (status code ${response.statusCode}): ${response.body}");
+    throw Exception('Failed to load mempool transaction: ${response.statusCode}');
   }
 
   Future<List<Transaction>> _fetchAddressTransactions(String address) async {
