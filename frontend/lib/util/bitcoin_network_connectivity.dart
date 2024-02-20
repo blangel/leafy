@@ -313,6 +313,70 @@ class Vout {
   }
 }
 
+class RBFTransaction {
+
+  final RBFTransactionInfo tx;
+  final int time;
+  final bool fullRbf;
+  final int? interval;
+  final List<RBFTransaction> replaces;
+
+  RBFTransaction({required this.tx, required this.time, required this.fullRbf, required this.replaces, required this.interval});
+
+  factory RBFTransaction.fromMempoolApiJson(Map<String, dynamic> json) {
+    var replacesJson = json['replaces'];
+    List<RBFTransaction> replaces = [];
+    if (replacesJson is List) {
+      replaces = replacesJson.asMap().map((index, replaceJson) {
+        return MapEntry(index, RBFTransaction.fromMempoolApiJson(replaceJson));
+      }).values.toList();
+    }
+    return RBFTransaction(
+      tx: RBFTransactionInfo.fromMempoolApiJson(json['tx']),
+      time: json['time'],
+      fullRbf: json['fullRbf'],
+      replaces: replaces,
+      interval: json.containsKey('interval') ? json['interval'] : null,
+    );
+  }
+}
+
+class RBFTransactionInfo {
+  final String id;
+  final int fee;
+  final double size;
+  final int value;
+  final double rate;
+  final bool rbf;
+  final bool? fullRbf;
+
+  RBFTransactionInfo({required this.id, required this.fee, required this.size, required this.value, required this.rate, required this. rbf, required this.fullRbf});
+
+  factory RBFTransactionInfo.fromMempoolApiJson(Map<String, dynamic> json) {
+    double size;
+    if (json['vsize'] is int) {
+      size = (json['vsize'] as int).toDouble();
+    } else {
+      size = json['vsize'] as double;
+    }
+    double rate;
+    if (json['rate'] is int) {
+      rate = (json['rate'] as int).toDouble();
+    } else {
+      rate = json['rate'] as double;
+    }
+    return RBFTransactionInfo(
+      id: json['txid'],
+      fee: json['fee'],
+      size: size,
+      value: json['value'],
+      rate: rate,
+      rbf: json['rbf'],
+        fullRbf: json.containsKey('fullRbf') ? json['fullRbf'] : null,
+    );
+  }
+}
+
 class Transaction implements Comparable<Transaction> {
   final String id;
   final int version;
@@ -607,12 +671,14 @@ class MempoolSnapshot {
 }
 
 abstract class BitcoinClient {
+  String getBitcoinProviderProtocol();
+  String getBitcoinProviderBaseUrl();
   String getBitcoinProviderName();
   String getBitcoinProviderTransactionUrl(String transactionId);
   String getBitcoinProviderAddressUrl(String address);
   String getBitcoinNetworkName();
   Future<AddressInfo> getAddressInfo(String address);
-  Future<List<Transaction>> getMempoolTransactions();
+  Future<List<Transaction>> getMempoolRBFTransactions();
   Future<List<Transaction>> getAddressTransactions(String address);
   Future<Transaction> augmentTransactionWithUnspentUtxos(Transaction transaction);
   Future<int> getCurrentBlockHeight();

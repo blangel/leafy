@@ -45,9 +45,7 @@ class _TransactionState extends State<TransactionPage> {
   }
 
   void _loadMempoolData() async {
-    // TODO - replace client
-    BitcoinClient client = MempoolSpaceClient.mainnet();
-    client.getMempoolSnapshot().then((snapshot) {
+    bitcoinClient.getMempoolSnapshot().then((snapshot) {
       if (mounted) {
         setState(() {
           mempoolSnapshot = snapshot;

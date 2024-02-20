@@ -19,8 +19,7 @@ const platform = MethodChannel('leafy/core');
 const int timelock = 52560;
 const int livelinessUpdateThreshold = 4320; // ~1 month
 
-// TODO - user configured network?
-final BitcoinClient bitcoinClient = kDebugMode ? MempoolSpaceClient.regtest() : MempoolSpaceClient.mainnet();
+late BitcoinClient bitcoinClient;
 
 const String documentationPasswordUrl = 'https://github.com/blangel/leafy?tab=readme-ov-file#3-optional-passwordpassphrase';
 final Uri documentationUri = Uri.parse('https://github.com/blangel/leafy/blob/main/README.md');
@@ -38,6 +37,32 @@ final PriceService priceService = CoinbasePriceService();
 final ThemeData lightTheme = ThemeData.light(useMaterial3: true);
 
 final ThemeData darkTheme = ThemeData.dark(useMaterial3: true);
+
+Future<void> persistBitcoinClient(String protocol, String url) async {
+  const storage = FlutterSecureStorage(aOptions: AndroidOptions(
+    encryptedSharedPreferences: true,
+  ));
+  storage.write(key: 'leafy:bitcoin-network:protocol', value: protocol);
+  storage.write(key: 'leafy:bitcoin-network:url', value: url);
+  bitcoinClient = MempoolSpaceClient(network: BitcoinNetwork.mainnet, internetProtocol: protocol, baseUrl: url);
+}
+
+Future<void> loadBitcoinClient() async {
+  BitcoinClient client = kDebugMode ? MempoolSpaceClient.regtest() : await _getPersistedBitcoinClient();
+  bitcoinClient = client;
+}
+
+Future<BitcoinClient> _getPersistedBitcoinClient() async {
+  const storage = FlutterSecureStorage(aOptions: AndroidOptions(
+    encryptedSharedPreferences: true,
+  ));
+  var protocol = await storage.read(key: 'leafy:bitcoin-network:protocol');
+  var url = await storage.read(key: 'leafy:bitcoin-network:url');
+  if ((protocol == null) || (url == null)) {
+    return MempoolSpaceClient.mainnet();
+  }
+  return MempoolSpaceClient(network: BitcoinNetwork.mainnet, internetProtocol: protocol, baseUrl: url);
+}
 
 ThemeData getLightTheme() {
   return lightTheme.copyWith(textTheme: GoogleFonts.outfitTextTheme(lightTheme.textTheme));
@@ -81,7 +106,7 @@ Scaffold _buildScaffold(BuildContext context, String title, Widget body, bool ad
             if (value == 'recovery') {
               Navigator.pushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.branch, remoteAccountId: globalRemoteAccountId, walletPassword: recovery.walletPassword, walletFirstMnemonic: recovery.firstMnemonic));
             } else if (value == 'settings') {
-              // TODO - settings
+              Navigator.pushNamed(context, '/settings');
             } else {
               throw Exception("programming error");
             }

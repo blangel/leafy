@@ -16,12 +16,21 @@ class MempoolSpaceClient extends BitcoinClient {
   MempoolSpaceClient({required this.network, required this.internetProtocol, required this.baseUrl});
 
   factory MempoolSpaceClient.regtest() {
-    // TODO - configurable api-base?
     return MempoolSpaceClient(network: BitcoinNetwork.regtest, internetProtocol: "http", baseUrl: "localhost:8080");
   }
 
   factory MempoolSpaceClient.mainnet() {
     return MempoolSpaceClient(network: BitcoinNetwork.mainnet, internetProtocol: "https", baseUrl: "mempool.space");
+  }
+
+  @override
+  String getBitcoinProviderProtocol() {
+    return internetProtocol;
+  }
+
+  @override
+  String getBitcoinProviderBaseUrl() {
+    return baseUrl;
   }
 
   @override
@@ -50,8 +59,8 @@ class MempoolSpaceClient extends BitcoinClient {
   }
 
   @override
-  Future<List<Transaction>> getMempoolTransactions() async {
-    return await _fetchMempoolTransactions();
+  Future<List<Transaction>> getMempoolRBFTransactions() async {
+    return await _fetchMempoolRBFTransactions();
   }
 
   @override
@@ -95,32 +104,36 @@ class MempoolSpaceClient extends BitcoinClient {
       AddressStats chain = AddressStats.fromMempoolApiJson(json, AddressStatsType.chain);
       AddressStats mempool = AddressStats.fromMempoolApiJson(json, AddressStatsType.mempool);
       return AddressInfo(network, address, chain, mempool);
+    } else if (response.body.contains("Address on invalid network")) {
+      log("failed to load address info (status code ${response.statusCode}): ${response.body}");
+      return AddressInfo(network, address, AddressStats(type: AddressStatsType.chain, numberUtxos: 0, bitcoinSum: 0, spentUtxos: 0, spentBitcoinSum: 0, transactionCount: 0),
+          AddressStats(type: AddressStatsType.mempool, numberUtxos: 0, bitcoinSum: 0, spentUtxos: 0, spentBitcoinSum: 0, transactionCount: 0));
     } else {
       log("failed to load address info (status code ${response.statusCode}): ${response.body}");
       throw Exception('Failed to load address info: ${response.statusCode}');
     }
   }
 
-  Future<List<Transaction>> _fetchMempoolTransactions() async {
+  Future<List<Transaction>> _fetchMempoolRBFTransactions() async {
     final response = await get(
-      Uri.parse('$internetProtocol://$baseUrl/api/mempool/txids'),
+      Uri.parse('$internetProtocol://$baseUrl/api/v1/replacements'),
     );
     if (response.statusCode == 200) {
       var json = jsonDecode(response.body);
       if (json is List) {
-        return List.from((await _fetchTransactions(json)).where((tx) => tx != null));
+        List<RBFTransaction> rbfTxs = json.map((rbfTransactionJson) {
+          return RBFTransaction.fromMempoolApiJson(rbfTransactionJson);
+        }).toList();
+        List<Transaction?> nullableTxs = await Future.wait(rbfTxs.map((rbfTx) => rbfTx.tx.id).map((txId) => _fetchTransaction(txId).then((Transaction transaction) => transaction, onError: (error) => null)));
+        return nullableTxs.where((tx) => (tx != null)).map((tx) => tx!).toList();
       }
     }
-    log("failed to load mempool transactions (status code ${response.statusCode}): ${response.body}");
-    throw Exception('Failed to load mempool transactions: ${response.statusCode}');
-  }
-
-  Future<List<Transaction?>> _fetchTransactions(List<dynamic> txIds) async {
-    List<Transaction?> txs = [];
-    for (String txId in txIds) {
-      txs.add(await _fetchTransaction(txId).then((Transaction transaction) => transaction, onError: (error) => null));
+    if (response.body.contains("Cannot GET /api/v1/replacements")) {
+      log("failed to load mempool RBF transactions, backend doesn't support");
+      return [];
     }
-    return txs;
+    log("failed to load mempool RBF transactions (status code ${response.statusCode}): ${response.body}");
+    throw Exception('Failed to load mempool RBF transactions: ${response.statusCode}');
   }
 
   Future<Transaction> _fetchTransaction(String txId) async {

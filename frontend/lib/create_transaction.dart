@@ -67,9 +67,7 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
   }
 
   void _loadFeeAndMempoolData() async {
-    // TODO - replace client
-    BitcoinClient client = MempoolSpaceClient.mainnet();
-    client.getRecommendedFees().then((fees) {
+    bitcoinClient.getRecommendedFees().then((fees) {
       setState(() {
         recommendedFees = fees;
         readyToSubmit = false;
@@ -82,7 +80,7 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
         }
       });
     });
-    client.getMempoolSnapshot().then((snapshot) {
+    bitcoinClient.getMempoolSnapshot().then((snapshot) {
       setState(() {
         mempoolSnapshot = snapshot;
         readyToSubmit = false;

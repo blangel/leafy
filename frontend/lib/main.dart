@@ -11,6 +11,7 @@ import 'package:leafy/firebase_options.dart';
 import 'package:leafy/globals.dart';
 import 'package:leafy/liveliness.dart';
 import 'package:leafy/receive_address.dart';
+import 'package:leafy/settings.dart';
 import 'package:leafy/setup_new.dart';
 import 'package:leafy/social_recovery.dart';
 import 'package:leafy/start_branch.dart';
@@ -27,6 +28,7 @@ Future<void> main() async {
 Future<void> init() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await loadBitcoinClient();
 }
 
 class LeafyApp extends StatelessWidget {
@@ -53,6 +55,7 @@ class LeafyApp extends StatelessWidget {
         '/transaction': (context) => const TransactionPage(),
         '/receive-address': (context) => const ReceiveAddressPage(),
         '/create-transaction': (context) => const CreateTransactionPage(),
+        '/settings': (context) => const SettingsPage(),
         '/wallet': (context) => const LeafyWalletPage(),
       },
     );

@@ -125,7 +125,7 @@ class DataLoader {
     Set<Transaction> allTransactions = {};
     String addressWithoutTransactions = "";
     int addressWithoutTransactionsCount = 0;
-    List<Transaction> mempoolTxs = await bitcoinClient.getMempoolTransactions();
+    List<Transaction> mempoolTxs = await bitcoinClient.getMempoolRBFTransactions();
     Map<String, List<Transaction>> transactionsByAddress = {};
     List<String> copiedAddresses = [];
     copiedAddresses.addAll(_addresses);

@@ -66,14 +66,12 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> with RouteAware
   }
 
   void _loadFeeAndMempoolData() async {
-    // TODO - switch to bitcoinClient from 'globals'
-    BitcoinClient client = MempoolSpaceClient.mainnet();
-    client.getRecommendedFees().then((fees) {
+    bitcoinClient.getRecommendedFees().then((fees) {
       setState(() {
         _recommendedFees = fees;
       });
     });
-    client.getMempoolSnapshot().then((snapshot) {
+    bitcoinClient.getMempoolSnapshot().then((snapshot) {
       setState(() {
         _mempoolSnapshot = snapshot;
       });
