@@ -351,17 +351,34 @@ Leafy ("program"), like Bitcoin ("money"), is [open-source](https://github.com/b
 
 ## Roadmap
 
-- [x] Add the redundant [Google Drive application storage](https://developers.google.com/drive/api/guides/appdata)
-- [x] Within [social recovery](#social-recovery), add Google Drive storage for companion's data
-- [x] Implement "Timelock Recovery"
-- [x] Implement "Liveliness Updates"
+### Prior to `mainnet`
+
+Those items marked `mainnet` are deemed necessary prior to generally availability.
+
+### Functionality
+
+- [x] `mainnet` Add the redundant [Google Drive application storage](https://developers.google.com/drive/api/guides/appdata)
+- [x] `mainnet` Within [social recovery](#social-recovery), add Google Drive storage for companion's data
+- [x] `mainnet` Implement "Timelock Recovery"
+- [x] `mainnet` Implement "Liveliness Updates"
+- [x] `mainnet` Add advanced option during setup for passphrase/password encryption
+- [ ] `mainnet` Add setting to customize the [Bitcoin Network Connectivity](#6-bitcoin-network-connectivity)
+- [ ] Add Apple iCloud as a Remote Account[^5]
 - [ ] Add local timed notifications as reminders for liveliness updates
-- [x] Add advanced option during setup for passphrase/password encryption
-- [ ] Add setting to customize the [Bitcoin Network Connectivity](#6-bitcoin-network-connectivity)
-- [ ] Marketing website (leafybitcoin.com)
-- [ ] Add Apple iCloud as a Remote Account
 - [ ] Expand Remote Account to include a label (so UI can list implementation name instead of 'Remote Account'; e.g. 'Google Drive')
 - [ ] Implement binaries as discussed in [App Provider Obstruction](#app-provider-obstruction)
+- [ ] Allow for timelock-recovery on same phone
+  
+[^5]: Although not marked 'mainnet' Apple may require this as part of release/approval for inclusion on the Apple App Store
+
+### Research
+
 - [ ] Research hardware wallets w.r.t. Remote Account possibility
 - [ ] Finalize research for [social bond](#2b-social-bond-recovery)
-- [ ] Allow for timelock-recovery on same phone
+
+### Other
+
+- [ ] `mainnet` Independent security audit
+- [ ] `mainnet` Release on Google Play Store
+- [ ] `mainnet` Release/approval on Apple App Store
+- [ ] Marketing website (leafybitcoin.com)
