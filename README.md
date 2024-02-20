@@ -2,6 +2,9 @@
 
 Leafy is a Bitcoin wallet designed to be user-friendly. It is built for those who want to participate in Bitcoin via [self-custody](#self-custody) but do not want to undertake the learning curve, cost and hassle required by other solutions.
 
+> [!WARNING]
+> Leafy is in beta testing and usage may result in loss of funds. See [Roadmap](#roadmap) and the remaining `mainnet` items before Leafy is fully released.
+
 ### Getting Started
 
 Users should download the Leafy application (available on [Android]() and [Apple]()) which will guide them through their wallet [setup](#setup).
