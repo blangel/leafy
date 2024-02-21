@@ -279,6 +279,31 @@ class TimelockRecoveryArguments {
   TimelockRecoveryArguments({required this.walletPassword, required this.walletFirstMnemonic, required this.walletSecondDescriptor});
 }
 
+Future<void> setAsNeedingCompanionDeviceBackup() async {
+  const storage = FlutterSecureStorage(aOptions: AndroidOptions(
+    encryptedSharedPreferences: true,
+  ));
+  await storage.write(key: 'leafy:companion-device:setup', value: "false");
+}
+
+Future<void> setNotNeedingCompanionDeviceBackup() async {
+  const storage = FlutterSecureStorage(aOptions: AndroidOptions(
+    encryptedSharedPreferences: true,
+  ));
+  await storage.write(key: 'leafy:companion-device:setup', value: "true");
+}
+
+Future<bool> isCompanionDeviceSetup() async {
+  const storage = FlutterSecureStorage(aOptions: AndroidOptions(
+    encryptedSharedPreferences: true,
+  ));
+  var setup = await storage.read(key: 'leafy:companion-device:setup');
+  if ((setup == null) || "false" == setup) {
+    return false;
+  }
+  return true;
+}
+
 // TODO - update to use biometric_storage (https://pub.dev/packages/biometric_storage) instead of flutter_secure_storage ?
 
 Future<void> persistLocallyViaBiometric(String? password, String firstMnemonic, String secondDescriptor, String remoteAccountId) async {

@@ -59,6 +59,7 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
           await persistLocallyViaBiometric(_password, _wallet.firstMnemonic, _wallet.secondDescriptor, account.email);
           await persistRemotely(_wallet.firstMnemonic, _wallet.secondMnemonic);
           if (context.mounted) {
+            setAsNeedingCompanionDeviceBackup();
             Navigator.popAndPushNamed(context, '/wallet', arguments: KeyArguments(firstMnemonic: _wallet.firstMnemonic, secondMnemonic: _wallet.secondMnemonic, secondDescriptor: _wallet.secondDescriptor, walletPassword: _password));
           }
         } else {

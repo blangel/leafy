@@ -255,6 +255,9 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
               Padding(padding: const EdgeInsets.all(20), child: Center(child: Image(height: 150, image: _restoreImage))),
               if (_encryptedData == null)
                 ...[
+                  const Padding(padding: EdgeInsets.fromLTRB(10, 0, 10, 10),
+                    child: Text("On a companion device, begin the process by setting up a recovery device for a companion and then either scan or paste the data here.", style: TextStyle(fontSize: 16))
+                  ),
                   const Padding(padding: EdgeInsets.all(10),
                     child: Row(
                         children: [
@@ -321,6 +324,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                   Align(
                       alignment: Alignment.centerRight,
                       child: ElevatedButton.icon(onPressed: () {
+                        setNotNeedingCompanionDeviceBackup();
                         Navigator.pop(context);
                       }, icon: const Icon(Icons.navigate_next), label: const Text("Done")))
                 ]

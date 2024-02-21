@@ -21,9 +21,16 @@ class _ReceiveAddressState extends State<ReceiveAddressPage> {
 
   late double _originalBrightness;
 
+  bool _companionDeviceSetup = false;
+
   @override
   void initState() {
     super.initState();
+    isCompanionDeviceSetup().then((value) {
+      setState(() {
+        _companionDeviceSetup = value;
+      });
+    });
     _setRevertibleBrightness();
   }
 
@@ -60,29 +67,47 @@ class _ReceiveAddressState extends State<ReceiveAddressPage> {
                 const Padding(padding: EdgeInsets.all(10), child: Text("Your Bitcoin address", style: TextStyle(fontSize: 24))),
               ],
             ),
-            Center(
-              child: Padding(padding: const EdgeInsets.all(20), child:
-              Container(
-                  color: Colors.white,
-                  child: QrImageView(
-                    data: arguments.address,
-                    version: QrVersions.auto,
-                    size: 200.0,
-                  )
-              ),
-              ),
-            ),
-            CopyableDataWidget(data: arguments.address),
-            Padding(padding: const EdgeInsets.all(10), child: RichText(text: TextSpan(
-                text: "This is a Segwit v1 address, to learn more about how Leafy wallets work, ",
-                style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium!.color),
-                children: [
-                  TextSpan(text: "see the documentation", style: TextStyle(fontSize: 12, decoration: TextDecoration.underline, color: Theme.of(context).textTheme.bodyMedium!.color),
-                      recognizer: TapGestureRecognizer()..onTap = () { launchDocumentation(); }
+            if (_companionDeviceSetup)
+              ...[
+                Center(
+                  child: Padding(padding: const EdgeInsets.all(20), child:
+                  Container(
+                      color: Colors.white,
+                      child: QrImageView(
+                        data: arguments.address,
+                        version: QrVersions.auto,
+                        size: 200.0,
+                      )
                   ),
-                ]
-            )),
-            )
+                  ),
+                ),
+                CopyableDataWidget(data: arguments.address),
+                Padding(padding: const EdgeInsets.all(10), child: RichText(text: TextSpan(
+                    text: "This is a Segwit v1 address, to learn more about how Leafy wallets work, ",
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium!.color),
+                    children: [
+                      TextSpan(text: "see the documentation", style: TextStyle(fontSize: 12, decoration: TextDecoration.underline, color: Theme.of(context).textTheme.bodyMedium!.color),
+                          recognizer: TapGestureRecognizer()..onTap = () { launchDocumentation(); }
+                      ),
+                    ]
+                )),
+                )
+              ]
+            else
+              ...[
+                Padding(padding: const EdgeInsets.all(10), child: RichText(text: TextSpan(
+                  text: "You have not yet setup a companion device for recovery. You must do so prior to receiving Bitcoin. ",
+                  style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color),
+                  children: [
+                    TextSpan(text: "Setup a companion device now.", style: TextStyle(fontSize: 18, decoration: TextDecoration.underline, color: Theme.of(context).textTheme.bodyMedium!.color),
+                      recognizer: TapGestureRecognizer()..onTap = () {
+                        Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.setup, remoteAccountId: globalRemoteAccountId, walletPassword: arguments.keyArguments.walletPassword, walletFirstMnemonic: arguments.keyArguments.firstMnemonic));
+                      }
+                    ),
+                  ]
+                )),
+                )
+              ],
           ],
         )
     );
