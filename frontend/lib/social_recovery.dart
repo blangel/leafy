@@ -37,7 +37,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
 
   final AssetImage _restoreImage = const AssetImage('images/restore.gif');
 
-  bool inited = false;
+  bool _inited = false;
   late String _selfId;
   final List<String> _companionIds = [];
   late String? _walletFirstMnemonic;
@@ -57,7 +57,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
 
   String? _assistingWithCompanionId;
 
-  late double originalBrightness;
+  late double _originalBrightness;
 
   bool _retrievingPassword = false;
 
@@ -103,12 +103,12 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
 
   @override
   void dispose() {
-    _setBrightness(originalBrightness);
+    _setBrightness(_originalBrightness);
     super.dispose();
   }
 
   Future<void> _setRevertibleBrightness() async {
-    originalBrightness = await ScreenBrightness().system;
+    _originalBrightness = await ScreenBrightness().system;
     _setBrightness(1.0);
   }
 
@@ -132,9 +132,9 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
   @override
   Widget build(BuildContext context) {
     final arguments = ModalRoute.of(context)!.settings.arguments as SocialRecoveryArguments;
-    if (!inited) {
+    if (!_inited) {
       setState(() {
-        inited = true;
+        _inited = true;
         _selfId = arguments.remoteAccountId;
         if (!_companionIds.contains(arguments.remoteAccountId)) {
           _companionIds.add(arguments.remoteAccountId);

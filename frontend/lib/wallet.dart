@@ -21,30 +21,28 @@ class _LeafyWalletState extends State<LeafyWalletPage> with RouteAware {
 
   final AssetImage _walletImage = const AssetImage('images/bitcoin_wallet.gif');
 
-  bool loadingAddresses = true;
-  bool finishedAddressPaging = false;
+  bool _loadingAddresses = true;
+  bool _finishedAddressPaging = false;
   late DataLoader _loader;
 
-  late List<String> addresses;
-  String receiveAddress = "";
-  late List<AddressInfo> addressInfos;
-  late Map<String, List<Transaction>> transactionsByAddress;
-  late List<Transaction> transactions;
+  String _receiveAddress = "";
+  late List<AddressInfo> _addressInfos;
+  late Map<String, List<Transaction>> _transactionsByAddress;
+  late List<Transaction> _transactions;
 
-  double confirmedBitcoin = 0;
+  double _confirmedBitcoin = 0;
 
-  double unconfirmedBitcoin = 0;
+  double _unconfirmedBitcoin = 0;
 
-  double usdPrice = 0;
-  int currentBlockHeight = 0;
+  double _usdPrice = 0;
+  int _currentBlockHeight = 0;
 
   @override
   void initState() {
     super.initState();
-    addresses = [];
-    addressInfos = [];
-    transactionsByAddress = {};
-    transactions = [];
+    _addressInfos = [];
+    _transactionsByAddress = {};
+    _transactions = [];
     _loader = DataLoader();
   }
 
@@ -72,7 +70,7 @@ class _LeafyWalletState extends State<LeafyWalletPage> with RouteAware {
           children: [
             Expanded(flex: 1, child: Image(height: 150, image: _walletImage, alignment: Alignment.centerLeft)),
             Expanded(flex: 2, child:
-            !finishedAddressPaging ?
+            !_finishedAddressPaging ?
             Shimmer.fromColors(
                 baseColor: Colors.black12,
                 highlightColor: Colors.white70,
@@ -89,14 +87,14 @@ class _LeafyWalletState extends State<LeafyWalletPage> with RouteAware {
               mainAxisAlignment: MainAxisAlignment.end,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                AutoSizeText("${formatBitcoin(confirmedBitcoin + unconfirmedBitcoin)} ₿", style: const TextStyle(fontSize: 40), textAlign: TextAlign.end, minFontSize: 20, maxLines: 1, stepGranularity: 1, overflow: TextOverflow.ellipsis),
-                if (unconfirmedBitcoin != 0)
+                AutoSizeText("${formatBitcoin(_confirmedBitcoin + _unconfirmedBitcoin)} ₿", style: const TextStyle(fontSize: 40), textAlign: TextAlign.end, minFontSize: 20, maxLines: 1, stepGranularity: 1, overflow: TextOverflow.ellipsis),
+                if (_unconfirmedBitcoin != 0)
                   ...[
-                    AutoSizeText("of which ${formatBitcoin(unconfirmedBitcoin)} ₿ is pending", textAlign: TextAlign.end, minFontSize: 10, maxLines: 1, stepGranularity: 1, overflow: TextOverflow.ellipsis)
+                    AutoSizeText("of which ${formatBitcoin(_unconfirmedBitcoin)} ₿ is pending", textAlign: TextAlign.end, minFontSize: 10, maxLines: 1, stepGranularity: 1, overflow: TextOverflow.ellipsis)
                   ],
-                if (usdPrice != 0)
+                if (_usdPrice != 0)
                   ...[
-                    AutoSizeText(formatCurrency((confirmedBitcoin + unconfirmedBitcoin) * usdPrice), style: const TextStyle(fontSize: 20, color: Colors.greenAccent), textAlign: TextAlign.end, minFontSize: 10, maxLines: 1, stepGranularity: 1, overflow: TextOverflow.ellipsis),
+                    AutoSizeText(formatCurrency((_confirmedBitcoin + _unconfirmedBitcoin) * _usdPrice), style: const TextStyle(fontSize: 20, color: Colors.greenAccent), textAlign: TextAlign.end, minFontSize: 10, maxLines: 1, stepGranularity: 1, overflow: TextOverflow.ellipsis),
                   ],
               ],
             )
@@ -114,7 +112,7 @@ class _LeafyWalletState extends State<LeafyWalletPage> with RouteAware {
                 Text("$livelinessTransactions transaction${livelinessTransactions > 1 ? 's' : ''} require${livelinessTransactions > 1 ? '' : 's'} a liveliness update."),
                 Align(alignment: Alignment.centerRight, child: TextButton.icon(icon: const Icon(Icons.monitor_heart_outlined),
                     onPressed: () {
-                      Navigator.pushNamed(context, '/liveliness', arguments: TransactionsArguments(keyArguments: keyArguments, transactions: transactions, changeAddress: receiveAddress, currentBlockHeight: currentBlockHeight));
+                      Navigator.pushNamed(context, '/liveliness', arguments: TransactionsArguments(keyArguments: keyArguments, transactions: _transactions, changeAddress: _receiveAddress, currentBlockHeight: _currentBlockHeight));
                     },
                     label: Text("Review Update${livelinessTransactions > 1 ? 's' : ''}", style: const TextStyle(fontSize: 14)))
                 )
@@ -123,7 +121,7 @@ class _LeafyWalletState extends State<LeafyWalletPage> with RouteAware {
           ],
         Expanded(flex: 1, child: ListView(shrinkWrap: true, children: [
           const Padding(padding: EdgeInsets.all(10), child: Text("Recent Transactions", style: TextStyle(fontSize: 24), textAlign: TextAlign.start)),
-          if (loadingAddresses)
+          if (_loadingAddresses)
             ...[Shimmer.fromColors(
                 baseColor: Colors.black12,
                 highlightColor: Colors.white70,
@@ -145,20 +143,20 @@ class _LeafyWalletState extends State<LeafyWalletPage> with RouteAware {
                 ))
             )]
           else
-            if (transactions.isEmpty)
+            if (_transactions.isEmpty)
               ...[const Padding(padding: EdgeInsets.all(10), child: Text("No transactions"))]
             else
               ...[
                 ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: min(5, transactions.length),
+                    itemCount: min(5, _transactions.length),
                     itemBuilder: (context, index) {
                       return Padding(padding: const EdgeInsets.symmetric(horizontal: 10),
                           child: InkWell(onTap: () {
                             Navigator.pushNamed(context, '/transaction',
-                                arguments: TransactionArgument(keyArguments: keyArguments, transaction: transactions[index], transactions: transactions, changeAddress: receiveAddress, currentBlockHeight: currentBlockHeight));
-                          }, child: TransactionRowWidget(transaction: transactions[index], currentBlockHeight: currentBlockHeight)));
+                                arguments: TransactionArgument(keyArguments: keyArguments, transaction: _transactions[index], transactions: _transactions, changeAddress: _receiveAddress, currentBlockHeight: _currentBlockHeight));
+                          }, child: TransactionRowWidget(transaction: _transactions[index], currentBlockHeight: _currentBlockHeight)));
                     },
                     separatorBuilder: (BuildContext context, int index) {
                       return Divider(color: Theme.of(context).textTheme.titleMedium!.color, indent: 20, endIndent: 20);
@@ -171,11 +169,11 @@ class _LeafyWalletState extends State<LeafyWalletPage> with RouteAware {
                   children: [
                     TextButton(onPressed: () {
                       Navigator.pushNamed(context, '/transactions',
-                          arguments: TransactionsArguments(keyArguments: keyArguments, transactions: transactions, changeAddress: receiveAddress, currentBlockHeight: currentBlockHeight));
+                          arguments: TransactionsArguments(keyArguments: keyArguments, transactions: _transactions, changeAddress: _receiveAddress, currentBlockHeight: _currentBlockHeight));
                     }, child: const Text("see all transactions", style: TextStyle(decoration: TextDecoration.underline),)),
                     TextButton(onPressed: () {
                       Navigator.pushNamed(context, '/addresses',
-                          arguments: AddressArguments(keyArguments: keyArguments, addresses: addressInfos, transactions: transactionsByAddress, allTransactions: transactions, changeAddress: receiveAddress, currentBlockHeight: currentBlockHeight));
+                          arguments: AddressArguments(keyArguments: keyArguments, addresses: _addressInfos, transactions: _transactionsByAddress, allTransactions: _transactions, changeAddress: _receiveAddress, currentBlockHeight: _currentBlockHeight));
                     }, child: const Text("see all addresses", style: TextStyle(decoration: TextDecoration.underline))),
                   ],
                 )
@@ -187,15 +185,15 @@ class _LeafyWalletState extends State<LeafyWalletPage> with RouteAware {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               TextButton.icon(icon: const Icon(Icons.arrow_downward),
-                  onPressed: receiveAddress.isEmpty ? null : () {
+                  onPressed: _receiveAddress.isEmpty ? null : () {
                     Navigator.pushNamed(context, '/receive-address',
-                        arguments: AddressArgument(keyArguments: keyArguments, address: receiveAddress, transactions: transactions, changeAddress: receiveAddress));
+                        arguments: AddressArgument(keyArguments: keyArguments, address: _receiveAddress, transactions: _transactions, changeAddress: _receiveAddress));
                   },
                   label: const Text("Receive", style: TextStyle(fontSize: 24),)),
               const SizedBox(width: 10),
               TextButton.icon(icon: const Icon(Icons.send),
-                  onPressed: addressInfos.isEmpty || receiveAddress.isEmpty ? null : () {
-                    Navigator.pushNamed(context, '/create-transaction', arguments: CreateTransactionArguments(keyArguments: keyArguments, transactions: transactions, changeAddress: receiveAddress));
+                  onPressed: _addressInfos.isEmpty || _receiveAddress.isEmpty ? null : () {
+                    Navigator.pushNamed(context, '/create-transaction', arguments: CreateTransactionArguments(keyArguments: keyArguments, transactions: _transactions, changeAddress: _receiveAddress));
                   }, label: const Text("Send", style: TextStyle(fontSize: 24))),
             ],
           )
@@ -214,33 +212,32 @@ class _LeafyWalletState extends State<LeafyWalletPage> with RouteAware {
       return;
     }
     setState(() {
-      this.addresses = addresses;
       if (metadata != null) {
-        confirmedBitcoin = metadata.confirmedBitcoin;
-        unconfirmedBitcoin = metadata.unconfirmedBitcoin;
-        addressInfos = metadata.addressInfos;
-        transactionsByAddress = metadata.transactionsByAddress;
-        transactions = metadata.transactions;
-        receiveAddress = metadata.receiveAddress;
+        _confirmedBitcoin = metadata.confirmedBitcoin;
+        _unconfirmedBitcoin = metadata.unconfirmedBitcoin;
+        _addressInfos = metadata.addressInfos;
+        _transactionsByAddress = metadata.transactionsByAddress;
+        _transactions = metadata.transactions;
+        _receiveAddress = metadata.receiveAddress;
       }
-      this.usdPrice = usdPrice;
-      this.currentBlockHeight = currentBlockHeight;
-      finishedAddressPaging = !paging;
-      loadingAddresses = false;
+      _usdPrice = usdPrice;
+      _currentBlockHeight = currentBlockHeight;
+      _finishedAddressPaging = !paging;
+      _loadingAddresses = false;
     });
   }
 
   bool _needLivelinessCheck() {
-    if (loadingAddresses) {
+    if (_loadingAddresses) {
       return false;
     }
-    return transactions.any((tx) => tx.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold));
+    return _transactions.any((tx) => tx.needLivelinessCheck(_currentBlockHeight + livelinessUpdateThreshold));
   }
 
   int _numberOfLivelinessChecksNeeded() {
-    if (loadingAddresses) {
+    if (_loadingAddresses) {
       return 0;
     }
-    return transactions.fold(0, (previousValue, tx) => tx.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold) ? previousValue + 1 : previousValue);
+    return _transactions.fold(0, (previousValue, tx) => tx.needLivelinessCheck(_currentBlockHeight + livelinessUpdateThreshold) ? previousValue + 1 : previousValue);
   }
 }

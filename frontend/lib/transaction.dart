@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:leafy/globals.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
-import 'package:leafy/util/mempool_space_connectivity.dart';
 import 'package:leafy/util/transaction.dart';
 import 'package:leafy/widget/transaction.dart';
 import 'package:leafy/widget/vin.dart';
@@ -23,11 +22,11 @@ class TransactionPage extends StatefulWidget {
 class _TransactionState extends State<TransactionPage> {
 
   // TODO - use websockets instead (need support from bitcoinClient implementation)
-  Timer? timer;
+  Timer? _timer;
 
-  int currentBlockHeight = 0;
+  int _currentBlockHeight = 0;
 
-  MempoolSnapshot? mempoolSnapshot;
+  MempoolSnapshot? _mempoolSnapshot;
 
   @override
   void initState() {
@@ -40,7 +39,7 @@ class _TransactionState extends State<TransactionPage> {
 
   @override
   void dispose() {
-    timer?.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
@@ -48,15 +47,15 @@ class _TransactionState extends State<TransactionPage> {
     bitcoinClient.getMempoolSnapshot().then((snapshot) {
       if (mounted) {
         setState(() {
-          mempoolSnapshot = snapshot;
+          _mempoolSnapshot = snapshot;
         });
       }
     });
   }
 
   void _setupRefreshTimer() async {
-    timer?.cancel();
-    timer = Timer.periodic(const Duration(seconds: 60), (Timer t) {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 60), (Timer t) {
       _loadBlockHeight();
       _loadMempoolData();
     });
@@ -65,7 +64,7 @@ class _TransactionState extends State<TransactionPage> {
   void _loadBlockHeight() async {
     bitcoinClient.getCurrentBlockHeight().then((height) {
       setState(() {
-        currentBlockHeight = height;
+        _currentBlockHeight = height;
       });
     });
   }
@@ -119,7 +118,7 @@ class _TransactionState extends State<TransactionPage> {
                       children: [
                         if (showExpectedBecauseUnconfirmed(transaction))
                           ...[
-                            TextSpan(text: mempoolSnapshot!.getExpectedDuration(transaction.feeRate()), style: const TextStyle(fontWeight: FontWeight.w200))
+                            TextSpan(text: _mempoolSnapshot!.getExpectedDuration(transaction.feeRate()), style: const TextStyle(fontWeight: FontWeight.w200))
                           ]
                         else
                           TextSpan(text: transaction.status.getAgoDurationParenthetical(), style: const TextStyle(fontWeight: FontWeight.w200)),
@@ -127,7 +126,7 @@ class _TransactionState extends State<TransactionPage> {
                   )))
                 ],
               ),
-              if (currentBlockHeight != 0) // still loading
+              if (_currentBlockHeight != 0) // still loading
                 ...[Row(
                   mainAxisSize: MainAxisSize.max,
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -316,13 +315,13 @@ class _TransactionState extends State<TransactionPage> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const Text("Liveliness Update", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        if (transaction.needLivelinessCheck(currentBlockHeight + livelinessUpdateThreshold))
+                        if (transaction.needLivelinessCheck(_currentBlockHeight + livelinessUpdateThreshold))
                           ...[
                             Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child:
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  if (transaction.needLivelinessCheck(currentBlockHeight))
+                                  if (transaction.needLivelinessCheck(_currentBlockHeight))
                                     ...[Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 10),
                                           decoration: BoxDecoration(
@@ -425,29 +424,29 @@ class _TransactionState extends State<TransactionPage> {
   }
 
   bool isUnconfirmed(Transaction transaction) {
-    if (currentBlockHeight == 0) {
+    if (_currentBlockHeight == 0) {
       return false; // not loaded
     }
-    int numConfirms = transaction.status.getConfirmations(currentBlockHeight);
+    int numConfirms = transaction.status.getConfirmations(_currentBlockHeight);
     return (numConfirms < 1);
   }
 
   bool showExpectedBecauseUnconfirmed(Transaction transaction) {
-    return isUnconfirmed(transaction) && (mempoolSnapshot != null);
+    return isUnconfirmed(transaction) && (_mempoolSnapshot != null);
   }
 
   String getConfirmationText(Transaction transaction) {
-    int numConfirms = transaction.status.getConfirmations(currentBlockHeight);
+    int numConfirms = transaction.status.getConfirmations(_currentBlockHeight);
     if (numConfirms < 1) {
       return "unconfirmed";
     } else if (numConfirms == 1) {
-      return "${transaction.status.getConfirmationsFormatted(currentBlockHeight)} confirmation";
+      return "${transaction.status.getConfirmationsFormatted(_currentBlockHeight)} confirmation";
     }
-    return "${transaction.status.getConfirmationsFormatted(currentBlockHeight)} confirmations";
+    return "${transaction.status.getConfirmationsFormatted(_currentBlockHeight)} confirmations";
   }
 
   Color getConfirmationColor(Transaction transaction) {
-    int confirmations = transaction.status.getConfirmations(currentBlockHeight);
+    int confirmations = transaction.status.getConfirmations(_currentBlockHeight);
     if (confirmations <= 0) {
       return Colors.red;
     } else if (confirmations < 6) {

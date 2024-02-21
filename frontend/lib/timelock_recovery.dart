@@ -4,7 +4,6 @@ import 'package:flutter_multi_formatter/utils/bitcoin_validator/bitcoin_validato
 import 'package:leafy/globals.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
 import 'package:leafy/util/data_loader.dart';
-import 'package:leafy/util/mempool_space_connectivity.dart';
 import 'package:leafy/util/transaction.dart';
 import 'package:leafy/widget/address.dart';
 import 'package:leafy/widget/recovery_utxo.dart';
@@ -39,7 +38,7 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> with RouteAware
 
   final Set<Transaction> _existingRecovery = {};
 
-  final TextEditingController newAddressController = TextEditingController();
+  final TextEditingController _newAddressController = TextEditingController();
   final List<String> _addresses = [];
 
   late DataLoader _loader;
@@ -61,7 +60,7 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> with RouteAware
   @override
   void dispose() {
     _loader.dispose();
-    newAddressController.dispose();
+    _newAddressController.dispose();
     super.dispose();
   }
 
@@ -365,7 +364,7 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> with RouteAware
                           return !valid ? 'Address must be a valid Bitcoin address' : null;
                         },
                         autovalidateMode: AutovalidateMode.onUserInteraction,
-                        controller: newAddressController,
+                        controller: _newAddressController,
                         onSaved: (value) {
                           setState(() {});
                         },
@@ -380,12 +379,12 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> with RouteAware
                     style: TextButton.styleFrom(
                       textStyle: Theme.of(context).textTheme.labelLarge,
                     ),
-                    onPressed: newAddressController.text.isEmpty || !isBitcoinWalletValid(newAddressController.text) ? null : () {
+                    onPressed: _newAddressController.text.isEmpty || !isBitcoinWalletValid(_newAddressController.text) ? null : () {
                       parentState(() {
-                        if (!_addresses.contains(newAddressController.text)) {
-                          _addresses.add(newAddressController.text);
+                        if (!_addresses.contains(_newAddressController.text)) {
+                          _addresses.add(_newAddressController.text);
                         }
-                        _destAddress = newAddressController.text;
+                        _destAddress = _newAddressController.text;
                       });
                       Navigator.of(context).pop();
                     },

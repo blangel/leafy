@@ -19,7 +19,7 @@ class _ReceiveAddressState extends State<ReceiveAddressPage> {
 
   final AssetImage _qrScanImage = const AssetImage('images/qr_scan.gif');
 
-  late double originalBrightness;
+  late double _originalBrightness;
 
   @override
   void initState() {
@@ -29,12 +29,12 @@ class _ReceiveAddressState extends State<ReceiveAddressPage> {
 
   @override
   void dispose() {
-    _setBrightness(originalBrightness);
+    _setBrightness(_originalBrightness);
     super.dispose();
   }
 
   Future<void> _setRevertibleBrightness() async {
-    originalBrightness = await ScreenBrightness().system;
+    _originalBrightness = await ScreenBrightness().system;
     _setBrightness(1.0);
   }
 

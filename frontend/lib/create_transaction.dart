@@ -25,30 +25,30 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
 
   final AssetImage _sendImage = const AssetImage('images/send.gif');
 
-  final List<String> addresses = [];
+  final List<String> _addresses = [];
 
-  late double usdPrice;
+  late double _usdPrice;
 
   final int _customAmountIndex = 0;
   final int _allAmountIndex = 1;
   final List<bool> _selectedAmountTypes = <bool>[true, false];
 
-  String? toAddress;
+  String? _toAddress;
 
-  RecommendedFees? recommendedFees;
-  MempoolSnapshot? mempoolSnapshot;
+  RecommendedFees? _recommendedFees;
+  MempoolSnapshot? _mempoolSnapshot;
 
-  RecommendedFeeRateLevel level = RecommendedFeeRateLevel.economy;
+  RecommendedFeeRateLevel _level = RecommendedFeeRateLevel.economy;
 
   // TODO - use websockets instead (need support from bitcoinClient implementation)
-  Timer? timer;
+  Timer? _timer;
 
-  final TextEditingController amountController = TextEditingController();
-  final TextEditingController newAddressController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _newAddressController = TextEditingController();
 
-  TransactionHex? hex;
-  bool signing = false;
-  bool readyToSubmit = false;
+  TransactionHex? _hex;
+  bool _signing = false;
+  bool _readyToSubmit = false;
 
   @override
   void initState() {
@@ -60,35 +60,35 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
 
   @override
   void dispose() {
-    timer?.cancel();
-    amountController.dispose();
-    newAddressController.dispose();
+    _timer?.cancel();
+    _amountController.dispose();
+    _newAddressController.dispose();
     super.dispose();
   }
 
   void _loadFeeAndMempoolData() async {
     bitcoinClient.getRecommendedFees().then((fees) {
       setState(() {
-        recommendedFees = fees;
-        readyToSubmit = false;
-        if (hex != null) {
-          hex = hex!.withHex("");
+        _recommendedFees = fees;
+        _readyToSubmit = false;
+        if (_hex != null) {
+          _hex = _hex!.withHex("");
           if (mounted) {
             final arguments = ModalRoute.of(context)!.settings.arguments as CreateTransactionArguments;
-            createTransactionHex(arguments.transactions, arguments.changeAddress, toAddress, level);
+            createTransactionHex(arguments.transactions, arguments.changeAddress, _toAddress, _level);
           }
         }
       });
     });
     bitcoinClient.getMempoolSnapshot().then((snapshot) {
       setState(() {
-        mempoolSnapshot = snapshot;
-        readyToSubmit = false;
-        if (hex != null) {
-          hex = hex!.withHex("");
+        _mempoolSnapshot = snapshot;
+        _readyToSubmit = false;
+        if (_hex != null) {
+          _hex = _hex!.withHex("");
           if (mounted) {
             final arguments = ModalRoute.of(context)!.settings.arguments as CreateTransactionArguments;
-            createTransactionHex(arguments.transactions, arguments.changeAddress, toAddress, level);
+            createTransactionHex(arguments.transactions, arguments.changeAddress, _toAddress, _level);
           }
         }
       });
@@ -96,12 +96,12 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
   }
 
   void _setupRefreshTimer() {
-    timer?.cancel();
-    timer = Timer.periodic(const Duration(minutes: 2), (Timer t) => _loadFeeAndMempoolData());
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(minutes: 2), (Timer t) => _loadFeeAndMempoolData());
   }
 
   void _loadPriceData() async {
-    usdPrice = await priceService.getCurrentPrice(Currency.usd);
+    _usdPrice = await priceService.getCurrentPrice(Currency.usd);
   }
 
   bool _isReplacement(CreateTransactionArguments arguments) {
@@ -112,28 +112,28 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
   Widget build(BuildContext context) {
     final arguments = ModalRoute.of(context)!.settings.arguments as CreateTransactionArguments;
     if (_isReplacement(arguments)) {
-      addresses.clear();
+      _addresses.clear();
       Vout destination = arguments.toReplace!.vouts.where((vout) => !vout.toKnownAddress).first; // TODO - this could be a self-send and/or multi-destination
-      toAddress = destination.scriptPubkeyAddress;
-      addresses.add(destination.scriptPubkeyAddress);
-      amountController.text = fromSatsToBitcoin(destination.valueSat.toDouble()).toString();
-      if (hex == null) {
-        createTransactionHex(arguments.transactions, arguments.changeAddress, toAddress, level);
+      _toAddress = destination.scriptPubkeyAddress;
+      _addresses.add(destination.scriptPubkeyAddress);
+      _amountController.text = fromSatsToBitcoin(destination.valueSat.toDouble()).toString();
+      if (_hex == null) {
+        createTransactionHex(arguments.transactions, arguments.changeAddress, _toAddress, _level);
       }
       // TODO - for fee level, need to only use something greater than current transaction fees
-    } else if (addresses.isEmpty) {
+    } else if (_addresses.isEmpty) {
       Set<String> sentToPreviously = arguments.transactions
           .expand((tx) => tx.vins.expand((vin) => vin.fromKnownAddress ?
       tx.vouts.where((vout) => !vout.toKnownAddress).map((vout) => vout.scriptPubkeyAddress) : const Iterable<String>.empty()))
           .toSet();
-      addresses.addAll(sentToPreviously);
+      _addresses.addAll(sentToPreviously);
     }
-    List<RecommendedFeeRateLevel> levelsToUse = ((arguments.toReplace == null) || (recommendedFees == null) ? RecommendedFeeRateLevel.values : RecommendedFeeRateLevel.values.where((rateLevel) {
-      bool comparison = (recommendedFees!.getRate(rateLevel) > arguments.toReplace!.feeRate().round());
+    List<RecommendedFeeRateLevel> levelsToUse = ((arguments.toReplace == null) || (_recommendedFees == null) ? RecommendedFeeRateLevel.values : RecommendedFeeRateLevel.values.where((rateLevel) {
+      bool comparison = (_recommendedFees!.getRate(rateLevel) > arguments.toReplace!.feeRate().round());
       return comparison;
     }).toList());
     if (!levelsToUse.contains(RecommendedFeeRateLevel.economy)) {
-      level = levelsToUse.last;
+      _level = levelsToUse.last;
     }
 
     const double fixedWidthLabel = 80;
@@ -157,7 +157,7 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
                       children: [
                         Text(!_hasValidHex()
                             ? (_isReplacement(arguments)) ? "Replace Transaction" : "Create Transaction"
-                            : readyToSubmit ? (_isReplacement(arguments)) ? "Submit Replacement" : "Submit Transaction"
+                            : _readyToSubmit ? (_isReplacement(arguments)) ? "Submit Replacement" : "Submit Transaction"
                             : (_isReplacement(arguments)) ? "Approve Replacement" : "Approve Transaction",
                             style: const TextStyle(fontSize: 24)),
                         if (_isReplacement(arguments))
@@ -177,9 +177,9 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
               children: [
                 const SizedBox(width: fixedWidthLabel - 10, child: Text("To", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
                 Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: DropdownButton(
-                  value: toAddress,
+                  value: _toAddress,
                   icon: const Icon(Icons.keyboard_arrow_down),
-                  items: addresses.map((String address) {
+                  items: _addresses.map((String address) {
                     return DropdownMenuItem(
                       value: address,
                       child: Padding(padding: const EdgeInsets.all(5), child: Text(shortData(address), style: const TextStyle(fontSize: 14),)),
@@ -187,10 +187,10 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
                   }).toList(),
                   onChanged: (_isReplacement(arguments)) ? null : <String>(value) {
                     setState(() {
-                      toAddress = value;
-                      readyToSubmit = false;
+                      _toAddress = value;
+                      _readyToSubmit = false;
                     });
-                    createTransactionHex(arguments.transactions, arguments.changeAddress, value, level);
+                    createTransactionHex(arguments.transactions, arguments.changeAddress, value, _level);
                   },
                 ))),
                 IconButton(
@@ -212,18 +212,18 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
                 const SizedBox(width: fixedWidthLabel, child: Text("Amount", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
                 const SizedBox(width: 10),
                 Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child:
-                TextFormField(textAlign: TextAlign.end, controller: amountController,
+                TextFormField(textAlign: TextAlign.end, controller: _amountController,
                     onSaved: (value) {
                       setState(() {});
                     },
                     onChanged: (value) {
                       setState(() {
-                        readyToSubmit = false;
+                        _readyToSubmit = false;
                         if (!_isValidAmount()) {
-                          hex = null;
+                          _hex = null;
                         }
                       });
-                      createTransactionHex(arguments.transactions, arguments.changeAddress, toAddress, level);
+                      createTransactionHex(arguments.transactions, arguments.changeAddress, _toAddress, _level);
                     },
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     enabled: !_isReplacement(arguments) && _selectedAmountTypes[_customAmountIndex]),
@@ -235,12 +235,12 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
                     direction: Axis.horizontal,
                     onPressed: (_isReplacement(arguments)) ? null : (int index) {
                       setState(() {
-                        readyToSubmit = false;
+                        _readyToSubmit = false;
                         for (int i = 0; i < _selectedAmountTypes.length; i++) {
                           _selectedAmountTypes[i] = i == index;
                         }
                       });
-                      createTransactionHex(arguments.transactions, arguments.changeAddress, toAddress, level);
+                      createTransactionHex(arguments.transactions, arguments.changeAddress, _toAddress, _level);
                     },
                     borderRadius: const BorderRadius.all(Radius.circular(8)),
                     constraints: const BoxConstraints(
@@ -256,7 +256,7 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
                 )
               ],
             )),
-            if ((hex == null) || !_isValidAmount())
+            if ((_hex == null) || !_isValidAmount())
               ...[]
             else
               if (_insufficientFunds())
@@ -278,12 +278,12 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
                         text: "to cover fees, you will spend a total of ",
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w200),
                         children: [
-                          TextSpan(text: "${formatBitcoin(fromSatsToBitcoin(hex!.fees.toDouble()) + double.parse(amountController.text))} ₿", style: const TextStyle(fontWeight: FontWeight.bold)),
+                          TextSpan(text: "${formatBitcoin(fromSatsToBitcoin(_hex!.fees.toDouble()) + double.parse(_amountController.text))} ₿", style: const TextStyle(fontWeight: FontWeight.bold)),
                         ]
                     )),
                   ],
                 )),
-            if ((hex != null) && hex!.changeIsDust)
+            if ((_hex != null) && _hex!.changeIsDust)
               Padding(padding: const EdgeInsets.fromLTRB(10, 0, 10, 10), child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 mainAxisSize: MainAxisSize.max,
@@ -308,12 +308,12 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
               children: [
                 const SizedBox(width: fixedWidthLabel, child: Text("Fee Rate", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
                 Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: DropdownButton(
-                  value: level,
+                  value: _level,
                   icon: const Icon(Icons.keyboard_arrow_down),
                   items: levelsToUse.map((RecommendedFeeRateLevel level) {
                     return DropdownMenuItem(
                         value: level,
-                        child: recommendedFees == null ?
+                        child: _recommendedFees == null ?
                         Padding(padding: const EdgeInsets.all(5), child: Text(level.getLabel())) :
                         Padding(padding: const EdgeInsets.all(5), child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -322,7 +322,7 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
                           children: [
                             Text(level.getLabel()),
                             Expanded(flex: 1, child: RichText(textAlign: TextAlign.end, text: TextSpan(
-                                text: "${recommendedFees!.getRate(level)} ",
+                                text: "${_recommendedFees!.getRate(level)} ",
                                 children: const [
                                   TextSpan(text: "sat/vB", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w200)),
                                 ]
@@ -340,10 +340,10 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
                       return;
                     }
                     setState(() {
-                      readyToSubmit = false;
-                      level = value;
+                      _readyToSubmit = false;
+                      _level = value;
                     });
-                    createTransactionHex(arguments.transactions, arguments.changeAddress, toAddress, value);
+                    createTransactionHex(arguments.transactions, arguments.changeAddress, _toAddress, value);
                   },
                 )))
               ],
@@ -366,18 +366,18 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
                             text: "you will spend  ",
                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w200),
                             children: [
-                              TextSpan(text: "${formatBitcoin(fromSatsToBitcoin(hex!.fees.toDouble()))} ₿", style: const TextStyle(fontWeight: FontWeight.bold)),
+                              TextSpan(text: "${formatBitcoin(fromSatsToBitcoin(_hex!.fees.toDouble()))} ₿", style: const TextStyle(fontWeight: FontWeight.bold)),
                               const TextSpan(text: " (", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w200)),
-                              TextSpan(text: formatCurrency(fromSatsToBitcoin(hex!.fees.toDouble() * usdPrice)), style: const TextStyle(fontWeight: FontWeight.bold)),
+                              TextSpan(text: formatCurrency(fromSatsToBitcoin(_hex!.fees.toDouble() * _usdPrice)), style: const TextStyle(fontWeight: FontWeight.bold)),
                               const TextSpan(text: ") on this transaction", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w200)),
                             ]
                         )),
-                        if ((recommendedFees != null) && (mempoolSnapshot != null))
+                        if ((_recommendedFees != null) && (_mempoolSnapshot != null))
                           RichText(textAlign: TextAlign.end, text: TextSpan(
                               text: "likely confirming within  ",
                               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w200),
                               children: [
-                                TextSpan(text: recommendedFees!.getExpectedDuration(level, mempoolSnapshot!), style: const TextStyle(fontWeight: FontWeight.bold)),
+                                TextSpan(text: _recommendedFees!.getExpectedDuration(_level, _mempoolSnapshot!), style: const TextStyle(fontWeight: FontWeight.bold)),
                               ]
                           ))
                       ],
@@ -385,7 +385,7 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
                   ],
               ],
             )),
-            if (readyToSubmit)
+            if (_readyToSubmit)
               ...[const SizedBox(height: 10),
                 Padding(padding: const EdgeInsets.fromLTRB(10, 10, 0, 10), child: Row(
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -394,15 +394,15 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
                   children: [
                     const SizedBox(width: fixedWidthLabel, child: Text("Signed Transaction", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold))),
                     const SizedBox(width: 5),
-                    Expanded(flex: 1, child: Text(shortTransactionHex(hex!.hex), style: const TextStyle(fontSize: 10))),
+                    Expanded(flex: 1, child: Text(shortTransactionHex(_hex!.hex), style: const TextStyle(fontSize: 10))),
                     IconButton(
                       iconSize: 20,
                       tooltip: 'Copy Signed Transaction',
                       icon: const Icon(Icons.copy),
                       onPressed: () {
-                        Clipboard.setData(ClipboardData(text: hex!.hex)).then((_) {
+                        Clipboard.setData(ClipboardData(text: _hex!.hex)).then((_) {
                           ScaffoldMessenger.of(context).clearSnackBars();
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Copied ${hex!.hex}', overflow: TextOverflow.ellipsis,),showCloseIcon: true));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Copied ${_hex!.hex}', overflow: TextOverflow.ellipsis,),showCloseIcon: true));
                         });
                       },
                     )
@@ -413,16 +413,16 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
                 mainAxisSize: MainAxisSize.max,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  TextButton.icon(onPressed: !_hasValidHex() || signing ? null : () async {
+                  TextButton.icon(onPressed: !_hasValidHex() || _signing ? null : () async {
                     setState(() {
-                      signing = true;
+                      _signing = true;
                     });
-                    if (readyToSubmit) {
+                    if (_readyToSubmit) {
                       submitTransaction();
                     } else {
-                      signTransactionHex(arguments.keyArguments.firstMnemonic, arguments.keyArguments.secondMnemonic!, arguments.transactions, arguments.changeAddress, toAddress, level);
+                      signTransactionHex(arguments.keyArguments.firstMnemonic, arguments.keyArguments.secondMnemonic!, arguments.transactions, arguments.changeAddress, _toAddress, _level);
                     }
-                  }, icon: Icon(readyToSubmit ? Icons.send : Icons.done), label: Text(readyToSubmit ? 'Submit' : 'Approve', style: const  TextStyle(fontSize: 24)))
+                  }, icon: Icon(_readyToSubmit ? Icons.send : Icons.done), label: Text(_readyToSubmit ? 'Submit' : 'Approve', style: const  TextStyle(fontSize: 24)))
                 ]
             )),
           ],
@@ -449,7 +449,7 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
                           return !valid ? 'Address must be a valid Bitcoin address' : null;
                         },
                         autovalidateMode: AutovalidateMode.onUserInteraction,
-                        controller: newAddressController,
+                        controller: _newAddressController,
                         onSaved: (value) {
                           setState(() {});
                         },
@@ -464,12 +464,12 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
                     style: TextButton.styleFrom(
                       textStyle: Theme.of(context).textTheme.labelLarge,
                     ),
-                    onPressed: newAddressController.text.isEmpty || !isBitcoinWalletValid(newAddressController.text) ? null : () {
+                    onPressed: _newAddressController.text.isEmpty || !isBitcoinWalletValid(_newAddressController.text) ? null : () {
                       parentState(() {
-                        if (!addresses.contains(newAddressController.text)) {
-                          addresses.add(newAddressController.text);
+                        if (!_addresses.contains(_newAddressController.text)) {
+                          _addresses.add(_newAddressController.text);
                         }
-                        toAddress = newAddressController.text;
+                        _toAddress = _newAddressController.text;
                       });
                       Navigator.of(context).pop();
                     },
@@ -487,11 +487,11 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
     if (_selectedAmountTypes[_allAmountIndex]) {
       return true;
     }
-    if (amountController.text.isEmpty) {
+    if (_amountController.text.isEmpty) {
       return false;
     }
     try {
-      double amount = double.parse(amountController.text);
+      double amount = double.parse(_amountController.text);
       return (amount > 0);
     } on FormatException {
       return false;
@@ -499,48 +499,48 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
   }
 
   bool _hasValidHex() {
-    return (hex != null) && !(hex!.insufficientFunds);
+    return (_hex != null) && !(_hex!.insufficientFunds);
   }
 
   bool _insufficientFunds() {
-    return (hex != null) && hex!.insufficientFunds;
+    return (_hex != null) && _hex!.insufficientFunds;
   }
 
   void createTransactionHex(List<Transaction> transactions, String changeAddr, String? destAddr, RecommendedFeeRateLevel level) async {
-    if ((recommendedFees == null) || (destAddr == null) || !_isValidAmount()) {
+    if ((_recommendedFees == null) || (destAddr == null) || !_isValidAmount()) {
       return;
     }
-    int amount = _selectedAmountTypes[_allAmountIndex] ? 0 : fromBitcoinToSats(double.parse(amountController.text));
-    createTransaction(getUtxos(transactions), changeAddr, destAddr, amount, recommendedFees!.getRate(level).toDouble()).then((value) {
+    int amount = _selectedAmountTypes[_allAmountIndex] ? 0 : fromBitcoinToSats(double.parse(_amountController.text));
+    createTransaction(getUtxos(transactions), changeAddr, destAddr, amount, _recommendedFees!.getRate(level).toDouble()).then((value) {
       setState(() {
-        hex = value;
+        _hex = value;
         if (_selectedAmountTypes[_allAmountIndex]) {
-          amountController.text = "${fromSatsToBitcoin(value.amount.toDouble())}";
+          _amountController.text = "${fromSatsToBitcoin(value.amount.toDouble())}";
         }
       });
     });
   }
 
   void signTransactionHex(String firstMnemonic, String secondMnemonic, List<Transaction> transactions, String changeAddr, String? destAddr, RecommendedFeeRateLevel level) async {
-    if ((recommendedFees == null) || (destAddr == null) || !_isValidAmount()) {
+    if ((_recommendedFees == null) || (destAddr == null) || !_isValidAmount()) {
       return;
     }
-    int amount = _selectedAmountTypes[_allAmountIndex] ? 0 : fromBitcoinToSats(double.parse(amountController.text));
-    signTransaction(firstMnemonic, secondMnemonic, getUtxos(transactions), changeAddr, destAddr, amount, recommendedFees!.getRate(level).toDouble()).then((value) {
+    int amount = _selectedAmountTypes[_allAmountIndex] ? 0 : fromBitcoinToSats(double.parse(_amountController.text));
+    signTransaction(firstMnemonic, secondMnemonic, getUtxos(transactions), changeAddr, destAddr, amount, _recommendedFees!.getRate(level).toDouble()).then((value) {
       setState(() {
-        hex = hex!.withHex(value);
-        signing = false;
-        readyToSubmit = true;
+        _hex = _hex!.withHex(value);
+        _signing = false;
+        _readyToSubmit = true;
       });
     });
   }
 
   void submitTransaction() async {
-    if (!readyToSubmit || (hex == null) || hex!.hex.isEmpty) {
+    if (!_readyToSubmit || (_hex == null) || _hex!.hex.isEmpty) {
       return;
     }
     try {
-      String txId = await bitcoinClient.submitTransaction(hex!.hex);
+      String txId = await bitcoinClient.submitTransaction(_hex!.hex);
       if (mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Submitted $txId', overflow: TextOverflow.ellipsis,), showCloseIcon: true));
