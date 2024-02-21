@@ -1,6 +1,6 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:leafy/globals.dart';
-import 'package:flutter/gestures.dart';
 import 'package:leafy/util/google_drive_remote_account.dart';
 import 'package:leafy/util/google_signin_util.dart';
 import 'package:leafy/util/remote_module.dart';

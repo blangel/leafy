@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:crypto/crypto.dart';
+import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:flutter/services.dart';
 import 'package:leafy/globals.dart';
-import 'package:encrypt/encrypt.dart' as encrypt;
 
 const mnemonicLength = 24;
 

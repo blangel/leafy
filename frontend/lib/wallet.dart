@@ -3,8 +3,8 @@ import 'dart:math';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:leafy/globals.dart';
-import 'package:leafy/util/data_loader.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
+import 'package:leafy/util/data_loader.dart';
 import 'package:leafy/widget/transaction.dart';
 import 'package:shimmer/shimmer.dart';
 

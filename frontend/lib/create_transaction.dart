@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_multi_formatter/utils/bitcoin_validator/bitcoin_validator.dart';
 import 'package:leafy/globals.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
-import 'package:leafy/util/mempool_space_connectivity.dart';
 import 'package:leafy/util/price_service.dart';
 import 'package:leafy/util/transaction.dart';
 import 'package:leafy/widget/address.dart';

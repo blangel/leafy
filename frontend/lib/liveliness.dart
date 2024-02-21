@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:leafy/globals.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';

@@ -6,9 +6,8 @@ import 'dart:math';
 import 'package:leafy/globals.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
 import 'package:leafy/util/price_service.dart';
-import 'package:synchronized/synchronized.dart';
-
 import 'package:leafy/util/wallet.dart';
+import 'package:synchronized/synchronized.dart';
 
 class AddressMetadata {
   final double confirmedBitcoin;
