@@ -356,7 +356,7 @@ Leafy ("program"), like Bitcoin ("money"), is [open-source](https://github.com/b
 
 ### Prior to `mainnet`
 
-Those items marked `mainnet` are deemed necessary prior to generally availability.
+Those items marked `mainnet` are deemed necessary prior to general availability.
 
 ### Functionality
 
