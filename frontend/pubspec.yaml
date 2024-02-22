@@ -55,6 +55,7 @@ dependencies:
   shimmer: ^3.0.0
   firebase_core: ^2.24.2
   synchronized: ^3.1.0+1
+  cloud_kit: ^1.2.0
 
 dev_dependencies:
   flutter_test:
