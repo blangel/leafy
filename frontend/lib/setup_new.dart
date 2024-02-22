@@ -6,6 +6,7 @@ import 'package:leafy/util/google_signin_util.dart';
 import 'package:leafy/util/remote_module.dart';
 import 'package:leafy/util/wallet.dart';
 import 'package:leafy/widget/wallet_password.dart';
+import 'dart:io' show Platform;
 
 class LeafySetupNewPage extends StatefulWidget {
   const LeafySetupNewPage({super.key});
@@ -23,6 +24,8 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
   final AssetImage _lockImage = const AssetImage('images/key_creation.gif');
 
   _UiState _uiState = _UiState.generatingMnemonic;
+  bool _backingUpViaGoogle = false;
+  bool _backingUpViaApple = false;
   late AnimationController _animationController;
 
   late final Wallet _wallet;
@@ -58,19 +61,19 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
           globalRemoteAccountId = account.email;
           await persistLocallyViaBiometric(_password, _wallet.firstMnemonic, _wallet.secondDescriptor, account.email);
           await persistRemotely(_wallet.firstMnemonic, _wallet.secondMnemonic);
-          if (context.mounted) {
+          if (mounted) {
             setAsNeedingCompanionDeviceBackup();
             Navigator.popAndPushNamed(context, '/wallet', arguments: KeyArguments(firstMnemonic: _wallet.firstMnemonic, secondMnemonic: _wallet.secondMnemonic, secondDescriptor: _wallet.secondDescriptor, walletPassword: _password));
           }
         } else {
-          if (context.mounted) {
+          if (mounted) {
             setState(() {
               _uiState = _UiState.readyForBackup;
             });
           }
         }
       } on Exception catch(e) {
-        if (context.mounted) {
+        if (mounted) {
           setState(() {
             _uiState = _UiState.readyForBackup;
           });
@@ -118,6 +121,36 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
             TextSpan(text: " to continue:", style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color)),
           ])))
         ),
+        if (Platform.isIOS)
+          ...[
+            Padding(padding: const EdgeInsets.all(10), child: Row(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                ElevatedButton(
+                  onPressed: (_uiState == _UiState.backingUp) ? null : () async {
+                    setState(() {
+                      _uiState = _UiState.backingUp;
+                      _backingUpViaApple = true;
+                      _backingUpViaGoogle = false;
+                    });
+                    // TODO - Apple iCloud
+                  },
+                  child: Row(mainAxisSize:MainAxisSize.min,
+                      children: [
+                        const Image(width: 50, image: AssetImage('images/apple_icloud_icon.png')),
+                        const SizedBox.square(dimension: 10),
+                        const Text("Apple iCloud", style: TextStyle(fontSize: 24),),
+                        if (_uiState == _UiState.backingUp && _backingUpViaApple)
+                          ...[const SizedBox.square(dimension: 10),
+                            Center(child: CircularProgressIndicator(value: _animationController.value)),]
+                        else
+                          ...[]
+                      ]),
+                )
+              ],
+            ))
+          ],
         Padding(padding: const EdgeInsets.all(10), child: Row(
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.start,
@@ -126,6 +159,8 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
               onPressed: (_uiState == _UiState.backingUp) ? null : () async {
                 setState(() {
                   _uiState = _UiState.backingUp;
+                  _backingUpViaApple = false;
+                  _backingUpViaGoogle = true;
                 });
                 await _googleSignIn.signIn();
               },
@@ -134,7 +169,7 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
                     const Image(width: 50, image: AssetImage('images/google_drive_icon.png')),
                     const SizedBox.square(dimension: 10),
                     const Text("Google Drive", style: TextStyle(fontSize: 24),),
-                    if (_uiState == _UiState.backingUp)
+                    if (_uiState == _UiState.backingUp && _backingUpViaGoogle)
                       ...[const SizedBox.square(dimension: 10),
                         Center(child: CircularProgressIndicator(value: _animationController.value)),]
                     else

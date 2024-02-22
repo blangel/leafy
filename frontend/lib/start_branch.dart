@@ -75,7 +75,7 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
     });
     _googleSignIn = GoogleSignInUtil.create((account) async {
       try {
-        if (!context.mounted) {
+        if (!mounted) {
           return;
         }
         if ((_uiState == _UiState.noLocalFoundRemote) && (account != null)) {
@@ -89,7 +89,7 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
           globalRemoteAccountId = account.email;
           _remoteAccount = await GoogleDriveRemoteAccount.create(account);
           var encryptedContent = await _remoteAccount.getEncryptedSecondSeed();
-          if (!context.mounted) {
+          if (!mounted) {
             return;
           }
           if (encryptedContent != null) {
