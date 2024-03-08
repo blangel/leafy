@@ -106,6 +106,11 @@ class GoogleDriveRemoteAccount extends RemoteModule {
     return results.first.item2!.where((file) => file.name != null).map((file) => file.name!).toList();
   }
 
+  @override
+  RemoteModuleProvider getProvider() {
+    return RemoteModuleProvider.google;
+  }
+
   static String _getCompanionFileName(String companionId) {
     return "${_leafyCompanionFileNamePrefix}_$companionId";
   }

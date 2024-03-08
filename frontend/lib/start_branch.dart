@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:leafy/globals.dart';
+import 'package:leafy/util/apple_icloud_remote_account.dart';
 import 'package:leafy/util/google_drive_remote_account.dart';
 import 'package:leafy/util/google_signin_util.dart';
 import 'package:leafy/util/remote_module.dart';
 import 'package:leafy/util/wallet.dart';
+import 'package:leafy/widget/apple_icloud_failure.dart';
 import 'package:leafy/widget/wallet_password.dart';
 
 // Possible branches and their handling:
@@ -38,6 +42,11 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
 
   late final RemoteModule _remoteAccount;
   late final GoogleSignInUtil _googleSignIn;
+  late final AppleICloudRemoteAccount _appleICloud;
+  bool _remoteAccountInitialized = false;
+  bool _checkingRemoteViaGoogle = false;
+  bool _checkingRemoteViaApple = false;
+  bool _appleICloudNotLoggedIn = false;
 
   _UiState _uiState = _UiState.loadingLocal;
   RecoveryWallet? _recoveryWallet;
@@ -54,7 +63,7 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
     });
     _animationController.repeat();
     super.initState();
-    getRecoveryWalletViaBiometric().then((wallet) {
+    getRecoveryWallet().then((wallet) {
       // no local; either (1) or (3)
       if (wallet == null) {
         setState(() {
@@ -69,7 +78,7 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
           _uiState = localState;
         });
         if (localState == _UiState.localDecryptedNeedRemote) {
-          _remoteAccountLogin();
+          _remoteAccountLoginAfterFindingLocal();
         }
       }
     });
@@ -78,45 +87,75 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
         if (!mounted) {
           return;
         }
-        if ((_uiState == _UiState.noLocalFoundRemote) && (account != null)) {
-          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.walletPassword, remoteAccountId: account.email, walletPassword: null, walletFirstMnemonic: null));
-          return;
-        }
-        if (account == null) {
-          Navigator.popAndPushNamed(context, '/timelock-recovery', arguments: TimelockRecoveryArguments(walletPassword: _password, walletFirstMnemonic: _recoveryWallet!.firstMnemonic, walletSecondDescriptor: _recoveryWallet!.secondDescriptor));
-          return;
+        if (account != null) {
+          if (!_remoteAccountInitialized) {
+            _remoteAccount = await GoogleDriveRemoteAccount.create(account);
+          }
+          _remoteAccountInitialized = true;
+          await _loadFromRemote(account.email);
         } else {
-          globalRemoteAccountId = account.email;
-          _remoteAccount = await GoogleDriveRemoteAccount.create(account);
-          var encryptedContent = await _remoteAccount.getEncryptedSecondSeed();
-          if (!mounted) {
-            return;
-          }
-          if (encryptedContent != null) {
-            final decrypted = decryptLeafyData(_recoveryWallet!.firstMnemonic, encryptedContent, mnemonicLength);
-            if (decrypted != null) {
-              Navigator.popAndPushNamed(context, '/wallet', arguments: KeyArguments(firstMnemonic: _recoveryWallet!.firstMnemonic, secondMnemonic: decrypted, secondDescriptor: _recoveryWallet!.secondDescriptor, walletPassword: _password));
-              return;
-            } else {
-              Navigator.popAndPushNamed(context, '/timelock-recovery', arguments: TimelockRecoveryArguments(walletPassword: _password, walletFirstMnemonic: _recoveryWallet!.firstMnemonic, walletSecondDescriptor: _recoveryWallet!.secondDescriptor));
-              return;
-            }
-          } else {
-            Navigator.popAndPushNamed(context, '/timelock-recovery', arguments: TimelockRecoveryArguments(walletPassword: _password, walletFirstMnemonic: _recoveryWallet!.firstMnemonic, walletSecondDescriptor: _recoveryWallet!.secondDescriptor));
-            return;
-          }
+          _failedToLoadRemote("No ${RemoteModuleProvider.google.getDisplayShortName()} account found");
         }
       } on Exception catch(e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text("${e.toString()}; loading wallet, please retry", style: const TextStyle(color: Colors.white),),
-            backgroundColor: Colors.redAccent,
-            duration: const Duration(seconds: 7),
-          ));
-          Navigator.pop(context);
-        }
+        _failedToLoadRemote(e.toString());
       }
     });
+    _appleICloud = AppleICloudRemoteAccount.create();
+  }
+
+  void _failedToLoadRemote(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("$message; loading wallet, please retry", style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.redAccent,
+        duration: const Duration(seconds: 7),
+      ));
+      Navigator.pop(context);
+    }
+  }
+
+  Future<void> _attemptAppleICloud() async {
+    if (!_remoteAccountInitialized) {
+      _remoteAccount = _appleICloud;
+    }
+    _remoteAccountInitialized = true;
+    if (!await _appleICloud.isLoggedIn()) {
+      setState(() {
+        _appleICloudNotLoggedIn = true;
+      });
+    } else {
+      String? userId = await _appleICloud.getUserId();
+      if (userId != null) {
+        await _loadFromRemote(userId);
+      } else {
+        _failedToLoadRemote("No ${RemoteModuleProvider.apple.getDisplayShortName()} account id found");
+      }
+    }
+  }
+
+  Future<void> _loadFromRemote(String remoteAccountId) async {
+    globalRemoteAccountId = remoteAccountId;
+    var encryptedContent = await _remoteAccount.getEncryptedSecondSeed();
+    if (!mounted) {
+      return;
+    }
+    if (_recoveryWallet == null) {
+      Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.walletPassword, remoteAccountId: remoteAccountId, remoteProvider: _remoteAccount.getProvider(), walletPassword: null, walletFirstMnemonic: null));
+      return;
+    }
+    if (encryptedContent != null) {
+      final decrypted = decryptLeafyData(_recoveryWallet!.firstMnemonic, encryptedContent, mnemonicLength);
+      if (decrypted != null) {
+        Navigator.popAndPushNamed(context, '/wallet', arguments: KeyArguments(firstMnemonic: _recoveryWallet!.firstMnemonic, secondMnemonic: decrypted, secondDescriptor: _recoveryWallet!.secondDescriptor, walletPassword: _password, remoteProvider: _remoteAccount.getProvider(), ));
+        return;
+      } else {
+        Navigator.popAndPushNamed(context, '/timelock-recovery', arguments: TimelockRecoveryArguments(walletPassword: _password, walletFirstMnemonic: _recoveryWallet!.firstMnemonic, walletSecondDescriptor: _recoveryWallet!.secondDescriptor));
+        return;
+      }
+    } else {
+      Navigator.popAndPushNamed(context, '/timelock-recovery', arguments: TimelockRecoveryArguments(walletPassword: _password, walletFirstMnemonic: _recoveryWallet!.firstMnemonic, walletSecondDescriptor: _recoveryWallet!.secondDescriptor));
+      return;
+    }
   }
 
   _UiState _determineUiStateFromLocalWallet(RecoveryWallet wallet) {
@@ -126,8 +165,20 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
     return _UiState.localDecryptedNeedRemote;
   }
 
-  Future<void> _remoteAccountLogin() async {
-    _googleSignIn.signIn(); // TODO - should be an abstraction over remote account
+  Future<void> _remoteAccountLoginAfterFindingLocal() async {
+    if (_recoveryWallet == null) {
+      return;
+    }
+    switch (_recoveryWallet!.remoteProvider) {
+      case RemoteModuleProvider.google:
+        _googleSignIn.signIn();
+        break;
+      case RemoteModuleProvider.apple:
+        _attemptAppleICloud();
+        break;
+      default:
+        throw Exception("programming error: unhandled provider type ${_recoveryWallet!.remoteProvider.name}");
+    }
   }
 
   void _updatePasswordState(String? password) {
@@ -145,7 +196,7 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
         _password = password;
         _recoveryWallet = decryptedWallet;
         _uiState = _UiState.localDecryptedNeedRemote;
-        _remoteAccountLogin();
+        _remoteAccountLoginAfterFindingLocal();
       });
     }
   }
@@ -229,46 +280,97 @@ class _LeafyStartState extends State<LeafyStartPage> with TickerProviderStateMix
             ]
           else if (_uiState == _UiState.noLocalTryingRemote || _uiState == _UiState.noLocalFoundRemote)
             ...[
-              Align(
-                alignment: Alignment.topCenter,
-                child:
-                  RichText(text: TextSpan(text: "To start wallet recovery, select your existing ",
-                      style: TextStyle(fontSize: 22, color: Theme.of(context).textTheme.bodyMedium!.color),
-                      children: [
-                        TextSpan(text: "Remote Account", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyMedium!.color)),
-                        TextSpan(text: ".", style: TextStyle(fontSize: 22, color: Theme.of(context).textTheme.bodyMedium!.color))
-                      ]
-                    ),
-                  )
-              ),
-              const SizedBox(height: 50),
-              Padding(padding: const EdgeInsets.all(10), child: Row(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.start,
+              Stack(
                 children: [
-                  ElevatedButton(
-                    onPressed: (_uiState == _UiState.noLocalFoundRemote) ? null : () {
-                      setState(() {
-                        _uiState = _UiState.noLocalFoundRemote;
-                        _googleSignIn.signIn();
-                      });
-                    },
-                    child: Row(mainAxisSize:MainAxisSize.min,
+                  Column(
+                    children: [
+                      Align(
+                        alignment: Alignment.topCenter,
+                        child:
+                          RichText(text: TextSpan(text: "To start wallet recovery, select your existing ",
+                              style: TextStyle(fontSize: 22, color: Theme.of(context).textTheme.bodyMedium!.color),
+                              children: [
+                                TextSpan(text: "Remote Account", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyMedium!.color)),
+                                TextSpan(text: ".", style: TextStyle(fontSize: 22, color: Theme.of(context).textTheme.bodyMedium!.color))
+                              ]
+                            ),
+                          )
+                      ),
+                      const SizedBox(height: 50),
+                      if (Platform.isIOS)
+                        ...[
+                          Padding(padding: const EdgeInsets.all(10), child: Row(
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              ElevatedButton(
+                                onPressed: (_uiState == _UiState.noLocalFoundRemote || (_remoteAccountInitialized && _remoteAccount.getProvider() == RemoteModuleProvider.google)) ? null : () async {
+                                  setState(() {
+                                    _uiState = _UiState.noLocalFoundRemote;
+                                    _checkingRemoteViaApple = true;
+                                    _checkingRemoteViaGoogle = false;
+                                  });
+                                  _attemptAppleICloud();
+                                },
+                                child: Center(child: Row(mainAxisSize:MainAxisSize.min,
+                                    children: [
+                                      const Padding(padding: EdgeInsets.fromLTRB(0, 5, 0, 0), child: Image(width: 50, image: AssetImage('images/apple_icloud_icon.png'))),
+                                      const SizedBox.square(dimension: 10),
+                                      Text(RemoteModuleProvider.apple.getDisplayName(), style: const TextStyle(fontSize: 24),),
+                                      if (_uiState == _UiState.noLocalFoundRemote && _checkingRemoteViaApple)
+                                        ...[const SizedBox.square(dimension: 10),
+                                          Center(child: CircularProgressIndicator(value: _animationController.value)),]
+                                      else
+                                        ...[]
+                                    ])),
+                              )
+                            ],
+                          ))
+                        ],
+                      Padding(padding: const EdgeInsets.all(10), child: Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          const Image(width: 50, image: AssetImage('images/google_drive_icon.png')),
-                          const SizedBox.square(dimension: 10),
-                          const Text("Google Drive", style: TextStyle(fontSize: 24),),
-                          if (_uiState == _UiState.noLocalFoundRemote)
-                            ...[const SizedBox.square(dimension: 10),
-                              Center(child: CircularProgressIndicator(value: _animationController.value)),]
-                          else
-                            ...[]
-                        ]),
-                  )
-                ],
-              )),
-              const SizedBox(height: 200),
-            ]
+                          ElevatedButton(
+                            onPressed: (_uiState == _UiState.noLocalFoundRemote || (_remoteAccountInitialized && _remoteAccount.getProvider() == RemoteModuleProvider.apple)) ? null : () {
+                              setState(() {
+                                _uiState = _UiState.noLocalFoundRemote;
+                                _checkingRemoteViaApple = false;
+                                _checkingRemoteViaGoogle = true;
+                                _googleSignIn.signIn();
+                              });
+                            },
+                            child: Row(mainAxisSize:MainAxisSize.min,
+                                children: [
+                                  const Image(width: 50, image: AssetImage('images/google_drive_icon.png')),
+                                  const SizedBox.square(dimension: 10),
+                                  Text(RemoteModuleProvider.google.getDisplayName(), style: const TextStyle(fontSize: 24),),
+                                  if (_uiState == _UiState.noLocalFoundRemote && _checkingRemoteViaGoogle)
+                                    ...[const SizedBox.square(dimension: 10),
+                                      Center(child: CircularProgressIndicator(value: _animationController.value)),]
+                                  else
+                                    ...[]
+                                ]),
+                          )
+                        ],
+                      )),
+                      const SizedBox(height: 200),
+                  ]),
+                  if (_appleICloudNotLoggedIn)
+                    ...[
+                      AppleICloudFailureWidget(retryFunction: () {
+                        setState(() {
+                          _uiState = _UiState.noLocalTryingRemote;
+                          _checkingRemoteViaApple = false;
+                          _checkingRemoteViaGoogle = false;
+                          _appleICloudNotLoggedIn = false;
+                        });
+                      })
+                    ]
+              ]
+            )
+          ]
           else if (_uiState == _UiState.localFailedDecryption)
             ...[
               const Text('Invalid password, try again?', style: TextStyle(fontSize: 24)),

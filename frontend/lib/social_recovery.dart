@@ -5,11 +5,13 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:leafy/globals.dart';
+import 'package:leafy/util/apple_icloud_remote_account.dart';
 import 'package:leafy/util/google_drive_remote_account.dart';
 import 'package:leafy/util/google_signin_util.dart';
 import 'package:leafy/util/remote_module.dart';
 import 'package:leafy/util/wallet.dart';
 import 'package:leafy/widget/address.dart';
+import 'package:leafy/widget/apple_icloud_failure.dart';
 import 'package:leafy/widget/wallet_password.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -48,10 +50,14 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
   bool _loggingInRemoteAccount = false;
   bool _remoteAccountPersistenceFailed = false;
   CompanionRecoveryWalletWrapper? _companionWallet;
+
   late final GoogleSignInUtil _googleSignIn;
+  late final AppleICloudRemoteAccount _appleICloud;
   RemoteModule? _remoteAccount;
+  bool _remoteAccountInitialized = false;
   _RemoteAccountUsage? _remoteAccountUsage;
   bool _loadedRemoteAccountCompanionIds = false;
+  bool _appleICloudNotLoggedIn = false;
 
   String? _encryptedData;
 
@@ -70,24 +76,14 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     _googleSignIn = GoogleSignInUtil.create((account) async {
       try {
         if (account != null) {
-          _remoteAccount = await GoogleDriveRemoteAccount.create(account);
-          if (_remoteAccountUsage == _RemoteAccountUsage.persist) {
-            var data = _companionWallet!.serializedWallet;
-            var encrypted = data;
-            if (_walletFirstMnemonic != null) {
-              encrypted = encryptLeafyData(_walletFirstMnemonic!, data);
-            }
-            var result = await _remoteAccount!.persistCompanionData(_companionWallet!.companionId, encrypted);
-            if (result) {
-              _finalizeAssistanceForCompanion();
-              return;
-            }
-          } else if (_remoteAccountUsage == _RemoteAccountUsage.load) {
-            _loadCompanionIds();
+          if (!_remoteAccountInitialized) {
+            _remoteAccount = await GoogleDriveRemoteAccount.create(account);
           }
+          _remoteAccountInitialized = true;
+          _loadRemoteAccounts();
         }
       } on Exception catch(e) {
-        if (context.mounted) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(e.toString(), style: const TextStyle(color: Colors.white),),
             backgroundColor: Colors.redAccent,
@@ -99,6 +95,33 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
         _loggingInRemoteAccount = false;
       });
     });
+    _appleICloud = AppleICloudRemoteAccount.create();
+  }
+
+  void _loadRemoteAccounts() async {
+    try {
+      if (_remoteAccountUsage == _RemoteAccountUsage.persist) {
+        var data = _companionWallet!.serializedWallet;
+        var encrypted = data;
+        if (_walletFirstMnemonic != null) {
+          encrypted = encryptLeafyData(_walletFirstMnemonic!, data);
+        }
+        var result = await _remoteAccount!.persistCompanionData(_companionWallet!.companionId, encrypted);
+        if (result) {
+          _finalizeAssistanceForCompanion();
+          return;
+        }
+      } else if (_remoteAccountUsage == _RemoteAccountUsage.load) {
+        _loadCompanionIds();
+      }
+    } on Exception catch(e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString(), style: const TextStyle(color: Colors.white),),
+          backgroundColor: Colors.redAccent,
+        ));
+      }
+    }
   }
 
   @override
@@ -158,7 +181,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
               const WalletPasswordDialog(newPassword: false, unknownUsage: true),
             ).then((password) {
               if (context.mounted) {
-                Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: arguments.remoteAccountId, walletPassword: password, walletFirstMnemonic: arguments.walletFirstMnemonic));
+                Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: arguments.remoteAccountId, remoteProvider: arguments.remoteProvider, walletPassword: password, walletFirstMnemonic: arguments.walletFirstMnemonic));
               }
             });
           });
@@ -173,78 +196,99 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
             ]
         ));
       case SocialRecoveryType.branch:
-        return buildScaffold(context, 'Recovery', Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(flex: 1, child: SettingsList(
-                platform: DevicePlatform.iOS,
-                sections: [
-                  SettingsSection(
-                    title: const Text('Recover'),
-                    tiles: <SettingsTile>[
-                      SettingsTile.navigation(
-                        leading: const Icon(Icons.restore),
-                        title: const Text('Your Account'),
-                        value: const Text(''),
-                        onPressed: (context) {
-                          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: arguments.remoteAccountId, walletPassword: arguments.walletPassword, walletFirstMnemonic: arguments.walletFirstMnemonic));
-                        },
-                      ),
-                    ],
-                  ),
-                  SettingsSection(
-                    title: const Text('Setup Recovery Device'),
-                    tiles: <SettingsTile>[
-                      SettingsTile.navigation(
-                        leading: const Icon(Icons.security_update_good),
-                        title: const Text('for Your Account'),
-                        value: const Text(''),
-                        onPressed: (context) {
-                          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.setup, remoteAccountId: arguments.remoteAccountId, walletPassword: arguments.walletPassword, walletFirstMnemonic: arguments.walletFirstMnemonic));
-                        },
-                      ),
-                      SettingsTile.navigation(
-                        leading: const Icon(Icons.person_add_alt_1),
-                        title: const Text('for a Companion'),
-                        value: const Text(''),
-                        onPressed: (context) {
-                          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.setupCompanion, remoteAccountId: arguments.remoteAccountId, walletPassword: arguments.walletPassword, walletFirstMnemonic: arguments.walletFirstMnemonic));
-                        },
-                      ),
-                    ],
-                  ),
-                  if (_companionIds.isNotEmpty)
+        return buildScaffold(context, 'Recovery', Stack(
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 1, child: SettingsList(
+                  platform: DevicePlatform.iOS,
+                  sections: [
                     SettingsSection(
-                      title: const Text("You can assist the following companions in recovery:"),
+                      title: const Text('Recover'),
                       tiles: <SettingsTile>[
-                        for ( var companionId in _companionIds ) SettingsTile.navigation(
-                          leading: const Icon(Icons.email_outlined),
-                          title: Text(arguments.remoteAccountId == companionId ? "$companionId  (self)" : companionId),
+                        SettingsTile.navigation(
+                          leading: const Icon(Icons.restore),
+                          title: const Text('Your Account'),
                           value: const Text(''),
                           onPressed: (context) {
-                            Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recoveryCompanion, remoteAccountId: arguments.remoteAccountId, assistingWithCompanionId: companionId, walletPassword: arguments.walletPassword, walletFirstMnemonic: arguments.walletFirstMnemonic));
+                            Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recovery, remoteAccountId: arguments.remoteAccountId, remoteProvider: arguments.remoteProvider, walletPassword: arguments.walletPassword, walletFirstMnemonic: arguments.walletFirstMnemonic));
                           },
                         ),
-                        if (!_loadedRemoteAccountCompanionIds)
-                          SettingsTile.navigation(
-                            leading: const Icon(Icons.cloud_sync_outlined),
-                            title: const Text('Sync with Remote Account'),
+                      ],
+                    ),
+                    SettingsSection(
+                      title: const Text('Setup Recovery Device'),
+                      tiles: <SettingsTile>[
+                        SettingsTile.navigation(
+                          leading: const Icon(Icons.security_update_good),
+                          title: const Text('for Your Account'),
+                          value: const Text(''),
+                          onPressed: (context) {
+                            Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.setup, remoteAccountId: arguments.remoteAccountId, remoteProvider: arguments.remoteProvider, walletPassword: arguments.walletPassword, walletFirstMnemonic: arguments.walletFirstMnemonic));
+                          },
+                        ),
+                        SettingsTile.navigation(
+                          leading: const Icon(Icons.person_add_alt_1),
+                          title: const Text('for a Companion'),
+                          value: const Text(''),
+                          onPressed: (context) {
+                            Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.setupCompanion, remoteAccountId: arguments.remoteAccountId, remoteProvider: arguments.remoteProvider, walletPassword: arguments.walletPassword, walletFirstMnemonic: arguments.walletFirstMnemonic));
+                          },
+                        ),
+                      ],
+                    ),
+                    if (_companionIds.isNotEmpty)
+                      SettingsSection(
+                        title: const Text("You can assist the following companions in recovery:"),
+                        tiles: <SettingsTile>[
+                          for ( var companionId in _companionIds ) SettingsTile.navigation(
+                            leading: const Icon(Icons.email_outlined),
+                            title: Text(arguments.remoteAccountId == companionId ? "$companionId  (self)" : companionId),
                             value: const Text(''),
                             onPressed: (context) {
-                              setState(() {
-                                _loadedRemoteAccountCompanionIds = true;
-                                _remoteAccountUsage = _RemoteAccountUsage.load;
-                                _googleSignIn.signIn();
-                              });
+                              Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recoveryCompanion, remoteAccountId: arguments.remoteAccountId, remoteProvider: arguments.remoteProvider, assistingWithCompanionId: companionId, walletPassword: arguments.walletPassword, walletFirstMnemonic: arguments.walletFirstMnemonic));
                             },
                           ),
-                      ],
-                    )
-                ],
-              )),
-            ]
+                          if (!_loadedRemoteAccountCompanionIds)
+                            SettingsTile.navigation(
+                              leading: const Icon(Icons.cloud_sync_outlined),
+                              title: Text('Sync with ${arguments.remoteProvider.getDisplayName()}'),
+                              value: const Text(''),
+                              onPressed: (context) {
+                                setState(() {
+                                  _loadedRemoteAccountCompanionIds = true;
+                                  _remoteAccountUsage = _RemoteAccountUsage.load;
+                                  switch (arguments.remoteProvider) {
+                                    case RemoteModuleProvider.google:
+                                      _googleSignIn.signIn();
+                                      break;
+                                    case RemoteModuleProvider.apple:
+                                      _attemptAppleICloud();
+                                      break;
+                                    default:
+                                      throw Exception("programming error: unhandled provider type ${arguments.remoteProvider.name}");
+                                  }
+                                });
+                              },
+                            ),
+                        ],
+                      )
+                  ],
+                )),
+              ]
+            ),
+            if (_appleICloudNotLoggedIn)
+              ...[
+                AppleICloudFailureWidget(retryFunction: () {
+                  setState(() {
+                    _appleICloudNotLoggedIn = false;
+                  });
+                })
+              ]
+          ]
         ));
       case SocialRecoveryType.setup:
         return buildScaffold(context, 'Setup Recovery', Column(
@@ -376,10 +420,10 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                 ]
               else if (_askForRemoteAccountPersistence)
                 ...[
-                  Padding(padding: const EdgeInsets.all(20), child: Text(_remoteAccountPersistenceFailed ? 'Failed to save companion data on your Remote Account (however, it is already successfully saved locally).'
+                  Padding(padding: const EdgeInsets.all(20), child: Text(_remoteAccountPersistenceFailed ? 'Failed to save companion data on your ${_remoteAccount!.getProvider().getDisplayName()} account (however, it is already successfully saved locally).'
                       : 'Companion data successfully saved locally!', style: const TextStyle(fontSize: 24))),
-                  Padding(padding: const EdgeInsets.all(20), child: Text(_remoteAccountPersistenceFailed ? 'Would you like to retry saving the companion data on your Remote Account?'
-                      : 'Would you want to persist this companion data on your Remote Account as well?', style: const TextStyle(fontSize: 24))),
+                  Padding(padding: const EdgeInsets.all(20), child: Text(_remoteAccountPersistenceFailed ? 'Would you like to retry saving the companion data on your ${_remoteAccount!.getProvider().getDisplayName()}?'
+                      : 'Would you want to persist this companion data on your ${_remoteAccount!.getProvider().getDisplayName()} as well?', style: const TextStyle(fontSize: 24))),
                   Padding(padding: const EdgeInsets.all(20), child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -527,7 +571,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         ),
                         onDetect: (capture) {
                           if (capture.barcodes.isNotEmpty && (capture.barcodes.first.rawValue != null)) {
-                            _dataDecryptAndSave(arguments.walletPassword, capture.barcodes.first.rawValue!, arguments.remoteAccountId);
+                            _dataDecryptAndSave(arguments.walletPassword, capture.barcodes.first.rawValue!, arguments.remoteAccountId, arguments.remoteProvider);
                           }
                         },
                       ))),
@@ -549,7 +593,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                           labelText: 'Companion Data',
                         ),
                         onChanged: (data) {
-                          _dataDecryptAndSave(arguments.walletPassword, data, arguments.remoteAccountId);
+                          _dataDecryptAndSave(arguments.walletPassword, data, arguments.remoteAccountId, arguments.remoteProvider);
                         },
                       )
                   )
@@ -674,7 +718,37 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     }
   }
 
-  void _dataDecryptAndSave(String? walletPassword, String encryptedData, String remoteAccountId) async {
+  Future<void> _attemptAppleICloud() async {
+    if (!_remoteAccountInitialized) {
+      _remoteAccount = _appleICloud;
+    }
+    _remoteAccountInitialized = true;
+    if (!await _appleICloud.isLoggedIn()) {
+      setState(() {
+        _appleICloudNotLoggedIn = true;
+      });
+    } else {
+      String? userId = await _appleICloud.getUserId();
+      if (userId != null) {
+        _loadRemoteAccounts();
+      } else {
+        _failedToLoadRemote("No ${RemoteModuleProvider.apple.getDisplayShortName()} account id found");
+      }
+    }
+  }
+
+  void _failedToLoadRemote(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("$message; loading wallet, please retry", style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.redAccent,
+        duration: const Duration(seconds: 7),
+      ));
+      Navigator.pop(context);
+    }
+  }
+
+  void _dataDecryptAndSave(String? walletPassword, String encryptedData, String remoteAccountId, RemoteModuleProvider remoteProvider) async {
     String decrypted = await _decryptWithEphemeralSocialPrivateKeyNatively(_socialKeyPair!.privateKey, encryptedData);
     var json = jsonDecode(decrypted);
     if (CompanionRecoveryWalletWrapper.isCompanionRecoveryWalletWrapper(json)) {
@@ -685,18 +759,18 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     if (walletPassword != null) {
       remoteAccountIdForWallet = encryptLeafyData(walletPassword, remoteAccountId);
     }
-    var wallet = RecoveryWallet.fromJson(remoteAccountIdForWallet, json);
+    var wallet = RecoveryWallet.fromJson(remoteAccountIdForWallet, remoteProvider, json);
     if (walletPassword != null) {
       final decryptedWallet = decryptWallet(walletPassword, wallet);
       if (decryptedWallet == null) {
         if (mounted) {
-          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.walletPassword, remoteAccountId: remoteAccountId, walletPassword: null, walletFirstMnemonic: _walletFirstMnemonic));
+          Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.walletPassword, remoteAccountId: remoteAccountId, remoteProvider: remoteProvider, walletPassword: null, walletFirstMnemonic: _walletFirstMnemonic));
         }
         return;
       }
       wallet = decryptedWallet;
     }
-    await persistLocallyViaBiometric(walletPassword, wallet.firstMnemonic, wallet.secondDescriptor, remoteAccountId);
+    await persistLocally(walletPassword, wallet.firstMnemonic, wallet.secondDescriptor, remoteAccountId, remoteProvider);
     if (mounted) {
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Successfully recovered wallet! Re-authenticate with remote-account to continue.', overflow: TextOverflow.ellipsis,), duration: Duration(seconds: 7), showCloseIcon: true));
@@ -707,7 +781,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
   void _dataDecryptAndSaveForCompanion(String encryptedData) async {
     String decrypted = await _decryptWithEphemeralSocialPrivateKeyNatively(_socialKeyPair!.privateKey, encryptedData);
     var wrapper = CompanionRecoveryWalletWrapper.fromJson(jsonDecode(decrypted));
-    await persistCompanionLocallyViaBiometric(wrapper.serializedWallet, wrapper.companionId);
+    await persistCompanionLocally(wrapper.serializedWallet, wrapper.companionId);
     setState(() {
       _companionWallet = wrapper;
       _askForRemoteAccountPersistence = true;

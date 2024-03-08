@@ -17,6 +17,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.2.2"
+  app_settings:
+    dependency: "direct main"
+    description:
+      name: app_settings
+      sha256: "09bc7fe0313a507087bec1a3baf555f0576e816a760cbb31813a88890a09d9e5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.1.1"
   args:
     dependency: transitive
     description:
@@ -92,10 +100,11 @@ packages:
   cloud_kit:
     dependency: "direct main"
     description:
-      name: cloud_kit
-      sha256: "05786cd41cfee2e82246801b3cd2bde94894ae6b1326159c2c300ad8c570a609"
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: HEAD
+      resolved-ref: "889738131ade3df9797d2ccbe33bfbde1d30cc7f"
+      url: "https://github.com/blangel/cloud_kit.git"
+    source: git
     version: "1.2.0"
   collection:
     dependency: transitive

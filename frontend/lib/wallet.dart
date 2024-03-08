@@ -57,7 +57,7 @@ class _LeafyWalletState extends State<LeafyWalletPage> with RouteAware {
     KeyArguments keyArguments = ModalRoute.of(context)!.settings.arguments as KeyArguments;
     _loader.init(keyArguments.firstMnemonic, keyArguments.secondDescriptor, _handleDataLoad);
     var livelinessTransactions = _numberOfLivelinessChecksNeeded();
-    return buildHomeScaffoldWithRestore(context, '🌿 Wallet', keyArguments.walletPassword, keyArguments.firstMnemonic, Column(
+    return buildHomeScaffoldWithRestore(context, '🌿 Wallet', keyArguments.walletPassword, keyArguments.firstMnemonic, keyArguments.remoteProvider, Column(
       mainAxisSize: MainAxisSize.max,
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,

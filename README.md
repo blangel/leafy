@@ -366,9 +366,9 @@ Those items marked `mainnet` are deemed necessary prior to general availability.
 - [x] `mainnet` Implement "Liveliness Updates"
 - [x] `mainnet` Add advanced option during setup for passphrase/password encryption
 - [x] `mainnet` Add setting to customize the [Bitcoin Network Connectivity](#6-bitcoin-network-connectivity)
-- [ ] Add Apple iCloud as a Remote Account[^5]
+- [x] Add Apple iCloud as a Remote Account[^5]
 - [ ] Add local timed notifications as reminders for liveliness updates
-- [ ] Expand Remote Account to include a label (so UI can list implementation name instead of 'Remote Account'; e.g. 'Google Drive')
+- [x] Expand Remote Account to include a label (so UI can list implementation name instead of 'Remote Account'; e.g. 'Google Drive')
 - [ ] Implement binaries as discussed in [App Provider Obstruction](#app-provider-obstruction)
 - [ ] Allow for timelock-recovery on same phone
   

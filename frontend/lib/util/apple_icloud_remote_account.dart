@@ -1,5 +1,6 @@
 
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:cloud_kit/cloud_kit.dart';
 import 'package:leafy/util/remote_module.dart';
@@ -14,8 +15,6 @@ class AppleICloudRemoteAccount extends RemoteModule {
 
   static const _leafyCompanionIdFileName = 'companion_files';
 
-  // TODO - get CloudKitAccountStatus? accountStatus; and if not logged-in need to handle
-
   static AppleICloudRemoteAccount create() {
     return AppleICloudRemoteAccount._();
   }
@@ -23,6 +22,19 @@ class AppleICloudRemoteAccount extends RemoteModule {
   final CloudKit _cloudKit = CloudKit(_leafyICloudContainerId);
 
   AppleICloudRemoteAccount._();
+
+  Future<bool> isLoggedIn() async {
+    var status = await _cloudKit.getAccountStatus();
+    return status == CloudKitAccountStatus.available;
+  }
+
+  Future<String?> getUserId() async {
+    // iCloud doesn't expose ID directly and doesn't enforce user to setup an email.
+    // Even if email present, requires permission check. Instead, simply get the
+    // per-application persistent id as the remote-account-id. A drawback here
+    // is the id is not user-friendly or recognizable
+    return await _cloudKit.getUserId();
+  }
 
   @override
   Future<String?> getCompanionData(String companionId) async {
@@ -73,6 +85,11 @@ class AppleICloudRemoteAccount extends RemoteModule {
       return false;
     }
     return validator.validate(persistedContent);
+  }
+
+  @override
+  RemoteModuleProvider getProvider() {
+    return RemoteModuleProvider.apple;
   }
 
   static String _getCompanionFileName(String companionId) {

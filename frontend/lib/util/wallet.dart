@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:flutter/services.dart';
 import 'package:leafy/globals.dart';
+import 'package:leafy/util/remote_module.dart';
 
 const mnemonicLength = 24;
 
@@ -39,7 +40,7 @@ RecoveryWallet? decryptWallet(String password, RecoveryWallet wallet) {
   if (remoteAccountId == null) {
     return null;
   }
-  return RecoveryWallet(firstMnemonic: firstMnemonic, secondDescriptor: secondDescriptor, remoteAccountId: remoteAccountId);
+  return RecoveryWallet(firstMnemonic: firstMnemonic, secondDescriptor: secondDescriptor, remoteAccountId: remoteAccountId, remoteProvider: wallet.remoteProvider);
 }
 
 String? decryptLeafyData(String password, String data, int lengthCheck) {
@@ -68,7 +69,7 @@ RecoveryWallet encryptWallet(String? password, RecoveryWallet wallet) {
   final firstMnemonic = encryptLeafyData(password, wallet.firstMnemonic);
   final secondDescriptor = encryptLeafyData(password, wallet.secondDescriptor);
   final remoteAccountId = encryptLeafyData(password, wallet.remoteAccountId);
-  return RecoveryWallet(firstMnemonic: firstMnemonic, secondDescriptor: secondDescriptor, remoteAccountId: remoteAccountId);
+  return RecoveryWallet(firstMnemonic: firstMnemonic, secondDescriptor: secondDescriptor, remoteAccountId: remoteAccountId, remoteProvider: wallet.remoteProvider);
 }
 
 String encryptLeafyData(String password, String data) {
@@ -118,8 +119,9 @@ class RecoveryWallet {
   final String firstMnemonic;
   final String secondDescriptor;
   final String remoteAccountId;
+  final RemoteModuleProvider remoteProvider;
 
-  RecoveryWallet({required this.firstMnemonic, required this.secondDescriptor, required this.remoteAccountId});
+  RecoveryWallet({required this.firstMnemonic, required this.secondDescriptor, required this.remoteAccountId, required this.remoteProvider});
 
   Map<String, dynamic> toJson() {
     return {
@@ -128,11 +130,12 @@ class RecoveryWallet {
     };
   }
 
-  factory RecoveryWallet.fromJson(String remoteAccountId, Map<String, dynamic> json) {
+  factory RecoveryWallet.fromJson(String remoteAccountId, RemoteModuleProvider remoteProvider, Map<String, dynamic> json) {
     return RecoveryWallet(
       firstMnemonic: json['f'],
       secondDescriptor: json['s'],
       remoteAccountId: remoteAccountId,
+      remoteProvider: remoteProvider,
     );
   }
 }

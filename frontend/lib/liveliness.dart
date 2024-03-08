@@ -23,6 +23,10 @@ class _LivelinessState extends State<LivelinessPage> {
   @override
   Widget build(BuildContext context) {
     TransactionsArguments arguments = ModalRoute.of(context)!.settings.arguments as TransactionsArguments;
+    String remoteAccountLabel = "Remote Account";
+    if (arguments.keyArguments.remoteProvider != null) {
+      remoteAccountLabel = arguments.keyArguments.remoteProvider!.getDisplayName();
+    }
     List<Transaction> livelinessTxs = [];
     livelinessTxs.addAll(arguments.transactions);
     List<Transaction> excludedTxs = [];
@@ -45,7 +49,7 @@ class _LivelinessState extends State<LivelinessPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(padding: const EdgeInsets.fromLTRB(20, 20, 20, 10), child: Center(child: Image(height: 150, image: _livelinessImage))),
-        const Padding(padding: EdgeInsets.all(10), child: Text("Liveliness updates are like a health check for your wallet. They ensure your bitcoin is kept secure and accessible even in the event you lose access to your Remote Account.")),
+        Padding(padding: const EdgeInsets.all(10), child: Text("Liveliness updates are like a health check for your wallet. They ensure your bitcoin is kept secure and accessible even in the event you lose access to your $remoteAccountLabel.")),
         Divider(color: Theme.of(context).textTheme.titleMedium!.color, indent: 20, endIndent: 20),
         Expanded(flex: 1, child: Column(mainAxisAlignment: MainAxisAlignment.start, crossAxisAlignment: CrossAxisAlignment.start, children: [
           if (utxos.isEmpty)

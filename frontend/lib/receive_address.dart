@@ -101,7 +101,7 @@ class _ReceiveAddressState extends State<ReceiveAddressPage> {
                   children: [
                     TextSpan(text: "Setup a companion device now.", style: TextStyle(fontSize: 18, decoration: TextDecoration.underline, color: Theme.of(context).textTheme.bodyMedium!.color),
                       recognizer: TapGestureRecognizer()..onTap = () {
-                        Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.setup, remoteAccountId: globalRemoteAccountId, walletPassword: arguments.keyArguments.walletPassword, walletFirstMnemonic: arguments.keyArguments.firstMnemonic));
+                        Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.setup, remoteAccountId: globalRemoteAccountId, remoteProvider: arguments.keyArguments.remoteProvider!, walletPassword: arguments.keyArguments.walletPassword, walletFirstMnemonic: arguments.keyArguments.firstMnemonic));
                       }
                     ),
                   ]

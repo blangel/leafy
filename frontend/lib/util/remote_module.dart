@@ -16,10 +16,53 @@ abstract class RemoteModule {
   Future<String?> getCompanionData(String companionId);
   // Retrieves companion ids for any with persisted data within the user's remote account.
   Future<List<String>> getCompanionIds();
+  // Retrieves the implementation's provider.
+  RemoteModuleProvider getProvider();
 }
 
 abstract class SecondSeedValidator {
   bool validate(String encryptedSecondSeed);
+}
+
+enum RemoteModuleProvider {
+  google,
+  apple;
+
+  static RemoteModuleProvider? fromName(String? name) {
+    if (name == null) {
+      return null;
+    }
+    switch (name) {
+      case "google":
+        return google;
+      case "apple":
+        return apple;
+      default:
+        return null;
+    }
+  }
+
+  String getDisplayName() {
+    switch (this) {
+      case google:
+        return "Google Drive";
+      case apple:
+        return "Apple iCloud";
+      default:
+        throw AssertionError("unimplemented RemoteModuleProvider type: $name");
+    }
+  }
+
+  String getDisplayShortName() {
+    switch (this) {
+      case google:
+        return "GDrive";
+      case apple:
+        return "iCloud";
+      default:
+        throw AssertionError("unimplemented RemoteModuleProvider type: $name");
+    }
+  }
 }
 
 class DefaultSecondSeedValidator implements SecondSeedValidator {

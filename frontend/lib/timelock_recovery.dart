@@ -160,7 +160,7 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> with RouteAware
                   const TextSpan(text: " "),
                   TextSpan(text: "You have already recovered 1 fund.", style: const TextStyle(decoration: TextDecoration.underline),
                     recognizer: TapGestureRecognizer()..onTap = () {
-                      Navigator.of(context).pushNamed('/transactions', arguments: TransactionsArguments(transactions: _existingRecovery.toList(), keyArguments: KeyArguments(firstMnemonic: timelockArguments.walletFirstMnemonic, secondDescriptor: timelockArguments.walletSecondDescriptor, secondMnemonic: null, walletPassword: null), changeAddress: _destAddress, currentBlockHeight: _currentBlockHeight, recovery: true));
+                      Navigator.of(context).pushNamed('/transactions', arguments: TransactionsArguments(transactions: _existingRecovery.toList(), keyArguments: KeyArguments(firstMnemonic: timelockArguments.walletFirstMnemonic, secondDescriptor: timelockArguments.walletSecondDescriptor, secondMnemonic: null, walletPassword: null, remoteProvider: null), changeAddress: _destAddress, currentBlockHeight: _currentBlockHeight, recovery: true));
                   }),
                 ]
               else
@@ -168,7 +168,7 @@ class _TimelockRecoveryState extends State<TimelockRecoveryPage> with RouteAware
                   const TextSpan(text: " "),
                   TextSpan(text: "You have already recovered ${_existingRecovery.length} funds.", style: const TextStyle(decoration: TextDecoration.underline),
                       recognizer: TapGestureRecognizer()..onTap = () {
-                        Navigator.of(context).pushNamed('/transactions', arguments: TransactionsArguments(transactions: _existingRecovery.toList(), keyArguments: KeyArguments(firstMnemonic: timelockArguments.walletFirstMnemonic, secondDescriptor: timelockArguments.walletSecondDescriptor, secondMnemonic: null, walletPassword: null), changeAddress: _destAddress, currentBlockHeight: _currentBlockHeight, recovery: true));
+                        Navigator.of(context).pushNamed('/transactions', arguments: TransactionsArguments(transactions: _existingRecovery.toList(), keyArguments: KeyArguments(firstMnemonic: timelockArguments.walletFirstMnemonic, secondDescriptor: timelockArguments.walletSecondDescriptor, secondMnemonic: null, walletPassword: null, remoteProvider: null), changeAddress: _destAddress, currentBlockHeight: _currentBlockHeight, recovery: true));
                       }),
                 ],
           ]

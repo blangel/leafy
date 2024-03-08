@@ -1,6 +1,7 @@
 
 import 'dart:convert';
 
+import 'package:app_settings/app_settings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,6 +29,9 @@ Future<void> launchDocumentation([String? override]) async {
   if (!await launchUrl(url)) {
     throw Exception('Could not launch $url');
   }
+}
+Future<void> launchAppSettings() async {
+  AppSettings.openAppSettings(type: AppSettingsType.settings);
 }
 
 String globalRemoteAccountId = "";
@@ -76,8 +80,8 @@ Scaffold buildHomeScaffold(BuildContext context, String title, Widget body) {
   return _buildScaffold(context, title, body, false, _Recovery.none);
 }
 
-Scaffold buildHomeScaffoldWithRestore(BuildContext context, String title, String? walletPassword, String? firstMnemonic, Widget body) {
-  return _buildScaffold(context, title, body, false, _Recovery(walletPassword, firstMnemonic));
+Scaffold buildHomeScaffoldWithRestore(BuildContext context, String title, String? walletPassword, String? firstMnemonic, RemoteModuleProvider? remoteProvider, Widget body) {
+  return _buildScaffold(context, title, body, false, _Recovery(walletPassword, firstMnemonic, remoteProvider));
 }
 
 Scaffold buildScaffold(BuildContext context, String title, Widget body) {
@@ -85,13 +89,15 @@ Scaffold buildScaffold(BuildContext context, String title, Widget body) {
 }
 
 class _Recovery {
-  static final _Recovery none = _Recovery(null, null);
+  static final _Recovery none = _Recovery(null, null, null);
 
   final String? walletPassword;
 
   final String? firstMnemonic;
 
-  _Recovery(this.walletPassword, this.firstMnemonic);
+  final RemoteModuleProvider? remoteProvider;
+
+  _Recovery(this.walletPassword, this.firstMnemonic, this.remoteProvider);
 }
 
 Scaffold _buildScaffold(BuildContext context, String title, Widget body, bool addLeading, _Recovery recovery) {
@@ -104,7 +110,7 @@ Scaffold _buildScaffold(BuildContext context, String title, Widget body, bool ad
           icon: const Icon(Icons.more_vert),
           onSelected: (String value) {
             if (value == 'recovery') {
-              Navigator.pushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.branch, remoteAccountId: globalRemoteAccountId, walletPassword: recovery.walletPassword, walletFirstMnemonic: recovery.firstMnemonic));
+              Navigator.pushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.branch, remoteAccountId: globalRemoteAccountId, remoteProvider: recovery.remoteProvider!, walletPassword: recovery.walletPassword, walletFirstMnemonic: recovery.firstMnemonic));
             } else if (value == 'settings') {
               Navigator.pushNamed(context, '/settings');
             } else {
@@ -178,8 +184,9 @@ class KeyArguments {
   final String secondDescriptor;
   final String? secondMnemonic;
   final String? walletPassword;
+  final RemoteModuleProvider? remoteProvider;
 
-  KeyArguments({required this.firstMnemonic, required this.secondDescriptor, required this.secondMnemonic, required this.walletPassword});
+  KeyArguments({required this.firstMnemonic, required this.secondDescriptor, required this.secondMnemonic, required this.walletPassword, required this.remoteProvider});
 }
 
 class TransactionsArguments {
@@ -266,9 +273,10 @@ class SocialRecoveryArguments {
   final String? walletPassword;
   final String? walletFirstMnemonic;
   final String remoteAccountId;
+  final RemoteModuleProvider remoteProvider;
   final String? assistingWithCompanionId;
 
-  SocialRecoveryArguments({required this.type, required this.walletPassword, required this.walletFirstMnemonic, required this.remoteAccountId, this.assistingWithCompanionId});
+  SocialRecoveryArguments({required this.type, required this.walletPassword, required this.walletFirstMnemonic, required this.remoteAccountId, required this.remoteProvider, this.assistingWithCompanionId});
 }
 
 class TimelockRecoveryArguments {
@@ -304,9 +312,7 @@ Future<bool> isCompanionDeviceSetup() async {
   return true;
 }
 
-// TODO - update to use biometric_storage (https://pub.dev/packages/biometric_storage) instead of flutter_secure_storage ?
-
-Future<void> persistLocallyViaBiometric(String? password, String firstMnemonic, String secondDescriptor, String remoteAccountId) async {
+Future<void> persistLocally(String? password, String firstMnemonic, String secondDescriptor, String remoteAccountId, RemoteModuleProvider provider) async {
   const storage = FlutterSecureStorage(aOptions: AndroidOptions(
     encryptedSharedPreferences: true,
   ));
@@ -321,17 +327,19 @@ Future<void> persistLocallyViaBiometric(String? password, String firstMnemonic, 
   storage.write(key: 'leafy:firstMnemonic', value: firstSeedData);
   storage.write(key: 'leafy:secondDescriptor', value: secondDescriptorData);
   storage.write(key: 'leafy:remoteAccountId', value: remoteAccountIdData);
+  storage.write(key: 'leafy:remoteProvider', value: provider.name);
 }
 
-Future<RecoveryWallet?> getRecoveryWalletViaBiometric() async {
+Future<RecoveryWallet?> getRecoveryWallet() async {
   const storage = FlutterSecureStorage(aOptions: AndroidOptions(
     encryptedSharedPreferences: true,
   ));
   final firstMnemonic = await storage.read(key: 'leafy:firstMnemonic');
   final secondDescriptor = await storage.read(key: 'leafy:secondDescriptor');
   final remoteAccountId = await storage.read(key: 'leafy:remoteAccountId');
-  if ((firstMnemonic != null) && (secondDescriptor != null) && (remoteAccountId != null)) {
-    return RecoveryWallet(firstMnemonic: firstMnemonic, secondDescriptor: secondDescriptor, remoteAccountId: remoteAccountId);
+  final remoteProvider = RemoteModuleProvider.fromName(await storage.read(key: 'leafy:remoteProvider'));
+  if ((firstMnemonic != null) && (secondDescriptor != null) && (remoteAccountId != null) && (remoteProvider != null)) {
+    return RecoveryWallet(firstMnemonic: firstMnemonic, secondDescriptor: secondDescriptor, remoteAccountId: remoteAccountId, remoteProvider: remoteProvider);
   }
   return null;
 }
@@ -355,7 +363,7 @@ Future<List<String>> getCompanionIds(RemoteModule? remoteModule) async {
 }
 
 Future<String> getRecoveryWalletSerialized() async {
-  RecoveryWallet? wallet = await getRecoveryWalletViaBiometric();
+  RecoveryWallet? wallet = await getRecoveryWallet();
   if (wallet == null) {
     throw Exception("no wallet found");
   }
@@ -363,7 +371,7 @@ Future<String> getRecoveryWalletSerialized() async {
 }
 
 Future<String> getRecoveryWalletSerializedForCompanion(String? walletPassword) async {
-  RecoveryWallet? wallet = await getRecoveryWalletViaBiometric();
+  RecoveryWallet? wallet = await getRecoveryWallet();
   if (wallet == null) {
     throw Exception("no wallet found");
   }
@@ -395,7 +403,7 @@ Future<String?> getCompanionIdWalletSerialized(String companionId, RemoteModule?
   return jsonEncode(wrapper.toJson());
 }
 
-Future<void> persistCompanionLocallyViaBiometric(String serialized, String companionId) async {
+Future<void> persistCompanionLocally(String serialized, String companionId) async {
   const storage = FlutterSecureStorage(aOptions: AndroidOptions(
     encryptedSharedPreferences: true,
   ));

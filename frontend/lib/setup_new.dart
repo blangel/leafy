@@ -1,10 +1,12 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:leafy/globals.dart';
+import 'package:leafy/util/apple_icloud_remote_account.dart';
 import 'package:leafy/util/google_drive_remote_account.dart';
 import 'package:leafy/util/google_signin_util.dart';
 import 'package:leafy/util/remote_module.dart';
 import 'package:leafy/util/wallet.dart';
+import 'package:leafy/widget/apple_icloud_failure.dart';
 import 'package:leafy/widget/wallet_password.dart';
 import 'dart:io' show Platform;
 
@@ -26,13 +28,17 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
   _UiState _uiState = _UiState.generatingMnemonic;
   bool _backingUpViaGoogle = false;
   bool _backingUpViaApple = false;
+  bool _appleICloudNotLoggedIn = false;
   late AnimationController _animationController;
 
   late final Wallet _wallet;
 
   late final GoogleSignInUtil _googleSignIn;
+
+  late final AppleICloudRemoteAccount _appleICloud;
   
   late final RemoteModule _remoteAccount;
+  bool _remoteAccountInitialized = false;
 
   bool _advancedTileExpanded = false;
   String? _password;
@@ -57,14 +63,11 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
     _googleSignIn = GoogleSignInUtil.create((account) async {
       try {
         if (account != null) {
-          _remoteAccount = await GoogleDriveRemoteAccount.create(account);
-          globalRemoteAccountId = account.email;
-          await persistLocallyViaBiometric(_password, _wallet.firstMnemonic, _wallet.secondDescriptor, account.email);
-          await persistRemotely(_wallet.firstMnemonic, _wallet.secondMnemonic);
-          if (mounted) {
-            setAsNeedingCompanionDeviceBackup();
-            Navigator.popAndPushNamed(context, '/wallet', arguments: KeyArguments(firstMnemonic: _wallet.firstMnemonic, secondMnemonic: _wallet.secondMnemonic, secondDescriptor: _wallet.secondDescriptor, walletPassword: _password));
+          if (!_remoteAccountInitialized) {
+            _remoteAccount = await GoogleDriveRemoteAccount.create(account);
           }
+          _remoteAccountInitialized = true;
+          _setupRemote(account.email, RemoteModuleProvider.google);
         } else {
           if (mounted) {
             setState(() {
@@ -84,6 +87,17 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
         }
       }
     });
+    _appleICloud = AppleICloudRemoteAccount.create();
+  }
+
+  Future<void> _setupRemote(String remoteAccountId, RemoteModuleProvider provider) async {
+    globalRemoteAccountId = remoteAccountId;
+    await persistRemotely(_wallet.firstMnemonic, _wallet.secondMnemonic);
+    await persistLocally(_password, _wallet.firstMnemonic, _wallet.secondDescriptor, remoteAccountId, provider);
+    if (mounted) {
+      setAsNeedingCompanionDeviceBackup();
+      Navigator.popAndPushNamed(context, '/wallet', arguments: KeyArguments(firstMnemonic: _wallet.firstMnemonic, secondMnemonic: _wallet.secondMnemonic, secondDescriptor: _wallet.secondDescriptor, walletPassword: _password, remoteProvider: provider));
+    }
   }
 
   @override
@@ -115,69 +129,115 @@ class _LeafySetupNewState extends State<LeafySetupNewPage> with TickerProviderSt
           )),
         ),
         Divider(color: Theme.of(context).textTheme.titleMedium!.color, indent: 10, endIndent: 10),
-        Padding(padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
-          child: Align(alignment: Alignment.centerLeft, child: RichText(text: TextSpan(text: "Select a ", style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color), children: [
-            TextSpan(text: "Remote Account", style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color, fontWeight: FontWeight.bold)),
-            TextSpan(text: " to continue:", style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color)),
-          ])))
-        ),
-        if (Platform.isIOS)
-          ...[
-            Padding(padding: const EdgeInsets.all(10), child: Row(
+        Stack(
+          children: [
+            Column(
               mainAxisSize: MainAxisSize.max,
               mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                ElevatedButton(
-                  onPressed: (_uiState == _UiState.backingUp) ? null : () async {
-                    setState(() {
-                      _uiState = _UiState.backingUp;
-                      _backingUpViaApple = true;
-                      _backingUpViaGoogle = false;
-                    });
-                    // TODO - Apple iCloud
-                  },
-                  child: Row(mainAxisSize:MainAxisSize.min,
+                Padding(padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+                    child: Align(alignment: Alignment.centerLeft, child: RichText(text: TextSpan(text: "Select a ", style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color), children: [
+                      TextSpan(text: "Remote Account", style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color, fontWeight: FontWeight.bold)),
+                      TextSpan(text: " to continue:", style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color)),
+                    ])))
+                ),
+                if (Platform.isIOS)
+                  ...[
+                    Padding(padding: const EdgeInsets.all(10), child: Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Image(width: 50, image: AssetImage('images/apple_icloud_icon.png')),
-                        const SizedBox.square(dimension: 10),
-                        const Text("Apple iCloud", style: TextStyle(fontSize: 24),),
-                        if (_uiState == _UiState.backingUp && _backingUpViaApple)
-                          ...[const SizedBox.square(dimension: 10),
-                            Center(child: CircularProgressIndicator(value: _animationController.value)),]
-                        else
-                          ...[]
-                      ]),
-                )
-              ],
-            ))
-          ],
-        Padding(padding: const EdgeInsets.all(10), child: Row(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            ElevatedButton(
-              onPressed: (_uiState == _UiState.backingUp) ? null : () async {
-                setState(() {
-                  _uiState = _UiState.backingUp;
-                  _backingUpViaApple = false;
-                  _backingUpViaGoogle = true;
-                });
-                await _googleSignIn.signIn();
-              },
-              child: Row(mainAxisSize:MainAxisSize.min,
+                        ElevatedButton(
+                          onPressed: (_uiState == _UiState.backingUp || (_remoteAccountInitialized && _remoteAccount.getProvider() == RemoteModuleProvider.google)) ? null : () async {
+                            setState(() {
+                              _uiState = _UiState.backingUp;
+                              _backingUpViaApple = true;
+                              _backingUpViaGoogle = false;
+                            });
+                            if (!_remoteAccountInitialized) {
+                              _remoteAccount = _appleICloud;
+                            }
+                            _remoteAccountInitialized = true;
+                            if (!await _appleICloud.isLoggedIn()) {
+                              setState(() {
+                                _appleICloudNotLoggedIn = true;
+                              });
+                            } else {
+                              String? userId = await _appleICloud.getUserId();
+                              if (userId != null) {
+                                _setupRemote(userId, RemoteModuleProvider.apple);
+                              } else {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                    content: Text("Could not load ${RemoteModuleProvider.apple.getDisplayShortName()} id for user", style: const TextStyle(color: Colors.white),),
+                                    backgroundColor: Colors.redAccent,
+                                  ));
+                                }
+                                setState(() {
+                                  _appleICloudNotLoggedIn = true;
+                                });
+                              }
+                            }
+                          },
+                          child: Center(child: Row(mainAxisSize:MainAxisSize.min,
+                              children: [
+                                const Padding(padding: EdgeInsets.fromLTRB(0, 5, 0, 0), child: Image(width: 50, image: AssetImage('images/apple_icloud_icon.png'))),
+                                const SizedBox.square(dimension: 10),
+                                Text(RemoteModuleProvider.apple.getDisplayName(), style: const TextStyle(fontSize: 24),),
+                                if (_uiState == _UiState.backingUp && _backingUpViaApple)
+                                  ...[const SizedBox.square(dimension: 10),
+                                    Center(child: CircularProgressIndicator(value: _animationController.value)),]
+                                else
+                                  ...[]
+                              ])),
+                        )
+                      ],
+                    ))
+                  ],
+                Padding(padding: const EdgeInsets.all(10), child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    const Image(width: 50, image: AssetImage('images/google_drive_icon.png')),
-                    const SizedBox.square(dimension: 10),
-                    const Text("Google Drive", style: TextStyle(fontSize: 24),),
-                    if (_uiState == _UiState.backingUp && _backingUpViaGoogle)
-                      ...[const SizedBox.square(dimension: 10),
-                        Center(child: CircularProgressIndicator(value: _animationController.value)),]
-                    else
-                      ...[]
-                  ]),
-            )
-          ],
-        )),
+                    ElevatedButton(
+                      onPressed: (_uiState == _UiState.backingUp || (_remoteAccountInitialized && _remoteAccount.getProvider() == RemoteModuleProvider.apple)) ? null : () async {
+                        setState(() {
+                          _uiState = _UiState.backingUp;
+                          _backingUpViaApple = false;
+                          _backingUpViaGoogle = true;
+                        });
+                        await _googleSignIn.signIn();
+                      },
+                      child: Row(mainAxisSize:MainAxisSize.min,
+                          children: [
+                            const Image(width: 50, image: AssetImage('images/google_drive_icon.png')),
+                            const SizedBox.square(dimension: 10),
+                            Text(RemoteModuleProvider.google.getDisplayName(), style: const TextStyle(fontSize: 24),),
+                            if (_uiState == _UiState.backingUp && _backingUpViaGoogle)
+                              ...[const SizedBox.square(dimension: 10),
+                                Center(child: CircularProgressIndicator(value: _animationController.value)),]
+                            else
+                              ...[]
+                          ]),
+                    )
+                  ],
+                )),
+              ]
+            ),
+            if (_appleICloudNotLoggedIn)
+              ...[
+                AppleICloudFailureWidget(retryFunction: () {
+                  setState(() {
+                    _uiState = _UiState.readyForBackup;
+                    _backingUpViaApple = false;
+                    _backingUpViaGoogle = false;
+                    _appleICloudNotLoggedIn = false;
+                  });
+                })
+              ]
+          ]
+        ),
         Expanded(flex: 1, child: Align(alignment: Alignment.bottomLeft,
           child: SingleChildScrollView(child: ExpansionPanelList(
             expansionCallback: (int index, bool isExpanded) {
