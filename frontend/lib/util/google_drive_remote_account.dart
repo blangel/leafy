@@ -103,7 +103,7 @@ class GoogleDriveRemoteAccount extends RemoteModule {
     if ((results == null) || results.isEmpty || results.first.item2 == null) {
       return List.empty();
     }
-    return results.first.item2!.where((file) => file.name != null).map((file) => file.name!).toList();
+    return results.first.item2!.where((file) => file.name != null).map((file) => file.name!.substring(_leafyCompanionFileNamePrefix.length + 1)).toList();
   }
 
   @override

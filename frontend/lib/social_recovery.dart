@@ -1,5 +1,6 @@
 
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -91,7 +92,6 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
         }
       }
       setState(() {
-        _remoteAccountPersistenceFailed = true;
         _loggingInRemoteAccount = false;
       });
     });
@@ -110,6 +110,10 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
         if (result) {
           _finalizeAssistanceForCompanion();
           return;
+        } else {
+          setState(() {
+            _remoteAccountPersistenceFailed = true;
+          });
         }
       } else if (_remoteAccountUsage == _RemoteAccountUsage.load) {
         _loadCompanionIds();
@@ -420,10 +424,10 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                 ]
               else if (_askForRemoteAccountPersistence)
                 ...[
-                  Padding(padding: const EdgeInsets.all(20), child: Text(_remoteAccountPersistenceFailed ? 'Failed to save companion data on your ${_remoteAccount!.getProvider().getDisplayName()} account (however, it is already successfully saved locally).'
+                  Padding(padding: const EdgeInsets.all(20), child: Text(_remoteAccountPersistenceFailed ? 'Failed to save companion data on your ${arguments.remoteProvider.getDisplayName()} account (however, it is already successfully saved locally).'
                       : 'Companion data successfully saved locally!', style: const TextStyle(fontSize: 24))),
-                  Padding(padding: const EdgeInsets.all(20), child: Text(_remoteAccountPersistenceFailed ? 'Would you like to retry saving the companion data on your ${_remoteAccount!.getProvider().getDisplayName()}?'
-                      : 'Would you want to persist this companion data on your ${_remoteAccount!.getProvider().getDisplayName()} as well?', style: const TextStyle(fontSize: 24))),
+                  Padding(padding: const EdgeInsets.all(20), child: Text(_remoteAccountPersistenceFailed ? 'Would you like to retry saving the companion data on your ${arguments.remoteProvider.getDisplayName()}?'
+                      : 'Would you want to persist this companion data on your ${arguments.remoteProvider.getDisplayName()} as well?', style: const TextStyle(fontSize: 24))),
                   Padding(padding: const EdgeInsets.all(20), child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -438,7 +442,16 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                           setState(() {
                             _loggingInRemoteAccount = true;
                             _remoteAccountUsage = _RemoteAccountUsage.persist;
-                            _googleSignIn.signIn();
+                            switch (arguments.remoteProvider) {
+                              case RemoteModuleProvider.google:
+                                _googleSignIn.signIn();
+                                break;
+                              case RemoteModuleProvider.apple:
+                                _attemptAppleICloud();
+                                break;
+                              default:
+                                throw Exception("programming error: unhandled provider type ${arguments.remoteProvider.name}");
+                            }
                           });
                         },
                         child: Text(_loggingInRemoteAccount ? 'Logging-in...' : 'Yes', style: const TextStyle(fontSize: 24)),

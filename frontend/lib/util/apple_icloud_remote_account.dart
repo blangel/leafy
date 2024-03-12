@@ -48,13 +48,17 @@ class AppleICloudRemoteAccount extends RemoteModule {
     if (companionIds == null) {
       return [];
     }
-    List<String> ids = jsonDecode(companionIds);
+    List<dynamic> idsJson = jsonDecode(companionIds);
+    List<String> ids = [];
+    for (var id in idsJson) {
+      ids.add(id);
+    }
     return ids;
   }
 
-  Future<void> _persistCompanionIds(List<String> ids) async {
+  Future<bool> _persistCompanionIds(List<String> ids) async {
     String idsJson = jsonEncode(ids);
-    await _cloudKit.save(_leafyCompanionIdFileName, idsJson);
+    return await _cloudKit.save(_leafyCompanionIdFileName, idsJson);
   }
 
   @override
@@ -64,24 +68,51 @@ class AppleICloudRemoteAccount extends RemoteModule {
 
   @override
   Future<bool> persistCompanionData(String companionId, String encryptedData) async {
+    log("apple icloud: getting companion ids");
     List<String> existingIds = await getCompanionIds();
+    log("apple icloud: existingIds? $existingIds");
     if (!existingIds.contains(companionId)) {
       List<String> expanded = [];
       expanded.addAll(existingIds);
       expanded.add(companionId);
-      await _persistCompanionIds(expanded);
+      var success = await _persistCompanionIds(expanded);
+      if (!success) {
+        log("apple icloud: failure persisting new companionId");
+        return false;
+      }
     }
     String companionFileName = _getCompanionFileName(companionId);
-    await _cloudKit.save(companionFileName, encryptedData);
+    var success = await _cloudKit.save(companionFileName, encryptedData);
+    if (!success) {
+      log("apple icloud: failure persisting encrypted second seed");
+      return false;
+    }
     String? persistedCompanionData = await getCompanionData(companionId);
+    int counter = 0;
+    while ((persistedCompanionData == null) && (counter < 5)) {
+      await Future.delayed(const Duration(seconds: 1));
+      persistedCompanionData = await getCompanionData(companionId);
+      counter = counter + 1;
+    }
     return persistedCompanionData == encryptedData;
   }
 
   @override
   Future<bool> persistEncryptedSecondSeed(String encryptedSecondSeed, SecondSeedValidator validator) async {
-    await _cloudKit.save(_leafyMnemonicFileName, encryptedSecondSeed);
+    var success = await _cloudKit.save(_leafyMnemonicFileName, encryptedSecondSeed);
+    if (!success) {
+      log("apple icloud: failure persisting encrypted second seed");
+      return false;
+    }
     String? persistedContent = await getEncryptedSecondSeed();
+    int counter = 0;
+    while ((persistedContent == null) && (counter < 5)) {
+      await Future.delayed(const Duration(seconds: 1));
+      persistedContent = await getEncryptedSecondSeed();
+      counter = counter + 1;
+    }
     if (persistedContent == null) {
+      log("apple icloud: could not load encrypted second seed");
       return false;
     }
     return validator.validate(persistedContent);
@@ -93,7 +124,9 @@ class AppleICloudRemoteAccount extends RemoteModule {
   }
 
   static String _getCompanionFileName(String companionId) {
-    return "${_leafyCompanionFileNamePrefix}_$companionId";
+    // https://developer.apple.com/documentation/cloudkit/ckrecord/id/1500975-init indicates that recordName
+    // must be less than 255 and ASCII but in practice it cannot contain '@' or '.', so normalizing
+    return "${_leafyCompanionFileNamePrefix}_$companionId".replaceAll("@", "_at_").replaceAll(".", "_dot_");
   }
 
 }
