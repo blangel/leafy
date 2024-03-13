@@ -1,6 +1,7 @@
 
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:math' as math;
 
 import 'package:http/http.dart';
 import 'package:leafy/util/bitcoin_network_connectivity.dart';
@@ -77,6 +78,14 @@ class MempoolSpaceClient extends BitcoinClient {
 
   @override
   Future<int> getCurrentBlockHeight() async {
+    // workaround (but nice developer ergonomics) for regtest/localhost
+    // testing where block-height diverges from historical transactions
+    if (baseUrl.contains("localhost")) {
+      var blockheight = await _fetchCurrentBlockHeight();
+      var blocks = await _fetchRecentBlocks();
+      var blockMax = blocks.map((block) => block.height).reduce((max, current) => math.max(max, current));
+      return math.max(blockheight, blockMax);
+    }
     return await _fetchCurrentBlockHeight();
   }
 
@@ -129,8 +138,7 @@ class MempoolSpaceClient extends BitcoinClient {
       }
     }
     if (response.body.contains("Cannot GET /api/v1/replacements")) {
-      log("failed to load mempool RBF transactions, backend doesn't support");
-      return [];
+      return []; // failed to load mempool RBF transactions, backend doesn't support
     }
     log("failed to load mempool RBF transactions (status code ${response.statusCode}): ${response.body}");
     throw Exception('Failed to load mempool RBF transactions: ${response.statusCode}');
@@ -194,6 +202,22 @@ class MempoolSpaceClient extends BitcoinClient {
     }
     log("failed to load current block height (status code ${response.statusCode}): ${response.body}");
     throw Exception('Failed to load current block height: ${response.statusCode}');
+  }
+
+  Future<List<Block>> _fetchRecentBlocks() async {
+    final response = await get(
+      Uri.parse('$internetProtocol://$baseUrl/api/v1/blocks'),
+    );
+    if (response.statusCode == 200) {
+      var json = jsonDecode(response.body);
+      if (json is List) {
+        return json.map((blockJson) {
+          return Block.fromMempoolApiJson(blockJson);
+        }).toList();
+      }
+    }
+    log("failed to load recent blocks (status code ${response.statusCode}): ${response.body}");
+    throw Exception('Failed to load recent blocks: ${response.statusCode}');
   }
 
   Future<RecommendedFees> _fetchRecommendedFees() async {

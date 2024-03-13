@@ -606,6 +606,48 @@ class RecommendedFees {
 
 }
 
+class Block {
+  final String id;
+  final int height;
+  final int version;
+  final int timestamp;
+  final int transactionCount;
+  final int size;
+  final int weight;
+  final String merkleRoot;
+  final String previousBlockhash;
+  final int medianTime;
+  final int nonce;
+  final int bits;
+  final double difficulty;
+
+  Block({required this.id, required this.height, required this.version, required this.timestamp, required this.transactionCount, required this.size, required this.weight, required this.merkleRoot, required this.previousBlockhash, required this.medianTime, required this.nonce, required this.bits, required this.difficulty});
+
+  factory Block.fromMempoolApiJson(Map<String, dynamic> json) {
+    double difficulty;
+    if (json['difficulty'] is int) {
+      difficulty = (json['difficulty'] as int).toDouble();
+    } else {
+      difficulty = json['difficulty'] as double;
+    }
+    return Block(
+      id: json['id'],
+      height: json['height'],
+      version: json['version'],
+      timestamp: json['timestamp'],
+      transactionCount: json['tx_count'],
+      size: json['size'],
+      weight: json['weight'],
+      merkleRoot: json['merkle_root'],
+      previousBlockhash: json['previousblockhash'],
+      medianTime: json['mediantime'],
+      nonce: json['nonce'],
+      bits: json['bits'],
+      difficulty: difficulty,
+    );
+  }
+}
+
 class MempoolHistogramValue {
 
   final double feeRate;
