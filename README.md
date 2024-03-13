@@ -75,19 +75,18 @@ To spend bitcoin stored in a Leafy wallet, the user needs access to its Remote A
 
 ### 1. Module System
 
-Leafy is designed with modularity in mind. Specifically there are two modules; a [Remote Module](#remote-module) and a [Recovery Module](#recovery-module). Each module is defined by an API to allow for other developers/users to create different implementations of the module. Leafy comes with at least one implementation of each module[^2].
-[^2]: ✅ represents the default implementation.
+Leafy is designed with modularity in mind. Specifically there are two modules; a [Remote Module](#remote-module) and a [Recovery Module](#recovery-module). Each module is defined by an API to allow for other developers/users to create different implementations of the module. Leafy comes with at least one implementation of each module.
 
 #### Remote Module
 
 As described in [Technical Details](#technical-details), a Leafy wallet requires two [BIP-39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) seed phrases. One of these phrases is stored on the user's Phone and another within a Remote Account. The Remote Module is the API necessary to implement a Remote Account. It is defined [here](https://github.com/blangel/leafy/blob/main/frontend/lib/util/remote_module.dart#L4). 
 
-Here are the Remote Accounts supported or being developed by Leafy.
+Here are the Remote Accounts supported or being researched by Leafy.
 
 | Remote Account | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |       Status |
 |:---------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------:|
-| Google Drive ✅ | Implemented via the [Google Drive API](https://developers.google.com/drive/api/guides/about-sdk) as well as the user [Google Drive application storage](https://developers.google.com/drive/api/guides/appdata)                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Supported 💪 |
-| Apple iCloud   | Implemented via [Apple's iCloud key storage](https://developer.apple.com/library/archive/documentation/General/Conceptual/iCloudDesignGuide/Chapters/DesigningForKey-ValueDataIniCloud.html)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |   Planned 🚧 |
+| Google Drive   | Implemented via the [Google Drive API](https://developers.google.com/drive/api/guides/about-sdk) as well as the user [Google Drive application storage](https://developers.google.com/drive/api/guides/appdata)                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Supported 💪 |
+| Apple iCloud   | Implemented via [Apple's iCloud key storage](https://developer.apple.com/library/archive/documentation/General/Conceptual/iCloudDesignGuide/Chapters/DesigningForKey-ValueDataIniCloud.html)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Supported 💪 |
 | Hardware       | Like [ColdCard](https://coldcard.com/) or [Ledger](https://www.ledger.com/)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |  Research 🔬 |
 | On-chain       | Could be implemented in at least three ways with various trade-offs. Each would require [encryption](#3-optional-passwordpassphrase) given the public nature of the blockchain.<table><tr><th></th><th>[Inscription](https://docs.ordinals.com/guides/inscriptions.html)</th><th>[Stamps](https://github.com/mikeinspace/stamps/blob/main/BitcoinStamps.md)</th><th>[Annex](https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki#script-validation-rules)</th></tr><tr><td>Transactions Needed</td><td>2</td><td>1</td><td>1</td></tr><tr><td>Standard</td><td>✅</td><td>✅</td><td>⛔</td></tr><tr><td>Witness Discount</td><td>✅</td><td>⛔</td><td>✅</td></tr></table> |  Research 🔬 |
 
@@ -95,12 +94,12 @@ Here are the Remote Accounts supported or being developed by Leafy.
 
 To assist a user in recovering their Leafy wallet in case of various loss scenarios, the user must select and configure a Recovery Module implementation. The Recovery Module is the API necessary to implement a Recovery Method. It is defined [here](TBD).
 
-Here are the Recovery Methods supported or being developed by Leafy.
+Here are the Recovery Methods supported or being researched by Leafy.
 
-| Recovery Method    | Description                                                                                                                                                                                             |       Status |
-|:-------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------:|
-| Companion Device ✅ | Leverages trusted companions to store backups of a user's Phone data and Bitcoin timelocks to recover from Remote Account access loss. This is [defined in depth below](#2a-companion-device-recovery). | Supported 💪 |
-| Social Bond        | Leverages trusted companions to pledge a [UTXO](https://river.com/learn/bitcoins-utxo-model/) to aid in recovery of a user's UTXO set. This is [discussed further below](#2b-social-bond-recovery).     |  Research 🔬 |
+| Recovery Method  | Description                                                                                                                                                                                             |       Status |
+|:-----------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------:|
+| Companion Device | Leverages trusted companions to store backups of a user's Phone data and Bitcoin timelocks to recover from Remote Account access loss. This is [defined in depth below](#2a-companion-device-recovery). | Supported 💪 |
+| Social Bond      | Leverages trusted companions to pledge a [UTXO](https://river.com/learn/bitcoins-utxo-model/) to aid in recovery of a user's UTXO set. This is [discussed further below](#2b-social-bond-recovery).     |  Research 🔬 |
 
 Continue to [Recovery](#2-recovery) for more details about each and to see a [comparison](#2c-companion-device-and-social-bond-comparison) between the two.
 
@@ -199,16 +198,16 @@ TODO
 
 |                                        | [Companion Device](#2a-companion-device-recovery) | [Social Bond](#2b-social-bond-recovery) |
 |:---------------------------------------|--------------------------------------------------:|----------------------------------------:|
-| **Yearly Maintenance Transactions**    |                                             1[^3] |                                       0 |
+| **Yearly Maintenance Transactions**    |                                             1[^2] |                                       0 |
 | **First Seed Recovery Transactions**   |                                                 0 |                                       2 |
 | **Second Seed Recovery Transactions**  |                                                 1 |                                       2 |
 | **Wait Time for First Seed Recovery**  |                                                 0 |                                 1 block |
 | **Wait Time for Second Seed Recovery** |                           1 ≤ wait < 52560 blocks |                                1 block  |
 
-[^3]: This is the [liveliness updates](#liveliness-updates) requirement
+[^2]: This is the [liveliness updates](#liveliness-updates) requirement
 
-**Note** the value `1` for Companion Device is technically `T + F` and the value of `2` for Social Bond is technically `1 + T + F`[^4]. For this analysis it is assumed that `U` can fit entirely within `1` transaction and that transaction can pay for fees. The UTXOs are P2TR inputs where there need only be 2 outputs for the transaction. [Thousands of inputs could fit within a transaction](https://bitcoinops.org/en/tools/calc-size/), and we'll assume Leafy users have less than this number of UTXOs.
-[^4]: The additional `1` is the social bond transaction (`Tx_b` in the [social bond diagram](#2b-social-bond-recovery))
+**Note** the value `1` for Companion Device is technically `T + F` and the value of `2` for Social Bond is technically `1 + T + F`[^3]. For this analysis it is assumed that `U` can fit entirely within `1` transaction and that transaction can pay for fees. The UTXOs are P2TR inputs where there need only be 2 outputs for the transaction. [Thousands of inputs could fit within a transaction](https://bitcoinops.org/en/tools/calc-size/), and we'll assume Leafy users have less than this number of UTXOs.
+[^3]: The additional `1` is the social bond transaction (`Tx_b` in the [social bond diagram](#2b-social-bond-recovery))
 
 | Symbol | Definition                                                      |
 |:-------|:----------------------------------------------------------------|
@@ -366,13 +365,13 @@ Those items marked `mainnet` are deemed necessary prior to general availability.
 - [x] `mainnet` Implement "Liveliness Updates"
 - [x] `mainnet` Add advanced option during setup for passphrase/password encryption
 - [x] `mainnet` Add setting to customize the [Bitcoin Network Connectivity](#6-bitcoin-network-connectivity)
-- [x] Add Apple iCloud as a Remote Account[^5]
+- [x] Add Apple iCloud as a Remote Account[^4]
 - [ ] Add local timed notifications as reminders for liveliness updates
 - [x] Expand Remote Account to include a label (so UI can list implementation name instead of 'Remote Account'; e.g. 'Google Drive')
 - [ ] Implement binaries as discussed in [App Provider Obstruction](#app-provider-obstruction)
 - [ ] Allow for timelock-recovery on same phone
   
-[^5]: Although not marked 'mainnet' Apple may require this as part of release/approval for inclusion on the Apple App Store
+[^4]: Although not marked 'mainnet' Apple may require this as part of release/approval for inclusion on the Apple App Store
 
 ### Research
 
