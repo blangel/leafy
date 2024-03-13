@@ -569,6 +569,17 @@ class RecommendedFees {
     );
   }
 
+  RecommendedFees fromMultiple(double multiple) {
+    if (multiple <= 1) {
+      return this;
+    }
+    return RecommendedFees(fastestFeeRate: (fastestFeeRate * multiple).toInt(),
+        halfHourFeeRate: (halfHourFeeRate * multiple).toInt(),
+        hourFeeRate: (hourFeeRate * multiple).toInt(),
+        economyFeeRate: (economyFeeRate * multiple).toInt(),
+        minimumFeeRate: (minimumFeeRate * multiple).toInt());
+  }
+
   int getRate(RecommendedFeeRateLevel level) {
     switch (level) {
       case RecommendedFeeRateLevel.fastest:

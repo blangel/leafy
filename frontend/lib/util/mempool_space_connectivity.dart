@@ -253,7 +253,7 @@ class MempoolSpaceClient extends BitcoinClient {
       return response.body;
     }
     log("failed to submit transaction $transactionHex (status code ${response.statusCode}): ${response.body}");
-    throw Exception('Failed to submit transaction: ${response.statusCode}');
+    throw Exception('Failed to submit transaction: (status code ${response.statusCode}): ${response.body}');
   }
 
 }

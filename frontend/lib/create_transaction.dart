@@ -36,6 +36,7 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
 
   RecommendedFees? _recommendedFees;
   MempoolSnapshot? _mempoolSnapshot;
+  double _feeMultiple = 1;
 
   RecommendedFeeRateLevel _level = RecommendedFeeRateLevel.economy;
 
@@ -68,15 +69,7 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
   void _loadFeeAndMempoolData() async {
     bitcoinClient.getRecommendedFees().then((fees) {
       setState(() {
-        _recommendedFees = fees;
-        _readyToSubmit = false;
-        if (_hex != null) {
-          _hex = _hex!.withHex("");
-          if (mounted) {
-            final arguments = ModalRoute.of(context)!.settings.arguments as CreateTransactionArguments;
-            createTransactionHex(arguments.transactions, arguments.changeAddress, _toAddress, _level);
-          }
-        }
+        _updateFees(fees);
       });
     });
     bitcoinClient.getMempoolSnapshot().then((snapshot) {
@@ -92,6 +85,18 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
         }
       });
     });
+  }
+
+  void _updateFees(RecommendedFees fees) {
+    _recommendedFees = fees.fromMultiple(_feeMultiple);
+    _readyToSubmit = false;
+    if (_hex != null) {
+      _hex = _hex!.withHex("");
+      if (mounted) {
+        final arguments = ModalRoute.of(context)!.settings.arguments as CreateTransactionArguments;
+        createTransactionHex(arguments.transactions, arguments.changeAddress, _toAddress, _level);
+      }
+    }
   }
 
   void _setupRefreshTimer() {
@@ -547,8 +552,20 @@ class _CreateTransactionState extends State<CreateTransactionPage> {
       }
     } on Exception catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to submit transaction: ${e.toString()}', overflow: TextOverflow.ellipsis,), showCloseIcon: true));
+        if (e.toString().contains("min relay fee not met")) {
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fee too low, retry with higher fees.', overflow: TextOverflow.ellipsis,), showCloseIcon: true));
+          setState(() {
+            _feeMultiple *= 2;
+            if (_recommendedFees != null) {
+              _updateFees(_recommendedFees!);
+            }
+            _signing = false;
+          });
+        } else {
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to submit transaction: ${e.toString()}', overflow: TextOverflow.ellipsis,), showCloseIcon: true));
+        }
       }
     }
   }
