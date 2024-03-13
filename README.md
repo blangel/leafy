@@ -164,19 +164,19 @@ The social bond recovery method is cheap to maintain (as opposed to [Companion D
 
 ##### Fee Handling
 
-TODO
+Researching
 
 ##### Bond Payment
 
-TODO
+Researching
 
 ##### Recovery Wallet Options/Selection
 
-TODO
+Researching
 
 ##### Preallocated Transaction Durability
 
-TODO
+Researching
 
 ##### Non-Loss Recovery Scenarios
 
@@ -184,15 +184,15 @@ There are some common scenarios requiring recovery which are not the result of a
 
 ###### New Phone
 
-TODO
+Researching
 
 ###### Uninstall Application / Application Data Deleted
 
-TODO
+Researching
 
 ##### Social Bond Recovery Summary
 
-TODO
+Researching
 
 #### 2.c Companion Device and Social Bond Comparison
 
