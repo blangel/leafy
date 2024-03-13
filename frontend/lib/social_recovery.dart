@@ -120,6 +120,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
       }
     } on Exception catch(e) {
       if (mounted) {
+        log("exception: $_remoteAccountUsage | ${e.toString()}");
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(e.toString(), style: const TextStyle(color: Colors.white),),
           backgroundColor: Colors.redAccent,
@@ -167,6 +168,10 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
           _companionIds.add(arguments.remoteAccountId);
         }
         _walletFirstMnemonic = arguments.walletFirstMnemonic;
+        if (arguments.remoteAccount != null && !_remoteAccountInitialized) {
+          _remoteAccount = arguments.remoteAccount;
+          _remoteAccountInitialized = true;
+        }
       });
     }
     if (arguments.assistingWithCompanionId != null) {
@@ -253,7 +258,8 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                             title: Text(arguments.remoteAccountId == companionId ? "$companionId  (self)" : companionId),
                             value: const Text(''),
                             onPressed: (context) {
-                              Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recoveryCompanion, remoteAccountId: arguments.remoteAccountId, remoteProvider: arguments.remoteProvider, assistingWithCompanionId: companionId, walletPassword: arguments.walletPassword, walletFirstMnemonic: arguments.walletFirstMnemonic));
+                              var remoteAccountArgument = _remoteAccountInitialized ? _remoteAccount : null;
+                              Navigator.popAndPushNamed(context, '/social-recovery', arguments: SocialRecoveryArguments(type: SocialRecoveryType.recoveryCompanion, remoteAccountId: arguments.remoteAccountId, remoteProvider: arguments.remoteProvider, assistingWithCompanionId: companionId, walletPassword: arguments.walletPassword, walletFirstMnemonic: arguments.walletFirstMnemonic, remoteAccount: remoteAccountArgument));
                             },
                           ),
                           if (!_loadedRemoteAccountCompanionIds)
@@ -324,7 +330,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         ),
                         onDetect: (capture) {
                           if (capture.barcodes.isNotEmpty && (capture.barcodes.first.rawValue != null)) {
-                            _validateCompanionPublicKey(arguments.walletPassword, capture.barcodes.first.rawValue!, arguments.remoteAccountId);
+                            _validateCompanionPublicKey(arguments.walletPassword, arguments.walletFirstMnemonic, capture.barcodes.first.rawValue!, arguments.remoteAccountId);
                           }
                         },
                       ))),
@@ -346,7 +352,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                           labelText: 'Companion Data',
                         ),
                         onChanged: (data) {
-                          _validateCompanionPublicKey(arguments.walletPassword, data, arguments.remoteAccountId);
+                          _validateCompanionPublicKey(arguments.walletPassword, arguments.walletFirstMnemonic, data, arguments.remoteAccountId);
                         },
                       )
                   )
@@ -676,7 +682,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                         ),
                         onDetect: (capture) {
                           if (capture.barcodes.isNotEmpty && (capture.barcodes.first.rawValue != null)) {
-                            _validateCompanionPublicKey(arguments.walletPassword, capture.barcodes.first.rawValue!, arguments.remoteAccountId);
+                            _validateCompanionPublicKey(arguments.walletPassword, arguments.walletFirstMnemonic, capture.barcodes.first.rawValue!, arguments.remoteAccountId);
                           }
                         },
                       ))),
@@ -698,7 +704,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                           labelText: 'Companion Data',
                         ),
                         onChanged: (data) {
-                          _validateCompanionPublicKey(arguments.walletPassword, data, arguments.remoteAccountId);
+                          _validateCompanionPublicKey(arguments.walletPassword, arguments.walletFirstMnemonic, data, arguments.remoteAccountId);
                         },
                       )
                   )
@@ -786,7 +792,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     await persistLocally(walletPassword, wallet.firstMnemonic, wallet.secondDescriptor, remoteAccountId, remoteProvider);
     if (mounted) {
       ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Successfully recovered wallet! Re-authenticate with remote-account to continue.', overflow: TextOverflow.ellipsis,), duration: Duration(seconds: 7), showCloseIcon: true));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Successfully recovered wallet! Re-authenticate.', overflow: TextOverflow.ellipsis,), duration: Duration(seconds: 7), showCloseIcon: true));
       Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
     }
   }
@@ -812,7 +818,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
     }
   }
 
-  void _validateCompanionPublicKey(String? walletPassword, String publicKeyHex, String self) async {
+  void _validateCompanionPublicKey(String? walletPassword, String? firstSeedMnemonic, String publicKeyHex, String self) async {
     bool result = await _validateEphemeralSocialPublicKeyNatively(publicKeyHex);
     if (!result) {
       if (mounted) {
@@ -826,7 +832,7 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
       } else if (_assistingWithCompanionId == null) {
         walletData = await getRecoveryWalletSerializedForCompanion(walletPassword);
       } else {
-        var companionSerialized = await getCompanionIdWalletSerialized(_assistingWithCompanionId!, _remoteAccount);
+        var companionSerialized = await getCompanionIdWalletSerialized(_assistingWithCompanionId!, _remoteAccount, firstSeedMnemonic);
         if (companionSerialized == null) {
           if (mounted) {
             ScaffoldMessenger.of(context).clearSnackBars();

@@ -80,11 +80,19 @@ class AppleICloudRemoteAccount extends RemoteModule {
         log("apple icloud: failure persisting new companionId");
         return false;
       }
+    } else {
+      // delete existing data; to overwrite with 'encryptedData'
+      String companionFileName = _getCompanionFileName(companionId);
+      var success = await _cloudKit.delete(companionFileName);
+      if (!success) {
+        log("apple icloud: failure deleting existing companion data");
+        return false;
+      }
     }
     String companionFileName = _getCompanionFileName(companionId);
     var success = await _cloudKit.save(companionFileName, encryptedData);
     if (!success) {
-      log("apple icloud: failure persisting encrypted second seed");
+      log("apple icloud: failure persisting companion data");
       return false;
     }
     String? persistedCompanionData = await getCompanionData(companionId);

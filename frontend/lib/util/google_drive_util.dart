@@ -26,7 +26,7 @@ class GoogleDriveUtil {
     List<int> dataBytes = utf8.encode(data);
     Stream<List<int>> dataStream = Stream.fromIterable([dataBytes]);
     var media = Media(dataStream, dataBytes.length);
-    final updatedFile = await _driveApi.files.update(file, file.id!, uploadMedia: media);
+    final updatedFile = await _driveApi.files.update(File(), file.id!, uploadMedia: media);
     return getContent(updatedFile.id!);
   }
 

@@ -275,8 +275,9 @@ class SocialRecoveryArguments {
   final String remoteAccountId;
   final RemoteModuleProvider remoteProvider;
   final String? assistingWithCompanionId;
+  final RemoteModule? remoteAccount;
 
-  SocialRecoveryArguments({required this.type, required this.walletPassword, required this.walletFirstMnemonic, required this.remoteAccountId, required this.remoteProvider, this.assistingWithCompanionId});
+  SocialRecoveryArguments({required this.type, required this.walletPassword, required this.walletFirstMnemonic, required this.remoteAccountId, required this.remoteProvider, this.assistingWithCompanionId, this.remoteAccount});
 }
 
 class TimelockRecoveryArguments {
@@ -384,7 +385,7 @@ Future<String> getRecoveryWalletSerializedForCompanion(String? walletPassword) a
   return jsonEncode(wrapper.toJson());
 }
 
-Future<String?> getCompanionIdWalletSerialized(String companionId, RemoteModule? remoteModule) async {
+Future<String?> getCompanionIdWalletSerialized(String companionId, RemoteModule? remoteModule, String? firstSeedMnemonicForRemoteDecryption) async {
   const storage = FlutterSecureStorage(aOptions: AndroidOptions(
     encryptedSharedPreferences: true,
   ));
@@ -394,6 +395,12 @@ Future<String?> getCompanionIdWalletSerialized(String companionId, RemoteModule?
       walletSerialized = await remoteModule.getCompanionData(companionId);
       if (walletSerialized == null) {
         return null;
+      }
+      if (firstSeedMnemonicForRemoteDecryption != null) {
+        walletSerialized = decryptLeafyData(firstSeedMnemonicForRemoteDecryption!, walletSerialized, mnemonicLength);
+        if (walletSerialized == null) {
+          return null;
+        }
       }
     } else {
       return null;

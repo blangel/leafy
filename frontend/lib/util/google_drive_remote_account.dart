@@ -75,7 +75,7 @@ class GoogleDriveRemoteAccount extends RemoteModule {
     String companionFileName = _getCompanionFileName(companionId);
     var existing = await _driveApi.getFileFromAppDirectory(companionFileName, false);
     if (existing == null || existing.isEmpty) {
-      String persisted = await _driveApi.createAndRetrieveFileFromAppDirectory(_getCompanionFileName(companionId), encryptedData);
+      String persisted = await _driveApi.createAndRetrieveFileFromAppDirectory(companionFileName, encryptedData);
       return (persisted == encryptedData);
     } else {
       var companionFile = existing.first.item2!.first;
