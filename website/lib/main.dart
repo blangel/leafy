@@ -127,7 +127,7 @@ class LeafyHomePage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Padding(padding: EdgeInsets.fromLTRB(0, documentationPaddingTop, 50, documentationPaddingBottom),
+                Padding(padding: EdgeInsets.fromLTRB(0, documentationPaddingTop, 20, documentationPaddingBottom),
                   child: InkWell(
                     onTap: () => {
                       _launchDocumentation()
@@ -137,6 +137,16 @@ class LeafyHomePage extends StatelessWidget {
                     ),
                   ),
                 ),
+                Padding(padding: EdgeInsets.fromLTRB(0, documentationPaddingTop, 50, documentationPaddingBottom),
+                  child: InkWell(
+                    onTap: () => {
+                      _launchPrivacyPolicy()
+                    },
+                    child: const Text('Privacy Policy',
+                      style: TextStyle(decoration: TextDecoration.underline),
+                    ),
+                  ),
+                )
               ],
             )),
           ],
@@ -165,11 +175,16 @@ _EffectiveDeviceType _getEffectiveDeviceType(BuildContext context) {
 }
 
 final Uri _documentationUri = Uri.parse('https://github.com/blangel/leafy/blob/main/README.md');
+final Uri _privacyPolicyUri = Uri.parse("https://leafybitcoin.com/privacy_policy.html");
 final Uri _googlePlayStoreUri = Uri.parse('http://leafybitcoin.com'); // TODO
 final Uri _appleAppStoreUri = Uri.parse('http://leafybitcoin.com'); // TODO
 
 Future<void> _launchDocumentation() async {
   _launchUri(_documentationUri);
+}
+
+Future<void> _launchPrivacyPolicy() async {
+  _launchUri(_privacyPolicyUri);
 }
 
 Future<void> _launchGooglePlayStore() async {
