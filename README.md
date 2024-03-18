@@ -383,4 +383,4 @@ Those items marked `mainnet` are deemed necessary prior to general availability.
 - [ ] `mainnet` Independent security audit
 - [ ] `mainnet` Release on Google Play Store
 - [ ] `mainnet` Release/approval on Apple App Store
-- [ ] Marketing website (leafybitcoin.com)
+- [x] Marketing website (leafybitcoin.com)
