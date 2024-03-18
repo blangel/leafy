@@ -5,3 +5,7 @@ target/
 *.*~
 frontend/android/app/libs/
 resources/dev/
+frontend/ios/GoogleService-Info.plist
+frontend/ios/Runner/GoogleService-Info.plist
+frontend/android/app/google-services.json
+frontend/lib/firebase_options.dart
