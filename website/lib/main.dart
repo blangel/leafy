@@ -1,5 +1,7 @@
 import 'package:animated_text_kit/animated_text_kit.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -47,12 +49,13 @@ class LeafyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     TextStyle descriptionStyle = const TextStyle(fontSize: 40);
-    const Duration textAnimationDuration = Duration(milliseconds: 100);
+    const Duration textAnimationDuration = Duration(milliseconds: 150);
     double dividerHeight = 48;
     double documentationPaddingTop = 24;
     double documentationPaddingBottom = 20;
     double buttonHeight = 75;
     double appleAppStoreImageHeight = 40;
+    double descriptionTextSize = 16;
     if (_getEffectiveDeviceType(context) == _EffectiveDeviceType.mobile) {
       dividerHeight = 12;
       documentationPaddingTop = 0;
@@ -79,20 +82,42 @@ class LeafyHomePage extends StatelessWidget {
             Column(
               mainAxisSize: MainAxisSize.max,
               mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Center(
-                  child: Text("Leafy is Bitcoin ", style: descriptionStyle),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.max,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text("Leafy is ", style: descriptionStyle, textAlign: TextAlign.left),
+                      AnimatedTextKit(
+                        repeatForever: true,
+                        animatedTexts: [
+                          TyperAnimatedText("Bitcoin that's easy to use", textStyle: descriptionStyle, speed: textAnimationDuration),
+                          TyperAnimatedText("for everyone", textStyle: descriptionStyle, speed: textAnimationDuration),
+                          TyperAnimatedText("secure", textStyle: descriptionStyle, speed: textAnimationDuration),
+                          TyperAnimatedText("self custodial", textStyle: descriptionStyle, speed: textAnimationDuration),
+                        ],
+                      )
+                    ]
+                  )
                 ),
-                Center(
-                  child: AnimatedTextKit(
-                    repeatForever: true,
-                    animatedTexts: [
-                      TyperAnimatedText("that's easy to use", textStyle: descriptionStyle, speed: textAnimationDuration),
-                      TyperAnimatedText("for everyone", textStyle: descriptionStyle, speed: textAnimationDuration),
-                      TyperAnimatedText("that's secure", textStyle: descriptionStyle, speed: textAnimationDuration),
-                      TyperAnimatedText("that's self custodial", textStyle: descriptionStyle, speed: textAnimationDuration),
-                    ],
+                SizedBox(height: dividerHeight),
+                Align(alignment: Alignment.centerRight, child:
+                  Padding(padding: const EdgeInsets.fromLTRB(0, 0, 20, 0), child:
+                    SizedBox(width: 800, child:
+                      RichText(textAlign: TextAlign.end, text: TextSpan(
+                        text: "Leafy is a Bitcoin wallet designed to be user-friendly. It is built for those who want to participate in Bitcoin via ",
+                        style: TextStyle(fontSize: descriptionTextSize, fontWeight: FontWeight.w200, color: Theme.of(context).textTheme.bodyMedium!.color),
+                        children: [
+                          TextSpan(text: "self-custody", style: TextStyle(fontSize: descriptionTextSize, fontWeight: FontWeight.w200, decoration: TextDecoration.underline, color: Theme.of(context).textTheme.bodyMedium!.color),
+                              recognizer: TapGestureRecognizer()..onTap = () { _launchSelfCustodyDocumentation(); }
+                          ),
+                          TextSpan(text: " but do not want to undertake the learning curve, cost and hassle required by other solutions.", style: TextStyle(fontSize: descriptionTextSize, fontWeight: FontWeight.w200, color: Theme.of(context).textTheme.bodyMedium!.color)),
+                        ]
+                      )),
+                    ),
                   ),
                 ),
                 SizedBox(height: dividerHeight),
@@ -175,16 +200,22 @@ _EffectiveDeviceType _getEffectiveDeviceType(BuildContext context) {
 }
 
 final Uri _documentationUri = Uri.parse('https://github.com/blangel/leafy/blob/main/README.md');
+final Uri _documentationSelfCustodyUri = Uri.parse('https://github.com/blangel/leafy/blob/main/README.md#self-custody');
+final Uri _localPrivacyPolicyUri = Uri.parse("./docs/privacy_policy.html");
 final Uri _privacyPolicyUri = Uri.parse("https://leafybitcoin.com/privacy_policy.html");
-final Uri _googlePlayStoreUri = Uri.parse('http://leafybitcoin.com'); // TODO
-final Uri _appleAppStoreUri = Uri.parse('http://leafybitcoin.com'); // TODO
+final Uri _googlePlayStoreUri = Uri.parse('https://leafybitcoin.com'); // TODO
+final Uri _appleAppStoreUri = Uri.parse('https://leafybitcoin.com'); // TODO
 
 Future<void> _launchDocumentation() async {
   _launchUri(_documentationUri);
 }
 
+Future<void> _launchSelfCustodyDocumentation() async {
+  _launchUri(_documentationSelfCustodyUri);
+}
+
 Future<void> _launchPrivacyPolicy() async {
-  _launchUri(_privacyPolicyUri);
+  _launchUri(kDebugMode ? _localPrivacyPolicyUri : _privacyPolicyUri);
 }
 
 Future<void> _launchGooglePlayStore() async {
