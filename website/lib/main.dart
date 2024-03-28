@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -49,7 +51,7 @@ class LeafyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     TextStyle descriptionStyle = const TextStyle(fontSize: 40);
-    const Duration textAnimationDuration = Duration(milliseconds: 150);
+    const Duration textAnimationDuration = Duration(milliseconds: 125);
     double dividerHeight = 48;
     double documentationPaddingTop = 24;
     double documentationPaddingBottom = 20;
@@ -59,7 +61,7 @@ class LeafyHomePage extends StatelessWidget {
     if (_getEffectiveDeviceType(context) == _EffectiveDeviceType.mobile) {
       dividerHeight = 12;
       documentationPaddingTop = 0;
-      documentationPaddingBottom = 0;
+      documentationPaddingBottom = 10;
       buttonHeight = 60;
       appleAppStoreImageHeight = 30;
       descriptionStyle = const TextStyle(fontSize: 32);
@@ -129,18 +131,20 @@ class LeafyHomePage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.end,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Center(child: SizedBox(height: buttonHeight, child: IconButton(
-                          icon: Image.asset('images/apple-app-store-badge.png', height: appleAppStoreImageHeight),
-                          onPressed: () {
-                            _launchAppleAppStore();
-                          },
-                        ))),
-                        Center(child: SizedBox(height: buttonHeight, child: IconButton(
-                          icon: Image.asset('images/google-play-badge.png'),
-                          onPressed: () {
-                            _launchGooglePlayStore();
-                          },
-                        ))),
+                        if (kIsWeb || Platform.isIOS)
+                          ...[Center(child: SizedBox(height: buttonHeight, child: IconButton(
+                            icon: Image.asset('images/apple-app-store-badge.png', height: appleAppStoreImageHeight),
+                            onPressed: () {
+                              _launchAppleAppStore();
+                            },
+                          )))],
+                        if (kIsWeb || Platform.isAndroid)
+                          ...[Center(child: SizedBox(height: buttonHeight, child: IconButton(
+                            icon: Image.asset('images/google-play-badge.png'),
+                            onPressed: () {
+                              _launchGooglePlayStore();
+                            },
+                          )))],
                         const SizedBox(width: 50),
                       ],
                     )
