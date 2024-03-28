@@ -79,35 +79,36 @@ class LeafyHomePage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(flex: 4, child:
+            Padding(padding: const EdgeInsets.symmetric(horizontal: 5), child:
             Column(
               mainAxisSize: MainAxisSize.max,
               mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                Align(alignment: Alignment.center, child: SizedBox(width: 800, child:
+                  Padding(padding: const EdgeInsets.fromLTRB(10, 0, 0, 0), child:Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
                     mainAxisSize: MainAxisSize.max,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text("Leafy is ", style: descriptionStyle, textAlign: TextAlign.left),
+                      Align(alignment: Alignment.centerLeft, child: Text("Leafy is ", style: descriptionStyle, textAlign: TextAlign.left)),
                       AnimatedTextKit(
                         repeatForever: true,
                         animatedTexts: [
-                          TyperAnimatedText("Bitcoin that's easy to use", textStyle: descriptionStyle, speed: textAnimationDuration),
-                          TyperAnimatedText("for everyone", textStyle: descriptionStyle, speed: textAnimationDuration),
-                          TyperAnimatedText("secure", textStyle: descriptionStyle, speed: textAnimationDuration),
-                          TyperAnimatedText("self custodial", textStyle: descriptionStyle, speed: textAnimationDuration),
+                          TyperAnimatedText("Bitcoin that's easy to use.", textStyle: descriptionStyle, speed: textAnimationDuration),
+                          TyperAnimatedText("for everyone.", textStyle: descriptionStyle, speed: textAnimationDuration),
+                          TyperAnimatedText("secure.", textStyle: descriptionStyle, speed: textAnimationDuration),
+                          TyperAnimatedText("self custodial.", textStyle: descriptionStyle, speed: textAnimationDuration),
                         ],
                       )
                     ]
                   )
-                ),
+                ))),
                 SizedBox(height: dividerHeight),
-                Align(alignment: Alignment.centerRight, child:
+                Align(alignment: Alignment.center, child:
                   Padding(padding: const EdgeInsets.fromLTRB(0, 0, 20, 0), child:
                     SizedBox(width: 800, child:
-                      RichText(textAlign: TextAlign.end, text: TextSpan(
+                      RichText(textAlign: TextAlign.center, text: TextSpan(
                         text: "Leafy is a Bitcoin wallet designed to be user-friendly. It is built for those who want to participate in Bitcoin via ",
                         style: TextStyle(fontSize: descriptionTextSize, fontWeight: FontWeight.w200, color: Theme.of(context).textTheme.bodyMedium!.color),
                         children: [
@@ -145,7 +146,7 @@ class LeafyHomePage extends StatelessWidget {
                     )
                 ),
               ],
-            )
+            )),
             ),
             Expanded(flex: 1, child: Row(
               mainAxisSize: MainAxisSize.max,

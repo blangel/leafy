@@ -5,6 +5,8 @@ target/
 *.*~
 frontend/android/app/libs/
 resources/dev/
+frontend/android/key.properties
+frontend/android/leafy-upload-keystore.jks
 frontend/ios/GoogleService-Info.plist
 frontend/ios/Runner/GoogleService-Info.plist
 frontend/android/app/google-services.json

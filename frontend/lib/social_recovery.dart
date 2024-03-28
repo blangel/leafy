@@ -531,9 +531,9 @@ class _SocialRecoveryState extends State<SocialRecoveryPage> {
                           children: [
                             TextSpan(text: "Companion Device", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyMedium!.color)),
                             TextSpan(text: " to assist in recovery.\n\nOn the companion device, click the restore icon in the upper right of the screen.", style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color)),
-                            TextSpan(text: "\n\nSelect ", style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color)),
+                            TextSpan(text: "\n\nSelect ", style: TextStyle(fontSize: 16, color: Theme.of(context).textTheme.bodyMedium!.color)),
                             TextSpan(text: arguments.remoteAccountId, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyMedium!.color)),
-                            TextSpan(text: " as the account to recover. Then provide your companion with the following data to begin the process.", style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyMedium!.color)),
+                            TextSpan(text: " as the account to recover. Then provide your companion with the following data to begin the process.", style: TextStyle(fontSize: 16, color: Theme.of(context).textTheme.bodyMedium!.color)),
                           ])
                       )),
                   if (_socialKeyPair != null)
