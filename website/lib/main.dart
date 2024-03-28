@@ -17,7 +17,7 @@ class LeafyWebsiteApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Leafy',
-      theme: _getLightTheme(),
+      theme: _getDarkTheme(),
       darkTheme: _getDarkTheme(),
       themeMode: ThemeMode.system,
       debugShowCheckedModeBanner: false,
@@ -28,13 +28,7 @@ class LeafyWebsiteApp extends StatelessWidget {
   }
 }
 
-final ThemeData _lightTheme = ThemeData.light(useMaterial3: true);
-
 final ThemeData _darkTheme = ThemeData.dark(useMaterial3: true);
-
-ThemeData _getLightTheme() {
-  return _lightTheme.copyWith(textTheme: GoogleFonts.outfitTextTheme(_lightTheme.textTheme));
-}
 
 ThemeData _getDarkTheme() {
   return _darkTheme.copyWith(textTheme: GoogleFonts.outfitTextTheme(_darkTheme.textTheme));
@@ -95,7 +89,7 @@ class LeafyHomePage extends StatelessWidget {
                       AnimatedTextKit(
                         repeatForever: true,
                         animatedTexts: [
-                          TyperAnimatedText("Bitcoin that's easy to use.", textStyle: descriptionStyle, speed: textAnimationDuration),
+                          TyperAnimatedText("easy to use.", textStyle: descriptionStyle, speed: textAnimationDuration),
                           TyperAnimatedText("for everyone.", textStyle: descriptionStyle, speed: textAnimationDuration),
                           TyperAnimatedText("secure.", textStyle: descriptionStyle, speed: textAnimationDuration),
                           TyperAnimatedText("self custodial.", textStyle: descriptionStyle, speed: textAnimationDuration),
