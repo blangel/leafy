@@ -62,6 +62,7 @@ class LeafyHomePage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(title),
+        centerTitle: false,
         actions: const [],
         leading: null,
         automaticallyImplyLeading: false,
