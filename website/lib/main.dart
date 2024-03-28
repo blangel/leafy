@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -131,14 +129,14 @@ class LeafyHomePage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.end,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        if (kIsWeb || Platform.isIOS)
+                        if (defaultTargetPlatform != TargetPlatform.android)
                           ...[Center(child: SizedBox(height: buttonHeight, child: IconButton(
                             icon: Image.asset('images/apple-app-store-badge.png', height: appleAppStoreImageHeight),
                             onPressed: () {
                               _launchAppleAppStore();
                             },
                           )))],
-                        if (kIsWeb || Platform.isAndroid)
+                        if (defaultTargetPlatform != TargetPlatform.iOS)
                           ...[Center(child: SizedBox(height: buttonHeight, child: IconButton(
                             icon: Image.asset('images/google-play-badge.png'),
                             onPressed: () {
